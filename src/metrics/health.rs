@@ -113,7 +113,7 @@ impl SenaHealth {
 
             let version_correct = if exists {
                 fs::read_to_string(&file_path)
-                    .map(|content| content.contains("5.0.0") || content.contains("v5"))
+                    .map(|content| content.contains("6.0.0") || content.contains("v6"))
                     .unwrap_or(false)
             } else {
                 false
@@ -132,7 +132,7 @@ impl SenaHealth {
                 file.to_string(),
                 ComponentHealth {
                     exists,
-                    version: if version_correct { "5.0.0".to_string() } else { "unknown".to_string() },
+                    version: if version_correct { "6.0.0".to_string() } else { "unknown".to_string() },
                     status: status.to_string(),
                 },
             );
@@ -186,7 +186,7 @@ impl SenaHealth {
 
         HealthReport {
             timestamp: Utc::now().to_rfc3339(),
-            version: "5.0.0".to_string(),
+            version: "6.0.0".to_string(),
             overall_status: overall_status.to_string(),
             components,
             metrics: HealthMetrics {
@@ -251,7 +251,7 @@ impl SenaHealth {
 
         InnovationMetrics {
             timestamp: Utc::now().to_rfc3339(),
-            version: "5.0.0".to_string(),
+            version: "6.0.0".to_string(),
             features: FeatureMetrics {
                 active: features_active,
                 total: feature_modules.len(),
@@ -356,14 +356,14 @@ mod tests {
     fn test_get_health() {
         let health = SenaHealth::new();
         let report = health.get_health();
-        assert_eq!(report.version, "5.0.0");
+        assert_eq!(report.version, "6.0.0");
     }
 
     #[test]
     fn test_get_innovation_metrics() {
         let health = SenaHealth::new();
         let metrics = health.get_innovation_metrics();
-        assert_eq!(metrics.version, "5.0.0");
+        assert_eq!(metrics.version, "6.0.0");
     }
 
     #[test]

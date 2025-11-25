@@ -1,4 +1,4 @@
-//! SENA Controller v4.0 - Truth-Embedded Architecture in Rust
+//! SENA Controller v6.0 - Truth-Embedded Architecture in Rust
 //!
 //! This version merges:
 //! - 3,000 years of ancient engineering wisdom
@@ -19,7 +19,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v5::{SenaUnifiedSystem, ProcessingRequest};
+//! use sena_v6::{SenaUnifiedSystem, ProcessingRequest};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -32,7 +32,7 @@
 //! }
 //! ```
 //!
-//! Version: 5.0.0
+//! Version: 6.0.0
 //! Date: 2025-11-25
 
 pub mod ancient;
@@ -84,11 +84,14 @@ pub use mcp::run_server;
 pub use hooks::{handle_hook, HookResult};
 
 // Re-export output formatting
-pub use output::{TableBuilder, ProgressBar, FormatBox};
+pub use output::{
+    TableBuilder, ProgressBar, ProgressConfig, LiveProgress,
+    MultiProgress, Spinner, FormatBox, render_progress_box, ansi
+};
 
 /// Version information
-pub const VERSION: &str = "5.0.0";
-pub const CODENAME: &str = "Personalized AI";
+pub const VERSION: &str = "6.0.0";
+pub const CODENAME: &str = "Live Progress";
 
 /// Errors for the unified system
 #[derive(Error, Debug)]

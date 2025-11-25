@@ -362,7 +362,7 @@ impl SessionManager {
     fn save_session_history(&self) {
         let history = self.session_history.read().unwrap();
         let data = SessionHistoryData {
-            version: "5.0.0".to_string(),
+            version: "6.0.0".to_string(),
             sessions: history.clone(),
             last_saved: Utc::now().to_rfc3339(),
         };
@@ -384,7 +384,7 @@ impl SessionManager {
     fn save_global_preferences(&self) {
         let prefs = self.global_preferences.read().unwrap();
         let data = PreferencesData {
-            version: "5.0.0".to_string(),
+            version: "6.0.0".to_string(),
             preferences: prefs.clone(),
             last_saved: Utc::now().to_rfc3339(),
         };

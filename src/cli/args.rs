@@ -4,11 +4,11 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-/// SENA Controller v5.0 - Truth-Embedded Architecture (Personalized AI)
+/// SENA Controller v6.0 - Truth-Embedded Architecture with Live Progress
 #[derive(Parser, Debug)]
 #[command(name = "sena")]
 #[command(author = "SENA Team")]
-#[command(version = "5.0.0")]
+#[command(version = "6.0.0")]
 #[command(about = "SENA Controller - Ancient Wisdom meets Modern AI", long_about = None)]
 pub struct Cli {
     /// Run in verbose mode
