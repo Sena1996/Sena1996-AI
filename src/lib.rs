@@ -1,8 +1,9 @@
-//! SENA Controller v6.0 - Truth-Embedded Architecture in Rust
+//! SENA Controller v7.0 - Collaboration Hub
 //!
 //! This version merges:
 //! - 3,000 years of ancient engineering wisdom
 //! - 23 cutting-edge 2025 innovations
+//! - Multi-session collaboration hub
 //!
 //! Core Principle: Build systems that embody truth, not just produce correct outputs.
 //!
@@ -16,10 +17,17 @@
 //! - **Layer 5**: Harmony Validation Engine (Antikythera, 150 BCE)
 //! - **Layer 6**: Millennium Test Framework (All Ancient Wisdom)
 //!
+//! # Collaboration Hub
+//!
+//! - Real-time session communication
+//! - Task management across sessions
+//! - Conflict detection and resolution
+//! - Lightning-fast Unix socket messaging
+//!
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v6::{SenaUnifiedSystem, ProcessingRequest};
+//! use sena_v7::{SenaUnifiedSystem, ProcessingRequest};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -32,7 +40,7 @@
 //! }
 //! ```
 //!
-//! Version: 6.0.0
+//! Version: 7.0.0
 //! Date: 2025-11-25
 
 pub mod ancient;
@@ -46,6 +54,7 @@ pub mod mcp;
 pub mod hooks;
 pub mod output;
 pub mod daemon;
+pub mod hub;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -62,7 +71,8 @@ pub use base::{
     IVerifier, IStorage, IExecutor, IPermissionManager, ICodebaseMemory, IResearchSystem,
 };
 
-// Re-export session management
+// Re-export session management (DEPRECATED - use hub::Session and hub::SessionRegistry instead)
+#[deprecated(since = "7.0.0", note = "Use hub::Session and hub::SessionRegistry instead")]
 pub use session::{SessionManager, SessionState};
 
 // Re-export sync
@@ -89,9 +99,20 @@ pub use output::{
     MultiProgress, Spinner, FormatBox, render_progress_box, ansi
 };
 
+// Re-export collaboration hub
+pub use hub::{
+    Hub, HubConfig, HubStatus,
+    Session, SessionRegistry, SessionRole, SessionStatus,
+    HubState, SharedState,
+    Task, TaskBoard, TaskPriority, TaskStatus,
+    Message, MessageQueue, Broadcast,
+    ConflictDetector, FileConflict,
+    HubServer, HubClient,
+};
+
 /// Version information
-pub const VERSION: &str = "6.0.0";
-pub const CODENAME: &str = "Live Progress";
+pub const VERSION: &str = "7.0.0";
+pub const CODENAME: &str = "Collaboration Hub";
 
 /// Errors for the unified system
 #[derive(Error, Debug)]

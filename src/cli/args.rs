@@ -4,12 +4,12 @@
 
 use clap::{Parser, Subcommand, ValueEnum};
 
-/// SENA Controller v6.0 - Truth-Embedded Architecture with Live Progress
+/// SENA Controller v7.0 - Collaboration Hub
 #[derive(Parser, Debug)]
 #[command(name = "sena")]
 #[command(author = "SENA Team")]
-#[command(version = "6.0.0")]
-#[command(about = "SENA Controller - Ancient Wisdom meets Modern AI", long_about = None)]
+#[command(version = "7.0.0")]
+#[command(about = "SENA Controller - Ancient Wisdom meets Modern AI with Collaboration Hub", long_about = None)]
 pub struct Cli {
     /// Run in verbose mode
     #[arg(short, long, default_value_t = false)]
@@ -130,6 +130,52 @@ pub enum Commands {
         /// Data (JSON string)
         data: String,
     },
+
+    /// Collaboration Hub commands
+    Hub {
+        /// Hub action
+        #[command(subcommand)]
+        action: HubAction,
+    },
+
+    /// Join the collaboration hub
+    Join {
+        /// Role (android, web, backend, iot, general)
+        #[arg(short, long)]
+        role: String,
+
+        /// Display name
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// List who's online in the hub
+    Who,
+
+    /// Send a message to another session
+    Tell {
+        /// Target session (role name or session ID)
+        target: String,
+
+        /// Message to send
+        message: String,
+    },
+
+    /// Check inbox for messages
+    Inbox,
+
+    /// Task management
+    Task {
+        /// Task action
+        #[command(subcommand)]
+        action: TaskAction,
+    },
+
+    /// Watch live collaboration dashboard
+    Watch,
+
+    /// Show current sync status
+    Sync,
 }
 
 /// Hook types
@@ -205,6 +251,79 @@ pub enum FormatOutputType {
     TruthVerification,
     /// Code analysis format
     CodeAnalysis,
+}
+
+/// Hub actions
+#[derive(Subcommand, Debug, Clone)]
+pub enum HubAction {
+    /// Start the collaboration hub daemon
+    Start,
+    /// Stop the hub daemon
+    Stop,
+    /// Check hub status
+    Status,
+    /// Show all conflicts
+    Conflicts,
+    /// Clear all hub data
+    Clear,
+}
+
+/// Task actions
+#[derive(Subcommand, Debug, Clone)]
+pub enum TaskAction {
+    /// Create a new task
+    New {
+        /// Task title
+        title: String,
+
+        /// Assignee (role or session ID)
+        #[arg(short, long)]
+        to: String,
+
+        /// Priority (critical, high, medium, low)
+        #[arg(short, long, default_value = "medium")]
+        priority: String,
+    },
+
+    /// List all tasks
+    List {
+        /// Filter by status
+        #[arg(short, long)]
+        status: Option<String>,
+    },
+
+    /// List my tasks
+    Mine,
+
+    /// Mark task as done
+    Done {
+        /// Task ID
+        id: u64,
+    },
+
+    /// Update task status
+    Update {
+        /// Task ID
+        id: u64,
+
+        /// New status (pending, in_progress, blocked, done)
+        status: String,
+    },
+
+    /// Reassign task
+    Assign {
+        /// Task ID
+        id: u64,
+
+        /// New assignee
+        to: String,
+    },
+
+    /// Delete a task
+    Delete {
+        /// Task ID
+        id: u64,
+    },
 }
 
 impl Cli {

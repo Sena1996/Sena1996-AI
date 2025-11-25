@@ -1,16 +1,16 @@
 [package]
-name = "sena_v6"
-version = "6.0.0"
+name = "sena_v7"
+version = "7.0.0"
 edition = "2021"
 authors = ["SENA Team"]
-description = "SENA Controller v6.0 - Truth-Embedded Architecture with Live Progress (Personalized AI)"
+description = "SENA Controller v7.0 - Collaboration Hub with Multi-Session Support"
 license = "MIT"
 repository = "https://github.com/sena/sena-controller"
-keywords = ["ai", "ancient-wisdom", "truth-embedded", "self-healing"]
+keywords = ["ai", "ancient-wisdom", "truth-embedded", "collaboration", "hub"]
 categories = ["science", "algorithms"]
 
 [lib]
-name = "sena_v6"
+name = "sena_v7"
 path = "src/lib.rs"
 
 [[bin]]
