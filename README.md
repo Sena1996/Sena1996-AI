@@ -5,7 +5,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-9.0.2-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-9.0.3-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Tests](https://img.shields.io/badge/tests-191%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
@@ -147,7 +147,7 @@ cargo build --release
 
 # Binary location
 ./target/release/sena --version
-# sena 9.0.2
+# sena 9.0.3
 ```
 
 ### Install Binary
@@ -301,6 +301,15 @@ Sena1996-AI/
 
 ## Version History
 
+### v9.0.3 (2025-11-26) - **Elite Coding Standards**
+- Added CLAUDE.md with 50 elite coding rules for Claude Code
+- Self-reminder rule (Rule 0) to prevent instruction forgetting
+- Balanced severity: 30% CRITICAL, 40% IMPORTANT, 30% BEST PRACTICE
+- Anti-forgetting optimizations based on Anthropic research
+- SOLID principles, Rust idioms, Clean Code, Performance rules
+- Quick reference anti-pattern table
+- Enforcement checklist for commits
+
 ### v9.0.2 (2025-11-26) - **Complete CLI Commands**
 - Full CLI implementation for Knowledge, Intelligence & Evolution systems
 - Knowledge commands: `sena knowledge search`, `sena knowledge list`, `sena knowledge stats`
@@ -378,9 +387,9 @@ MIT License
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA 🦁 v9.0: Production Ready                        ║
+║       SENA 🦁 v9.0.3: Elite Coding Standards                ║
 ║                                                              ║
-║       Robust • Configurable • Battle-Tested • Ancient Wisdom ║
+║       Robust • Clean Code • Battle-Tested • Ancient Wisdom   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```

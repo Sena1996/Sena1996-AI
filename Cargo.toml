@@ -1,9 +1,9 @@
 [package]
 name = "sena_v9"
-version = "9.0.2"
+version = "9.0.3"
 edition = "2021"
 authors = ["SENA Team"]
-description = "SENA Controller v9.0 - Complete CLI Commands with Knowledge, Intelligence & Evolution Systems"
+description = "SENA Controller v9.0.3 - Elite Coding Standards with Knowledge, Intelligence & Evolution Systems"
 license = "MIT"
 repository = "https://github.com/sena/sena-controller"
 keywords = ["ai", "ancient-wisdom", "truth-embedded", "knowledge", "intelligence", "evolution"]
