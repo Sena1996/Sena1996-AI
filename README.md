@@ -1,11 +1,11 @@
-# SENA Controller v4.0 - Rust Edition
+# SENA Controller v5.0 - Rust Edition
 
 **Truth-Embedded Architecture - Complete Rewrite in Rust**
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/sena-controller-v4)
-[![Version](https://img.shields.io/badge/version-4.0.0-brightgreen)](https://github.com/Sena1996/sena-controller-v4)
+[![Version](https://img.shields.io/badge/version-5.0.0-brightgreen)](https://github.com/Sena1996/sena-controller-v4)
 [![Tests](https://img.shields.io/badge/tests-108%20passing-success)](https://github.com/Sena1996/sena-controller-v4)
 
 ---
@@ -24,7 +24,7 @@ SENA v4 is a **complete rewrite** of the SENA Controller in Rust, featuring:
 
 ---
 
-## NEW in v4.0: Rust Architecture
+## NEW in v5.0: Rust Architecture
 
 ### Before (Python v3.x):
 ```
@@ -34,7 +34,7 @@ SENA v4 is a **complete rewrite** of the SENA Controller in Rust, featuring:
 - Memory: ~50MB
 ```
 
-### After (Rust v4.0):
+### After (Rust v5.0):
 ```
 - Single binary (3MB)
 - No runtime dependencies
@@ -184,7 +184,7 @@ $ sena
 
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║     SENA Controller v4.0.0 - Ancient Lion                    ║
+║     SENA Controller v5.0.0 - Ancient Lion                    ║
 ║                                                              ║
 ║     Truth-Embedded Architecture in Rust                      ║
 ║                                                              ║
@@ -204,7 +204,7 @@ $ sena health --detailed
 ╔══════════════════════════════════════════════════════════════╗
 ║                   SENA 🦁 HEALTH STATUS                       ║
 ╚══════════════════════════════════════════════════════════════╝
-Version: 4.0.0
+Version: 5.0.0
 Status: Excellent
 Health: 100%
 
@@ -393,7 +393,7 @@ cargo test test_millennium_test
 
 ## Performance
 
-| Metric | Python v3.x | Rust v4.0 |
+| Metric | Python v3.x | Rust v5.0 |
 |--------|-------------|-----------|
 | Binary Size | ~50MB (with runtime) | 3MB |
 | Startup Time | ~500ms | <10ms |
@@ -405,7 +405,7 @@ cargo test test_millennium_test
 
 ## Feature Compatibility Matrix
 
-| Feature | Python v3.x | Rust v4.0 |
+| Feature | Python v3.x | Rust v5.0 |
 |---------|-------------|-----------|
 | 7 Ancient Wisdom Layers | ✅ | ✅ |
 | MCP Server | ✅ | ✅ |
@@ -462,7 +462,7 @@ MIT License - see LICENSE file for details.
 
 ## Version History
 
-### v4.0.0 (2025-11-25) - **Complete Rust Rewrite**
+### v5.0.0 (2025-11-25) - **Complete Rust Rewrite**
 - Complete rewrite from Python to Rust
 - 7 Ancient Wisdom Layers implemented
 - MCP Server with 7 tools
@@ -478,7 +478,7 @@ MIT License - see LICENSE file for details.
 
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA v4.0: Truth-Embedded Architecture in Rust        ║
+║       SENA v5.0: Truth-Embedded Architecture in Rust        ║
 ║                                                              ║
 ║       Native Performance • Ancient Wisdom • Modern Code     ║
 ║                                                              ║

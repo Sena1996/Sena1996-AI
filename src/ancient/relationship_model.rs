@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 3: Relationship Data Model (Rust)
+//! SENA v5.0 - Layer 3: Relationship Data Model (Rust)
 //!
 //! Inspired by Mayan Mathematics and Calendar Systems
 //!

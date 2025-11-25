@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 6: Millennium Test Framework (Rust)
+//! SENA v5.0 - Layer 6: Millennium Test Framework (Rust)
 //!
 //! Inspired by all ancient structures that survived 1,000+ years
 //!

@@ -62,7 +62,7 @@ save_user_config() {
   "prefix": "$USER_PREFIX",
   "emoji": "$USER_EMOJI",
   "installed_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "version": "4.0.0"
+  "version": "5.0.0"
 }
 EOF
     echo "✅ User preferences saved"

@@ -2,7 +2,7 @@
 //!
 //! Truth-Embedded Architecture in Rust
 //!
-//! This binary provides a CLI interface to the SENA v4.0 system.
+//! This binary provides a CLI interface to the SENA v5.0 system.
 //! Supports multiple modes:
 //! - MCP server mode for Claude Code integration
 //! - Hook mode for Claude Code hooks
@@ -10,7 +10,7 @@
 //! - Command mode for single operations
 
 use clap::Parser;
-use sena_v4::{
+use sena_v5::{
     Cli, Commands, execute_command,
     create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
 };

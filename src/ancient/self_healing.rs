@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 4: Embedded Self-Healing (Rust)
+//! SENA v5.0 - Layer 4: Embedded Self-Healing (Rust)
 //!
 //! Inspired by Roman Concrete (2000+ years durability)
 //!

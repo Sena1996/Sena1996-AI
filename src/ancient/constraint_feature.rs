@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 1: Constraint-as-Feature Engine (Rust)
+//! SENA v5.0 - Layer 1: Constraint-as-Feature Engine (Rust)
 //!
 //! Ancient Source: Persian Qanat Engineers (3000+ years)
 //! - Used gravity (constraint) as the POWER SOURCE for water delivery

@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 0: First Principles Engine (Rust)
+//! SENA v5.0 - Layer 0: First Principles Engine (Rust)
 //!
 //! Ancient Source: Eratosthenes (240 BCE)
 //! - Measured Earth's circumference with 98% accuracy

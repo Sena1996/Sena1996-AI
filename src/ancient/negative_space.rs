@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 2: Negative Space Architecture (Rust)
+//! SENA v5.0 - Layer 2: Negative Space Architecture (Rust)
 //!
 //! Inspired by Sushruta (600 BCE) - The Father of Surgery
 //!

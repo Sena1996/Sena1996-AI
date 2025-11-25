@@ -1,16 +1,16 @@
 [package]
-name = "sena_v4"
-version = "4.0.0"
+name = "sena_v5"
+version = "5.0.0"
 edition = "2021"
 authors = ["SENA Team"]
-description = "SENA Controller v4.0 - Truth-Embedded Architecture in Rust"
+description = "SENA Controller v5.0 - Truth-Embedded Architecture in Rust (Personalized AI)"
 license = "MIT"
 repository = "https://github.com/sena/sena-controller"
 keywords = ["ai", "ancient-wisdom", "truth-embedded", "self-healing"]
 categories = ["science", "algorithms"]
 
 [lib]
-name = "sena_v4"
+name = "sena_v5"
 path = "src/lib.rs"
 
 [[bin]]

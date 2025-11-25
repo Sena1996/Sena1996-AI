@@ -1,4 +1,4 @@
-//! SENA v4.0 - Layer 5: Harmony Validation Engine (Rust)
+//! SENA v5.0 - Layer 5: Harmony Validation Engine (Rust)
 //!
 //! Inspired by the Antikythera Mechanism (150 BCE)
 //!

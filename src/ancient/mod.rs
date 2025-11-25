@@ -1,6 +1,6 @@
-//! SENA v4.0 - Ancient Wisdom Layers (Rust)
+//! SENA v5.0 - Ancient Wisdom Layers (Rust)
 //!
-//! These 7 layers form the foundation of SENA v4.0,
+//! These 7 layers form the foundation of SENA v5.0,
 //! derived from 3,000 years of proven engineering wisdom.
 //!
 //! Each layer addresses a fundamental aspect that modern AI systems miss:

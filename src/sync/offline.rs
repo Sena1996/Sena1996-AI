@@ -342,7 +342,7 @@ impl OfflineSync {
         let crdt = self.crdt.read().unwrap();
 
         let data = PersistedData {
-            version: "4.0.0".to_string(),
+            version: "5.0.0".to_string(),
             author_id: self.author_id.clone(),
             data: crdt.get_data().clone(),
             vector_clock: crdt.get_vector_clock().clone(),

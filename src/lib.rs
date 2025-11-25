@@ -19,7 +19,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v4::{SenaUnifiedSystem, ProcessingRequest};
+//! use sena_v5::{SenaUnifiedSystem, ProcessingRequest};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -32,7 +32,7 @@
 //! }
 //! ```
 //!
-//! Version: 4.0.0
+//! Version: 5.0.0
 //! Date: 2025-11-25
 
 pub mod ancient;
@@ -87,8 +87,8 @@ pub use hooks::{handle_hook, HookResult};
 pub use output::{TableBuilder, ProgressBar, FormatBox};
 
 /// Version information
-pub const VERSION: &str = "4.0.0";
-pub const CODENAME: &str = "Truth-Embedded";
+pub const VERSION: &str = "5.0.0";
+pub const CODENAME: &str = "Personalized AI";
 
 /// Errors for the unified system
 #[derive(Error, Debug)]
