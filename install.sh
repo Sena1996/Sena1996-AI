@@ -1,6 +1,7 @@
 #!/bin/bash
 # Sena1996-AI Installation Script
 # Installs SENA Controller with Rust binary
+# Technology is for everyone - customize your experience!
 
 set -e
 
@@ -8,12 +9,64 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SENA_HOME="$SCRIPT_DIR"
 CLAUDE_DIR="$HOME/.claude"
 
+# Default branding
+DEFAULT_PREFIX="SENA"
+DEFAULT_EMOJI="🦁"
+
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                                                              ║"
 echo "║           SENA 🦁 CONTROLLER INSTALLER                       ║"
 echo "║                                                              ║"
+echo "║       Technology is for everyone - Make it yours!           ║"
+echo "║                                                              ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
+
+# ═══════════════════════════════════════════════════════════════════
+#  PERSONALIZATION - Your AI, Your Identity
+# ═══════════════════════════════════════════════════════════════════
+echo "┌──────────────────────────────────────────────────────────────┐"
+echo "│  PERSONALIZATION - Your AI, Your Identity                   │"
+echo "└──────────────────────────────────────────────────────────────┘"
+echo ""
+echo "Default branding: $DEFAULT_PREFIX $DEFAULT_EMOJI"
+echo ""
+read -p "Would you like to customize your prefix and emoji? [y/n]: " customize
+
+if [ "$customize" = "y" ] || [ "$customize" = "Y" ]; then
+    echo ""
+    echo "Examples:"
+    echo "  Name: JARVIS, FRIDAY, ALEX, MAX, or your own name"
+    echo "  Emoji: 🤖 🧠 ⚡ 🔮 🌟 💫 🎯 🚀 or any emoji you like"
+    echo ""
+    read -p "Enter your custom prefix [$DEFAULT_PREFIX]: " CUSTOM_PREFIX
+    read -p "Enter your custom emoji [$DEFAULT_EMOJI]: " CUSTOM_EMOJI
+
+    # Use defaults if empty
+    USER_PREFIX="${CUSTOM_PREFIX:-$DEFAULT_PREFIX}"
+    USER_EMOJI="${CUSTOM_EMOJI:-$DEFAULT_EMOJI}"
+else
+    USER_PREFIX="$DEFAULT_PREFIX"
+    USER_EMOJI="$DEFAULT_EMOJI"
+fi
+
+echo ""
+echo "✅ Your branding: $USER_PREFIX $USER_EMOJI"
+echo ""
+
+# Save user preferences to config file
+save_user_config() {
+    CONFIG_FILE="$CLAUDE_DIR/.sena_user_config.json"
+    cat > "$CONFIG_FILE" << EOF
+{
+  "prefix": "$USER_PREFIX",
+  "emoji": "$USER_EMOJI",
+  "installed_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "version": "4.0.0"
+}
+EOF
+    echo "✅ User preferences saved"
+}
 
 # Check if Rust binary exists, if not build it
 if [ ! -f "$SENA_HOME/target/release/sena" ]; then
@@ -79,8 +132,13 @@ install_claude_md() {
         echo "  (backed up existing CLAUDE.md)"
     fi
 
-    sed "s|{SENA_HOME}|$SENA_HOME|g" "$SENA_HOME/config/CLAUDE.md.template" > "$CLAUDE_DIR/CLAUDE.md"
-    echo "✅ CLAUDE.md installed"
+    # Replace placeholders with user's custom branding
+    sed -e "s|{SENA_HOME}|$SENA_HOME|g" \
+        -e "s|{USER_PREFIX}|$USER_PREFIX|g" \
+        -e "s|{USER_EMOJI}|$USER_EMOJI|g" \
+        "$SENA_HOME/config/CLAUDE.md.template" > "$CLAUDE_DIR/CLAUDE.md"
+
+    echo "✅ CLAUDE.md installed with branding: $USER_PREFIX $USER_EMOJI"
 }
 
 update_settings() {
@@ -116,6 +174,7 @@ EOF
 
 case $choice in
     1)
+        save_user_config
         install_hooks
         install_commands
         install_memory
@@ -123,6 +182,7 @@ case $choice in
         update_settings
         ;;
     2)
+        save_user_config
         install_hooks
         update_settings
         ;;
@@ -133,6 +193,7 @@ case $choice in
         read -p "Install CLAUDE.md? [y/n]: " d
         read -p "Update settings.json? [y/n]: " s
 
+        save_user_config
         [ "$h" = "y" ] && install_hooks
         [ "$c" = "y" ] && install_commands
         [ "$m" = "y" ] && install_memory
@@ -145,24 +206,32 @@ case $choice in
         ;;
 esac
 
-# Enable SENA always-on mode
-read -p "Enable SENA Always-On mode? [y/n]: " always_on
+# Enable Always-On mode with custom branding
+echo ""
+read -p "Enable Always-On mode? (responses start with '$USER_PREFIX $USER_EMOJI') [y/n]: " always_on
 if [ "$always_on" = "y" ]; then
     touch "$CLAUDE_DIR/.sena_always_on"
-    echo "✅ Always-On mode enabled"
+    echo "✅ Always-On mode enabled - Every response will start with: $USER_PREFIX $USER_EMOJI"
 fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                                                              ║"
-echo "║           INSTALLATION COMPLETE! 🦁                          ║"
+echo "║           INSTALLATION COMPLETE! $USER_EMOJI                          ║"
 echo "║                                                              ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
-echo "SENA Binary: $SENA_HOME/target/release/sena"
+echo "┌──────────────────────────────────────────────────────────────┐"
+echo "│  Your Personal AI Assistant: $USER_PREFIX $USER_EMOJI"
+echo "└──────────────────────────────────────────────────────────────┘"
 echo ""
-echo "To use SENA CLI directly:"
+echo "Binary: $SENA_HOME/target/release/sena"
+echo "Config: $CLAUDE_DIR/.sena_user_config.json"
+echo ""
+echo "To use CLI directly:"
 echo "  export PATH=\"\$PATH:$SENA_HOME/target/release\""
 echo "  sena --help"
 echo ""
 echo "Restart Claude Code to apply changes."
+echo ""
+echo "Technology is for everyone. Enjoy your personalized AI! $USER_EMOJI"
