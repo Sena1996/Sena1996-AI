@@ -5,7 +5,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-9.0.1-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-9.0.2-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Tests](https://img.shields.io/badge/tests-195%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
@@ -147,7 +147,7 @@ cargo build --release
 
 # Binary location
 ./target/release/sena --version
-# sena 9.0.1
+# sena 9.0.2
 ```
 
 ### Install Binary
@@ -301,6 +301,15 @@ Sena1996-AI/
 ---
 
 ## Version History
+
+### v9.0.2 (2025-11-26) - **Complete CLI Commands**
+- Full CLI implementation for Knowledge, Intelligence & Evolution systems
+- Knowledge commands: `sena knowledge search`, `sena knowledge list`, `sena knowledge stats`
+- Intelligence commands: `sena think`, `sena agent security/performance/architecture`
+- Evolution commands: `sena evolve`, `sena evolve learn`, `sena evolve optimize`, `sena evolve patterns`
+- Feedback command: `sena feedback <type> <message>`
+- All 47 knowledge patterns accessible via CLI
+- Extended thinking with Quick/Standard/Deep/Maximum depth levels
 
 ### v9.0.1 (2025-11-25) - **Production Ready**
 - Robust error handling (eliminated 127 unwrap() calls)

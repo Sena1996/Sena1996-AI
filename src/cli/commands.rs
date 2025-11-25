@@ -85,6 +85,26 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
             execute_sync(cli.format).await
         }
 
+        Some(Commands::Knowledge { action }) => {
+            execute_knowledge(action.clone(), cli.format).await
+        }
+
+        Some(Commands::Think { query, depth }) => {
+            execute_think(query, *depth, cli.format).await
+        }
+
+        Some(Commands::Agent { agent_type, content }) => {
+            execute_agent(*agent_type, content, cli.format).await
+        }
+
+        Some(Commands::Evolve { action }) => {
+            execute_evolve(action.clone(), cli.format).await
+        }
+
+        Some(Commands::Feedback { feedback_type, message, context }) => {
+            execute_feedback(*feedback_type, message, context.clone(), cli.format).await
+        }
+
         None => {
             // No command - show status
             execute_health(false, cli.format)
@@ -775,5 +795,487 @@ async fn execute_sync(format: OutputFormat) -> Result<String, String> {
             status.total_tasks,
             status.active_conflicts
         )),
+    }
+}
+
+// ================================
+// Knowledge System Commands
+// ================================
+
+async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Result<String, String> {
+    use crate::knowledge::KnowledgeSystem;
+
+    let knowledge = KnowledgeSystem::new();
+
+    match action {
+        KnowledgeAction::Search { query, limit } => {
+            let mut results = knowledge.search(&query);
+            results.truncate(limit);
+
+            match format {
+                OutputFormat::Json => {
+                    let json: Vec<serde_json::Value> = results.iter().map(|r| {
+                        serde_json::json!({
+                            "domain": r.domain,
+                            "title": r.title,
+                            "description": r.description,
+                            "relevance": r.relevance,
+                        })
+                    }).collect();
+                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                }
+                OutputFormat::Pretty => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 KNOWLEDGE SEARCH").render());
+                    output.push_str(&format!("\nQuery: \"{}\"\n", query));
+                    output.push_str(&format!("Found: {} results\n\n", results.len()));
+
+                    for result in &results {
+                        output.push_str(&format!(
+                            "┌─ {} ─────────────────────────────────────\n",
+                            result.domain.to_uppercase()
+                        ));
+                        output.push_str(&format!("│ {}\n", result.title));
+                        output.push_str(&format!("│ {}\n", result.description));
+                        output.push_str(&format!("│ Relevance: {:.0}%\n", result.relevance * 100.0));
+                        output.push_str("└──────────────────────────────────────────\n\n");
+                    }
+                    Ok(output)
+                }
+                OutputFormat::Text => {
+                    if results.is_empty() {
+                        Ok("No results found.".to_string())
+                    } else {
+                        let mut output = format!("Found {} results for \"{}\":\n", results.len(), query);
+                        for result in &results {
+                            output.push_str(&format!(
+                                "  • [{}] {} - {}\n",
+                                result.domain, result.title, result.description
+                            ));
+                        }
+                        Ok(output)
+                    }
+                }
+            }
+        }
+        KnowledgeAction::List { category } => {
+            let domain = match category {
+                KnowledgeCategory::Reasoning => "reasoning",
+                KnowledgeCategory::Security => "security",
+                KnowledgeCategory::Performance => "performance",
+                KnowledgeCategory::Architecture => "architecture",
+                KnowledgeCategory::All => "all",
+            };
+
+            let patterns = if domain == "all" {
+                let mut all = Vec::new();
+                all.extend(knowledge.get_domain_patterns("reasoning"));
+                all.extend(knowledge.get_domain_patterns("security"));
+                all.extend(knowledge.get_domain_patterns("performance"));
+                all.extend(knowledge.get_domain_patterns("architecture"));
+                all
+            } else {
+                knowledge.get_domain_patterns(domain)
+            };
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&patterns).map_err(|e| e.to_string())
+                }
+                OutputFormat::Pretty => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&format!("SENA 🦁 {} PATTERNS", format!("{:?}", category).to_uppercase())).render());
+                    output.push_str(&format!("\nTotal: {} patterns\n\n", patterns.len()));
+
+                    for pattern in &patterns {
+                        output.push_str(&format!("  • {}\n", pattern));
+                    }
+                    Ok(output)
+                }
+                OutputFormat::Text => {
+                    if patterns.is_empty() {
+                        Ok(format!("No {:?} patterns found.", category))
+                    } else {
+                        let mut output = format!("{:?} patterns ({}):\n", category, patterns.len());
+                        for pattern in &patterns {
+                            output.push_str(&format!("  • {}\n", pattern));
+                        }
+                        Ok(output)
+                    }
+                }
+            }
+        }
+        KnowledgeAction::Stats => {
+            let stats = &knowledge.stats;
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&stats).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 KNOWLEDGE STATISTICS").render());
+                    output.push('\n');
+                    output.push_str(&format!("Total Entries: {}\n", stats.total_entries));
+                    output.push_str(&format!("Reasoning Frameworks: {}\n", stats.reasoning_count));
+                    output.push_str(&format!("Security Patterns: {}\n", stats.security_count));
+                    output.push_str(&format!("Performance Patterns: {}\n", stats.performance_count));
+                    output.push_str(&format!("Architecture Patterns: {}\n", stats.architecture_count));
+                    Ok(output)
+                }
+            }
+        }
+    }
+}
+
+// ================================
+// Intelligence System Commands
+// ================================
+
+async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputFormat) -> Result<String, String> {
+    use crate::intelligence::{IntelligenceSystem, ThinkingDepth};
+
+    let intelligence = IntelligenceSystem::new();
+
+    let thinking_depth = match depth {
+        ThinkingDepthArg::Quick => ThinkingDepth::Quick,
+        ThinkingDepthArg::Standard => ThinkingDepth::Standard,
+        ThinkingDepthArg::Deep => ThinkingDepth::Deep,
+        ThinkingDepthArg::Maximum => ThinkingDepth::Maximum,
+    };
+
+    let result = intelligence.analyze(query, thinking_depth);
+
+    match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(&serde_json::json!({
+                "query": query,
+                "depth": format!("{:?}", depth),
+                "problem": result.problem,
+                "conclusion": result.conclusion,
+                "confidence": result.confidence,
+                "frameworks_used": result.frameworks_used,
+                "steps": result.steps.iter().map(|s| {
+                    serde_json::json!({
+                        "name": s.name,
+                        "description": s.description,
+                        "output": s.output,
+                    })
+                }).collect::<Vec<_>>(),
+                "thinking_time_ms": result.thinking_time_ms,
+            })).map_err(|e| e.to_string())
+        }
+        OutputFormat::Pretty => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new("SENA 🦁 EXTENDED THINKING").render());
+            output.push_str(&format!("\nDepth: {:?}\n", depth));
+            output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
+
+            output.push_str("═══════════════════════════════════════════\n");
+            output.push_str("  PROBLEM\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            output.push_str(&result.problem);
+            output.push_str("\n\n");
+
+            output.push_str("═══════════════════════════════════════════\n");
+            output.push_str("  THINKING STEPS\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            for (i, step) in result.steps.iter().enumerate() {
+                output.push_str(&format!("{}. **{}**\n   {}\n\n", i + 1, step.name, step.description));
+            }
+
+            output.push_str("═══════════════════════════════════════════\n");
+            output.push_str("  FRAMEWORKS USED\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            for framework in &result.frameworks_used {
+                output.push_str(&format!("  • {}\n", framework));
+            }
+            output.push('\n');
+
+            output.push_str("═══════════════════════════════════════════\n");
+            output.push_str("  CONCLUSION\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            output.push_str(&format!("  {}\n", result.conclusion));
+            output.push_str(&format!("\nThinking time: {}ms\n", result.thinking_time_ms));
+
+            Ok(output)
+        }
+        OutputFormat::Text => {
+            let mut output = format!("Analysis ({:?}, {:.0}% confidence):\n\n", depth, result.confidence * 100.0);
+            output.push_str(&format!("Problem: {}\n\n", result.problem));
+            output.push_str("Steps:\n");
+            for (i, step) in result.steps.iter().enumerate() {
+                output.push_str(&format!("  {}. {}\n", i + 1, step.name));
+            }
+            output.push_str(&format!("\nConclusion: {}\n", result.conclusion));
+            Ok(output)
+        }
+    }
+}
+
+async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFormat) -> Result<String, String> {
+    use crate::intelligence::{IntelligenceSystem, AgentType};
+
+    let intelligence = IntelligenceSystem::new();
+
+    let agent = match agent_type {
+        AgentTypeArg::Security => AgentType::Security,
+        AgentTypeArg::Performance => AgentType::Performance,
+        AgentTypeArg::Architecture => AgentType::Architecture,
+        AgentTypeArg::General => AgentType::General,
+    };
+
+    let result = intelligence.dispatch(content, agent);
+
+    match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(&serde_json::json!({
+                "agent": format!("{:?}", agent_type),
+                "task": result.task,
+                "analysis": result.analysis,
+                "recommendations": result.recommendations,
+                "confidence": result.confidence,
+            })).map_err(|e| e.to_string())
+        }
+        OutputFormat::Pretty => {
+            let mut output = String::new();
+            let title = format!("SENA 🦁 {:?} AGENT ANALYSIS", agent_type).to_uppercase();
+            output.push_str(&FormatBox::new(&title).render());
+            output.push_str(&format!("\nAgent: {:?}\n", agent_type));
+            output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
+
+            output.push_str("═══════════════════════════════════════════\n");
+            output.push_str("  ANALYSIS\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            output.push_str(&result.analysis);
+            output.push('\n');
+
+            output.push_str("\n═══════════════════════════════════════════\n");
+            output.push_str("  RECOMMENDATIONS\n");
+            output.push_str("═══════════════════════════════════════════\n\n");
+            for rec in &result.recommendations {
+                output.push_str(&format!("  ✓ {}\n", rec));
+            }
+
+            Ok(output)
+        }
+        OutputFormat::Text => {
+            let mut output = format!("{:?} Agent Analysis (Confidence: {:.0}%):\n\n", agent_type, result.confidence * 100.0);
+            output.push_str(&result.analysis);
+            output.push_str("\n\nRecommendations:\n");
+            for rec in &result.recommendations {
+                output.push_str(&format!("  ✓ {}\n", rec));
+            }
+            Ok(output)
+        }
+    }
+}
+
+// ================================
+// Evolution System Commands
+// ================================
+
+async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> Result<String, String> {
+    use crate::evolution::{EvolutionSystem, OptimizationTarget as EvOptTarget};
+
+    let mut evolution = EvolutionSystem::new();
+    let _ = evolution.load();
+
+    match action {
+        None => {
+            // Default: run evolution cycle
+            let result = evolution.evolve();
+            let _ = evolution.save();
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 EVOLUTION CYCLE").render());
+                    output.push('\n');
+                    output.push_str(&format!("Patterns Applied: {}\n", result.patterns_applied));
+                    output.push_str(&format!("Optimizations Made: {}\n", result.optimizations_made));
+                    output.push_str(&format!("Feedback Processed: {}\n", result.feedback_processed));
+                    output.push_str(&format!("Improvement Score: {:.1}%\n", result.new_improvement_score * 100.0));
+                    Ok(output)
+                }
+            }
+        }
+        Some(EvolveAction::Learn { context, outcome }) => {
+            evolution.learn(&context, &outcome, true);
+            let _ = evolution.save();
+
+            match format {
+                OutputFormat::Json => Ok(serde_json::json!({
+                    "action": "learn",
+                    "context": context,
+                    "outcome": outcome,
+                    "status": "learned"
+                }).to_string()),
+                _ => Ok(format!("Pattern learned:\n  Context: {}\n  Outcome: {}", context, outcome)),
+            }
+        }
+        Some(EvolveAction::Optimize { target }) => {
+            let opt_target = match target {
+                Some(OptimizeTarget::Quality) => EvOptTarget::Quality,
+                Some(OptimizeTarget::Speed) => EvOptTarget::Speed,
+                Some(OptimizeTarget::Accuracy) => EvOptTarget::Accuracy,
+                Some(OptimizeTarget::Satisfaction) => EvOptTarget::Satisfaction,
+                Some(OptimizeTarget::Balanced) | None => EvOptTarget::Balanced,
+            };
+
+            let result = evolution.optimize(opt_target);
+            let _ = evolution.save();
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 SELF-OPTIMIZATION").render());
+                    output.push('\n');
+                    output.push_str(&format!("Target: {:?}\n", opt_target));
+                    output.push_str(&format!("Success: {}\n", if result.success { "✅" } else { "❌" }));
+                    output.push_str(&format!("Improvement: +{:.1}%\n", result.improvement * 100.0));
+                    output.push_str(&format!("New Score: {:.1}%\n", result.new_score * 100.0));
+                    if !result.suggestions.is_empty() {
+                        output.push_str("\nSuggestions:\n");
+                        for suggestion in &result.suggestions {
+                            output.push_str(&format!("  • {}\n", suggestion));
+                        }
+                    }
+                    Ok(output)
+                }
+            }
+        }
+        Some(EvolveAction::Stats) => {
+            let stats = &evolution.stats;
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&stats).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 EVOLUTION STATISTICS").render());
+                    output.push('\n');
+                    output.push_str(&format!("Patterns Learned: {}\n", stats.patterns_learned));
+                    output.push_str(&format!("Optimizations Applied: {}\n", stats.optimizations_applied));
+                    output.push_str(&format!("Feedback Count: {}\n", stats.feedback_count));
+                    output.push_str(&format!("Improvement Score: {:.1}%\n", stats.improvement_score * 100.0));
+                    output.push_str(&format!("Learning Rate: {:.2}\n", stats.learning_rate));
+                    Ok(output)
+                }
+            }
+        }
+        Some(EvolveAction::Patterns { limit }) => {
+            let patterns = evolution.learner.get_patterns(limit);
+
+            match format {
+                OutputFormat::Json => {
+                    let json: Vec<serde_json::Value> = patterns.iter().map(|p| {
+                        serde_json::json!({
+                            "id": p.id,
+                            "context": p.context,
+                            "outcome": p.outcome,
+                            "pattern_type": format!("{:?}", p.pattern_type),
+                            "success_rate": p.success_rate,
+                            "usage_count": p.usage_count,
+                        })
+                    }).collect();
+                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new("SENA 🦁 LEARNED PATTERNS").render());
+                    output.push_str(&format!("\nShowing {} patterns:\n\n", patterns.len()));
+
+                    if patterns.is_empty() {
+                        output.push_str("No patterns learned yet. Use 'sena evolve learn <context> <outcome>' to add patterns.\n");
+                    } else {
+                        for pattern in &patterns {
+                            output.push_str("┌─ Pattern ────────────────────────────────\n");
+                            output.push_str(&format!("│ Context: {}\n", pattern.context));
+                            output.push_str(&format!("│ Outcome: {}\n", pattern.outcome));
+                            output.push_str(&format!("│ Type: {}\n", pattern.pattern_type));
+                            output.push_str(&format!("│ Success Rate: {:.1}%\n", pattern.success_rate * 100.0));
+                            output.push_str(&format!("│ Usage Count: {}\n", pattern.usage_count));
+                            output.push_str("└──────────────────────────────────────────\n\n");
+                        }
+                    }
+                    Ok(output)
+                }
+            }
+        }
+    }
+}
+
+// ================================
+// Feedback System Commands
+// ================================
+
+async fn execute_feedback(
+    feedback_type: FeedbackTypeArg,
+    message: &str,
+    context: Option<String>,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::evolution::{EvolutionSystem, FeedbackType};
+
+    let mut evolution = EvolutionSystem::new();
+    let _ = evolution.load();
+
+    let fb_type = match feedback_type {
+        FeedbackTypeArg::Positive => FeedbackType::Positive,
+        FeedbackTypeArg::Negative => FeedbackType::Negative,
+        FeedbackTypeArg::Bug => FeedbackType::Bug,
+        FeedbackTypeArg::Feature => FeedbackType::FeatureRequest,
+        FeedbackTypeArg::Correction => FeedbackType::Correction,
+    };
+
+    // Combine message with context if provided
+    let full_message = if let Some(ctx) = &context {
+        format!("{} [Context: {}]", message, ctx)
+    } else {
+        message.to_string()
+    };
+
+    evolution.process_feedback(fb_type, &full_message);
+    let _ = evolution.save();
+
+    let emoji = match feedback_type {
+        FeedbackTypeArg::Positive => "👍",
+        FeedbackTypeArg::Negative => "👎",
+        FeedbackTypeArg::Bug => "🐛",
+        FeedbackTypeArg::Feature => "✨",
+        FeedbackTypeArg::Correction => "📝",
+    };
+
+    match format {
+        OutputFormat::Json => Ok(serde_json::json!({
+            "action": "feedback",
+            "type": format!("{:?}", feedback_type),
+            "message": message,
+            "context": context,
+            "status": "recorded"
+        }).to_string()),
+        OutputFormat::Pretty => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new("SENA 🦁 FEEDBACK RECORDED").render());
+            output.push('\n');
+            output.push_str(&format!("{} Type: {:?}\n", emoji, feedback_type));
+            output.push_str(&format!("Message: {}\n", message));
+            if let Some(ctx) = &context {
+                output.push_str(&format!("Context: {}\n", ctx));
+            }
+            output.push_str("\nThank you for your feedback! SENA learns from every interaction.\n");
+            Ok(output)
+        }
+        OutputFormat::Text => {
+            Ok(format!("{} Feedback recorded: {:?} - {}", emoji, feedback_type, message))
+        }
     }
 }

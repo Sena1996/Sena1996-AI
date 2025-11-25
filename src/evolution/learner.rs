@@ -204,6 +204,15 @@ impl PatternLearner {
         self.patterns.len() * 500
     }
 
+    pub fn get_patterns(&self, limit: usize) -> Vec<&LearnedPattern> {
+        let mut patterns: Vec<_> = self.patterns.values().collect();
+        patterns.sort_by(|a, b| {
+            b.success_rate.partial_cmp(&a.success_rate)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        patterns.into_iter().take(limit).collect()
+    }
+
     pub fn save(&self, path: &Path) -> Result<(), String> {
         let patterns: Vec<&LearnedPattern> = self.patterns.values().collect();
         let json = serde_json::to_string_pretty(&patterns)

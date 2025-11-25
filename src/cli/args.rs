@@ -147,6 +147,48 @@ pub enum Commands {
 
     #[command(about = "Show sync status")]
     Sync,
+
+    #[command(about = "Knowledge system commands")]
+    Knowledge {
+        #[command(subcommand)]
+        action: KnowledgeAction,
+    },
+
+    #[command(about = "Extended thinking analysis")]
+    Think {
+        #[arg(help = "Query to analyze")]
+        query: String,
+
+        #[arg(short, long, value_enum, default_value_t = ThinkingDepthArg::Standard, help = "Thinking depth")]
+        depth: ThinkingDepthArg,
+    },
+
+    #[command(about = "Specialized agent analysis")]
+    Agent {
+        #[arg(value_enum, help = "Agent type")]
+        agent_type: AgentTypeArg,
+
+        #[arg(help = "Content to analyze")]
+        content: String,
+    },
+
+    #[command(about = "Evolution system commands")]
+    Evolve {
+        #[command(subcommand)]
+        action: Option<EvolveAction>,
+    },
+
+    #[command(about = "Submit feedback")]
+    Feedback {
+        #[arg(value_enum, help = "Feedback type")]
+        feedback_type: FeedbackTypeArg,
+
+        #[arg(help = "Feedback message")]
+        message: String,
+
+        #[arg(short, long, help = "Context")]
+        context: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -260,6 +302,98 @@ pub enum TaskAction {
         #[arg(help = "Task ID")]
         id: u64,
     },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum KnowledgeAction {
+    #[command(about = "Search knowledge base")]
+    Search {
+        #[arg(help = "Search query")]
+        query: String,
+
+        #[arg(short, long, default_value_t = 10, help = "Max results")]
+        limit: usize,
+    },
+
+    #[command(about = "List patterns by category")]
+    List {
+        #[arg(value_enum, help = "Category")]
+        category: KnowledgeCategory,
+    },
+
+    #[command(about = "Show knowledge statistics")]
+    Stats,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum KnowledgeCategory {
+    Reasoning,
+    Security,
+    Performance,
+    Architecture,
+    All,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq, Default)]
+pub enum ThinkingDepthArg {
+    Quick,
+    #[default]
+    Standard,
+    Deep,
+    Maximum,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum AgentTypeArg {
+    Security,
+    Performance,
+    Architecture,
+    General,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum EvolveAction {
+    #[command(about = "Learn new pattern")]
+    Learn {
+        #[arg(help = "Context")]
+        context: String,
+
+        #[arg(help = "Outcome")]
+        outcome: String,
+    },
+
+    #[command(about = "Run self-optimization")]
+    Optimize {
+        #[arg(value_enum, help = "Target")]
+        target: Option<OptimizeTarget>,
+    },
+
+    #[command(about = "Show evolution stats")]
+    Stats,
+
+    #[command(about = "Show learned patterns")]
+    Patterns {
+        #[arg(short, long, default_value_t = 10, help = "Limit")]
+        limit: usize,
+    },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum OptimizeTarget {
+    Quality,
+    Speed,
+    Accuracy,
+    Satisfaction,
+    Balanced,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum FeedbackTypeArg {
+    Positive,
+    Negative,
+    Bug,
+    Feature,
+    Correction,
 }
 
 impl Cli {
