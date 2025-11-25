@@ -1,16 +1,16 @@
 [package]
-name = "sena_v7"
-version = "7.0.0"
+name = "sena_v8"
+version = "8.1.0"
 edition = "2021"
 authors = ["SENA Team"]
-description = "SENA Controller v7.0 - Collaboration Hub with Multi-Session Support"
+description = "SENA Controller v8.0 - Unified Intelligence with Knowledge, Reasoning & Self-Improvement"
 license = "MIT"
 repository = "https://github.com/sena/sena-controller"
-keywords = ["ai", "ancient-wisdom", "truth-embedded", "collaboration", "hub"]
+keywords = ["ai", "ancient-wisdom", "truth-embedded", "knowledge", "intelligence", "evolution"]
 categories = ["science", "algorithms"]
 
 [lib]
-name = "sena_v7"
+name = "sena_v8"
 path = "src/lib.rs"
 
 [[bin]]

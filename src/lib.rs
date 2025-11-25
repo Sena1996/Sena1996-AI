@@ -1,13 +1,15 @@
-//! SENA Controller v7.0 - Collaboration Hub
+//! SENA Controller v8.0 - Unified Intelligence
 //!
-//! This version merges:
-//! - 3,000 years of ancient engineering wisdom
-//! - 23 cutting-edge 2025 innovations
+//! This version combines ALL capabilities:
+//! - 3,000 years of ancient engineering wisdom (7 layers)
 //! - Multi-session collaboration hub
+//! - Multi-level knowledge system
+//! - Extended thinking & specialized sub-agents
+//! - Self-improvement evolution engine
 //!
-//! Core Principle: Build systems that embody truth, not just produce correct outputs.
+//! Core Principle: Build systems that embody truth, learn continuously, and improve autonomously.
 //!
-//! # The 7 Ancient Layers
+//! # The 7 Ancient Wisdom Layers
 //!
 //! - **Layer 0**: First Principles Engine (Eratosthenes, 240 BCE)
 //! - **Layer 1**: Constraint-as-Feature Engine (Persian Qanats, 3000+ years)
@@ -16,6 +18,28 @@
 //! - **Layer 4**: Embedded Self-Healing (Roman Concrete, 2000+ years)
 //! - **Layer 5**: Harmony Validation Engine (Antikythera, 150 BCE)
 //! - **Layer 6**: Millennium Test Framework (All Ancient Wisdom)
+//!
+//! # NEW: Knowledge System
+//!
+//! - Multi-level memory (Session, Project, Global, Permanent)
+//! - Reasoning frameworks (First Principles, 5 Whys, Systems Thinking)
+//! - Security patterns (OWASP, Auth, Crypto)
+//! - Performance patterns (Big O, Caching, Async)
+//! - Architecture patterns (SOLID, Design Patterns, DDD)
+//!
+//! # NEW: Intelligence Engine
+//!
+//! - Extended thinking mode (like /deep-think)
+//! - Specialized sub-agents (Security, Performance, Architecture)
+//! - Multi-model routing (Fast/Balanced/Powerful)
+//! - Autonomous skills (auto-activating capabilities)
+//!
+//! # NEW: Evolution System
+//!
+//! - Pattern learning from successful interactions
+//! - Self-optimization for quality, speed, accuracy
+//! - Feedback loop for continuous improvement
+//! - Knowledge evolution over time
 //!
 //! # Collaboration Hub
 //!
@@ -27,12 +51,19 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v7::{SenaUnifiedSystem, ProcessingRequest};
+//! use sena_v8::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
 //!
 //! #[tokio::main]
 //! async fn main() {
 //!     let mut system = SenaUnifiedSystem::new();
 //!
+//!     // Search knowledge base
+//!     let results = system.knowledge().search("sql injection");
+//!
+//!     // Use extended thinking
+//!     let analysis = system.intelligence().analyze("complex problem", ThinkingDepth::Deep);
+//!
+//!     // Process request
 //!     let request = ProcessingRequest::new("Hello, SENA!", "greeting");
 //!     let result = system.process(request).await;
 //!
@@ -40,7 +71,7 @@
 //! }
 //! ```
 //!
-//! Version: 7.0.0
+//! Version: 8.0.0
 //! Date: 2025-11-25
 
 pub mod ancient;
@@ -55,6 +86,9 @@ pub mod hooks;
 pub mod output;
 pub mod daemon;
 pub mod hub;
+pub mod knowledge;
+pub mod intelligence;
+pub mod evolution;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -110,9 +144,35 @@ pub use hub::{
     HubServer, HubClient,
 };
 
-/// Version information
-pub const VERSION: &str = "7.0.0";
-pub const CODENAME: &str = "Collaboration Hub";
+// Re-export knowledge system
+pub use knowledge::{
+    KnowledgeSystem, KnowledgeStats, SearchResult,
+    MemoryLevel, MemorySystem, KnowledgeEntry,
+    ReasoningFramework, ThinkingMode,
+    SecurityPattern, VulnerabilityType, SecurityAudit,
+    PerformancePattern, ComplexityClass, OptimizationSuggestion,
+    ArchitecturePattern, DesignPattern, SolidPrinciple,
+};
+
+// Re-export intelligence system
+pub use intelligence::{
+    IntelligenceSystem, IntelligenceStatus,
+    ThinkingEngine, ThinkingDepth, ThinkingResult,
+    Agent, AgentType, AgentPool, AgentResult,
+    ModelRouter, ModelType, RoutingDecision,
+    Skill, SkillRegistry, SkillExecution,
+};
+
+// Re-export evolution system
+pub use evolution::{
+    EvolutionSystem, EvolutionStatus, EvolutionResult,
+    PatternLearner, LearnedPattern, PatternType,
+    SelfOptimizer, OptimizationResult, OptimizationTarget,
+    FeedbackLoop, FeedbackEntry, FeedbackType,
+};
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const CODENAME: &str = "Unified Intelligence";
 
 /// Errors for the unified system
 #[derive(Error, Debug)]
@@ -307,7 +367,7 @@ pub struct PhaseResult {
     pub score: f64,
 }
 
-/// The unified SENA system integrating all 7 ancient layers
+/// The unified SENA system integrating all capabilities
 pub struct SenaUnifiedSystem {
     // Layer 0: First Principles
     first_principles: FirstPrinciplesEngine,
@@ -323,6 +383,13 @@ pub struct SenaUnifiedSystem {
     harmony_validation: HarmonyValidationEngine,
     // Layer 6: Millennium Test
     millennium_test: MillenniumTestFramework,
+
+    // NEW: Knowledge System
+    knowledge_system: KnowledgeSystem,
+    // NEW: Intelligence System
+    intelligence_system: IntelligenceSystem,
+    // NEW: Evolution System
+    evolution_system: EvolutionSystem,
 
     // Processing state
     request_count: u64,
@@ -348,6 +415,9 @@ impl SenaUnifiedSystem {
             self_healing: EmbeddedSelfHealing::new(),
             harmony_validation: HarmonyValidationEngine::new(),
             millennium_test: MillenniumTestFramework::new(),
+            knowledge_system: KnowledgeSystem::new(),
+            intelligence_system: IntelligenceSystem::new(),
+            evolution_system: EvolutionSystem::new(),
             request_count: 0,
             successful_count: 0,
             failed_count: 0,
@@ -666,6 +736,46 @@ impl SenaUnifiedSystem {
     /// Get millennium test framework
     pub fn millennium_test(&mut self) -> &mut MillenniumTestFramework {
         &mut self.millennium_test
+    }
+
+    /// Get knowledge system
+    pub fn knowledge(&mut self) -> &mut KnowledgeSystem {
+        &mut self.knowledge_system
+    }
+
+    /// Get intelligence system
+    pub fn intelligence(&mut self) -> &mut IntelligenceSystem {
+        &mut self.intelligence_system
+    }
+
+    /// Get evolution system
+    pub fn evolution(&mut self) -> &mut EvolutionSystem {
+        &mut self.evolution_system
+    }
+
+    /// Search knowledge base
+    pub fn search_knowledge(&self, query: &str) -> Vec<SearchResult> {
+        self.knowledge_system.search(query)
+    }
+
+    /// Analyze with extended thinking
+    pub fn analyze(&self, problem: &str, depth: ThinkingDepth) -> ThinkingResult {
+        self.intelligence_system.analyze(problem, depth)
+    }
+
+    /// Dispatch to specialized agent
+    pub fn dispatch_agent(&self, task: &str, agent_type: AgentType) -> AgentResult {
+        self.intelligence_system.dispatch(task, agent_type)
+    }
+
+    /// Learn from interaction
+    pub fn learn(&mut self, context: &str, outcome: &str, success: bool) {
+        self.evolution_system.learn(context, outcome, success);
+    }
+
+    /// Run evolution cycle
+    pub fn evolve(&mut self) -> EvolutionResult {
+        self.evolution_system.evolve()
     }
 }
 

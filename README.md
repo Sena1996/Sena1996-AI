@@ -1,57 +1,68 @@
-# SENA Controller v7.0 - Collaboration Hub
+# SENA Controller v8.1 - Unified Intelligence
 
-**Truth-Embedded Architecture with Multi-Session Collaboration**
+**Truth-Embedded Architecture with Knowledge, Reasoning & Self-Improvement**
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-7.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
-[![Tests](https://img.shields.io/badge/tests-135%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-8.1.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Tests](https://img.shields.io/badge/tests-190%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
 
-## What is SENA v7?
+## What is SENA v8?
 
-SENA v7 is the **Collaboration Hub** edition featuring:
+SENA v8 is the **Unified Intelligence** edition - a complete, self-improving system featuring:
 
-- **Multi-Session Collaboration** - Android/Web/Backend/IoT Claude working together
-- **Lightning-Fast IPC** - Unix socket communication (<1ms latency)
-- **Task Management** - Create and assign tasks across sessions
+- **Knowledge System** - Multi-level memory with reasoning, security, performance & architecture patterns
+- **Intelligence System** - Extended thinking engine, specialized sub-agents, model routing, autonomous skills
+- **Evolution System** - Pattern learning, self-optimization, feedback loops for continuous improvement
 - **7 Ancient Wisdom Layers** - Truth-embedded architecture
-- **MCP Server** - Model Context Protocol for Claude Desktop
-- **Claude Code Hooks** - Terminal behavior enhancement
+- **Collaboration Hub** - Multi-session collaboration from v7
+- **MCP Server & Hooks** - Claude Desktop/Code integration
 
-**Multiple Claude sessions. One collaboration hub. Ancient wisdom.**
+**Knowledge. Intelligence. Evolution. Ancient Wisdom.**
 
 ---
 
-## NEW in v7.0: Collaboration Hub
+## NEW in v8.1: Clean Code & Unlimited Capacity
 
-### Multi-Session Collaboration
-```bash
-# Terminal 1 - Android Development
-sena join android
-sena task new "Fix login bug" --assign backend --priority high
+### v8.1.0 Changes
+- Single global VERSION constant from Cargo.toml
+- Removed all comments from source files (clean code)
+- Unlimited Extended Thinking (no token limits)
+- Unlimited Pattern Learning (no pattern count limits)
 
-# Terminal 2 - Backend Development
-sena join backend
-sena inbox                    # See assigned task
-sena task done 1              # Complete task
-
-# Terminal 3 - Web Development
-sena join web
-sena who                      # See who's online
-sena tell android "API ready" # Send message
+### Knowledge System
+```rust
+// Multi-level memory (Session, Project, Global, Permanent)
+// Reasoning frameworks (First Principles, 5 Whys, Systems Thinking...)
+// Security patterns (OWASP, Auth, Crypto, Secure Coding)
+// Performance patterns (O(n) optimization, Caching, N+1 fixes)
+// Architecture patterns (SOLID, DDD, Microservices, CQRS)
 ```
 
-### Session Roles
-| Role | Emoji | Description |
-|------|-------|-------------|
-| Android | 🤖 | Mobile/Android development |
-| Web | 🌐 | Frontend/Web development |
-| Backend | ⚙️ | Server/API development |
-| IoT | 📡 | Embedded/Hardware development |
-| General | 💻 | General purpose |
+### Intelligence System
+```rust
+// Extended Thinking Engine with depth levels
+// - Quick / Standard / Deep / Maximum (ALL UNLIMITED)
+
+// Specialized Sub-Agents
+// - Security Agent: OWASP analysis, vulnerability detection
+// - Performance Agent: Complexity analysis, optimization suggestions
+// - Architecture Agent: Design patterns, SOLID principles
+
+// Model Routing (Fast/Balanced/Powerful)
+// Autonomous Skills (Security Auditor, Performance Optimizer, Truth Verifier)
+```
+
+### Evolution System
+```rust
+// Pattern Learner - UNLIMITED pattern storage
+// Self-Optimizer - Improves quality, speed, accuracy, satisfaction
+// Feedback Loop - Collects and analyzes user feedback
+// Continuous improvement with persistence
+```
 
 ---
 
@@ -71,45 +82,40 @@ sena tell android "API ready" # Send message
 
 ## Features
 
-### Collaboration Hub Commands
+### Knowledge Commands
 ```bash
-# Hub Management
-sena hub start              # Start collaboration hub
-sena hub stop               # Stop hub
-sena hub status             # Hub status
-
-# Session Management
-sena join <role>            # Join as android/web/backend/iot
-sena who                    # List online sessions
-
-# Messaging
-sena tell <target> <msg>    # Send direct message
-sena inbox                  # Check messages
-
-# Task Management
-sena task new               # Create new task
-sena task list              # List all tasks
-sena task mine              # Show my tasks
-sena task done <id>         # Complete task
-
-# Monitoring
-sena watch                  # Live dashboard
-sena sync                   # Sync status
+sena knowledge search "sql injection"   # Search knowledge base
+sena knowledge list reasoning           # List reasoning frameworks
+sena knowledge list security            # List security patterns
+sena knowledge list performance         # List performance patterns
+sena knowledge list architecture        # List architecture patterns
 ```
 
-### MCP Server Tools
-- **sena_health** - System health status
-- **sena_metrics** - Performance metrics
-- **sena_detect_format** - Auto format detection
-- **sena_validate** - Content validation
-- **sena_process** - Ancient wisdom processing
-- **sena_format_table** - Unicode table generation
-- **sena_progress** - Progress bar display
+### Intelligence Commands
+```bash
+sena think <query>                      # Extended thinking analysis
+sena think --depth deep <query>         # Deep analysis (50K tokens)
+sena agent security <code>              # Security agent analysis
+sena agent performance <code>           # Performance agent analysis
+```
 
-### Claude Code Hooks
-- **UserPromptSubmit** - Pre-prompt analysis & trigger detection
-- **AssistantResponse** - Response validation & SENA compliance
-- **ToolExecution** - Tool call validation
+### Evolution Commands
+```bash
+sena evolve                             # Trigger evolution cycle
+sena evolve learn <context> <outcome>   # Learn new pattern
+sena evolve optimize                    # Run self-optimization
+sena feedback positive "Great!"         # Add positive feedback
+sena feedback bug "Found issue"         # Report bug
+```
+
+### Collaboration Hub (v7)
+```bash
+sena hub start                          # Start collaboration hub
+sena join <role>                        # Join as android/web/backend/iot
+sena task new "Fix bug" --assign web    # Create and assign task
+sena tell android "API ready"           # Send message
+sena inbox                              # Check messages
+```
 
 ### CLI Commands
 ```bash
@@ -118,8 +124,6 @@ sena mcp               # Start MCP server
 sena hook <type>       # Handle Claude Code hooks
 sena health            # System health
 sena metrics           # System metrics
-sena validate <text>   # Validate content
-sena process <text>    # Process through wisdom layers
 sena daemon start      # Start background daemon
 ```
 
@@ -139,7 +143,7 @@ cargo build --release
 
 # Binary location
 ./target/release/sena --version
-# sena 7.0.0
+# sena 8.1.0
 ```
 
 ### Install Binary
@@ -208,7 +212,28 @@ Sena1996-AI/
     │   ├── harmony_validation.rs
     │   └── millennium_test.rs
     │
-    ├── hub/                # Collaboration Hub (NEW in v7)
+    ├── knowledge/          # Knowledge System (NEW in v8)
+    │   ├── mod.rs          # Knowledge hub
+    │   ├── memory.rs       # Multi-level memory
+    │   ├── reasoning.rs    # Reasoning frameworks
+    │   ├── security.rs     # Security patterns
+    │   ├── performance.rs  # Performance patterns
+    │   └── architecture.rs # Architecture patterns
+    │
+    ├── intelligence/       # Intelligence System (NEW in v8)
+    │   ├── mod.rs          # Intelligence hub
+    │   ├── thinking.rs     # Extended thinking engine
+    │   ├── agents.rs       # Specialized sub-agents
+    │   ├── routing.rs      # Model routing
+    │   └── skills.rs       # Autonomous skills
+    │
+    ├── evolution/          # Evolution System (NEW in v8)
+    │   ├── mod.rs          # Evolution hub
+    │   ├── learner.rs      # Pattern learner
+    │   ├── optimizer.rs    # Self-optimizer
+    │   └── feedback.rs     # Feedback loop
+    │
+    ├── hub/                # Collaboration Hub (v7)
     │   ├── mod.rs          # Hub controller
     │   ├── session.rs      # Session registry & roles
     │   ├── state.rs        # CRDT state management
@@ -231,6 +256,34 @@ Sena1996-AI/
 
 ---
 
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SENA v8.0 Unified Intelligence               │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │  Knowledge  │  │Intelligence │  │  Evolution  │             │
+│  │   System    │  │   System    │  │   System    │             │
+│  ├─────────────┤  ├─────────────┤  ├─────────────┤             │
+│  │ • Memory    │  │ • Thinking  │  │ • Learner   │             │
+│  │ • Reasoning │  │ • Agents    │  │ • Optimizer │             │
+│  │ • Security  │  │ • Routing   │  │ • Feedback  │             │
+│  │ • Perform   │  │ • Skills    │  │             │             │
+│  │ • Architect │  │             │  │             │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+├─────────────────────────────────────────────────────────────────┤
+│            7 Ancient Wisdom Layers (Foundation)                 │
+│  ┌───┬───┬───┬───┬───┬───┬───┐                                 │
+│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │                                 │
+│  └───┴───┴───┴───┴───┴───┴───┘                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  Collaboration Hub │ MCP Server │ Hooks │ CLI │ Daemon         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Performance
 
 | Metric | Value |
@@ -239,11 +292,33 @@ Sena1996-AI/
 | Startup Time | <10ms |
 | Memory Usage | ~5MB |
 | Hub IPC Latency | <1ms |
-| Tests | 135 passing |
+| Tests | 190 passing |
 
 ---
 
 ## Version History
+
+### v8.1.0 (2025-11-25) - **Clean Code & Unlimited Capacity**
+- Single global VERSION constant from Cargo.toml
+- Removed all comments from source files (clean code philosophy)
+- Unlimited Extended Thinking (no token limits)
+- Unlimited Pattern Learning (no pattern count limits)
+- 191 tests passing (190 unit + 1 doc)
+
+### v8.0.0 (2025-11-25) - **Unified Intelligence**
+- Knowledge System with multi-level memory (Session/Project/Global/Permanent)
+- Reasoning frameworks (First Principles, 5 Whys, Decision Matrix, etc.)
+- Security patterns library (OWASP, Auth, Crypto, Secure Coding)
+- Performance patterns library (Algorithm optimization, Caching, N+1)
+- Architecture patterns library (SOLID, Design Patterns, DDD, CQRS)
+- Intelligence System with extended thinking engine
+- Specialized sub-agents (Security, Performance, Architecture)
+- Multi-model routing (Fast/Balanced/Powerful)
+- Autonomous self-activating skills
+- Evolution System with pattern learner
+- Self-optimizer for quality/speed/accuracy/satisfaction
+- Feedback loop with sentiment analysis
+- 190 tests passing
 
 ### v7.0.0 (2025-11-25) - **Collaboration Hub**
 - Multi-session collaboration (Android/Web/Backend/IoT)
@@ -252,7 +327,6 @@ Sena1996-AI/
 - Inter-session messaging
 - File conflict detection
 - CRDT state synchronization
-- Deprecated old session module (merged into hub)
 - 135 tests passing
 
 ### v6.0.0 (2025-11-25) - **Live Progress**
@@ -281,10 +355,12 @@ MIT License
 
 ---
 
+```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA v7.0: Collaboration Hub                          ║
+║       SENA v8.1: Clean Code & Unlimited Capacity            ║
 ║                                                              ║
-║       Multiple Sessions • One Hub • Ancient Wisdom          ║
+║       Knowledge • Intelligence • Evolution • Ancient Wisdom  ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
+```

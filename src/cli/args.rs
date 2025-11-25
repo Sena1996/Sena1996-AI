@@ -1,333 +1,268 @@
-//! CLI Argument Definitions
-//!
-//! Uses clap for argument parsing
-
 use clap::{Parser, Subcommand, ValueEnum};
 
-/// SENA Controller v7.0 - Collaboration Hub
 #[derive(Parser, Debug)]
 #[command(name = "sena")]
 #[command(author = "SENA Team")]
-#[command(version = "7.0.0")]
-#[command(about = "SENA Controller - Ancient Wisdom meets Modern AI with Collaboration Hub", long_about = None)]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(about = "SENA Controller - Unified Intelligence")]
 pub struct Cli {
-    /// Run in verbose mode
-    #[arg(short, long, default_value_t = false)]
+    #[arg(short, long, default_value_t = false, help = "Run in verbose mode")]
     pub verbose: bool,
 
-    /// Output format
-    #[arg(short, long, value_enum, default_value_t = OutputFormat::Text)]
+    #[arg(short, long, value_enum, default_value_t = OutputFormat::Text, help = "Output format")]
     pub format: OutputFormat,
 
-    /// Configuration file path
-    #[arg(short, long)]
+    #[arg(short, long, help = "Configuration file path")]
     pub config: Option<String>,
 
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
 
-/// Output format options
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum OutputFormat {
-    /// Plain text output
     Text,
-    /// JSON output
     Json,
-    /// Pretty formatted output with Unicode
     Pretty,
 }
 
-/// Available commands
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Start MCP server mode (JSON-RPC over stdio)
+    #[command(about = "Start MCP server mode")]
     Mcp {
-        /// Enable debug logging
-        #[arg(short, long)]
+        #[arg(short, long, help = "Enable debug logging")]
         debug: bool,
     },
 
-    /// Run as a hook handler
+    #[command(about = "Run as hook handler")]
     Hook {
-        /// Hook type to handle
-        #[arg(value_enum)]
+        #[arg(value_enum, help = "Hook type")]
         hook_type: HookType,
 
-        /// Input data (or read from stdin if not provided)
-        #[arg(short, long)]
+        #[arg(short, long, help = "Input data")]
         input: Option<String>,
     },
 
-    /// Process a request through SENA
+    #[command(about = "Process request through SENA")]
     Process {
-        /// Request content
+        #[arg(help = "Request content")]
         content: String,
 
-        /// Request type
-        #[arg(short = 't', long, default_value = "general")]
+        #[arg(short = 't', long, default_value = "general", help = "Request type")]
         request_type: String,
     },
 
-    /// Check system health
+    #[command(about = "Check system health")]
     Health {
-        /// Show detailed health information
-        #[arg(short, long)]
+        #[arg(short, long, help = "Show detailed info")]
         detailed: bool,
     },
 
-    /// Get system metrics
+    #[command(about = "Get system metrics")]
     Metrics {
-        /// Metric category
-        #[arg(value_enum)]
+        #[arg(value_enum, help = "Metric category")]
         category: Option<MetricCategory>,
     },
 
-    /// Detect format for input text
+    #[command(about = "Detect format for input")]
     Detect {
-        /// Text to analyze
+        #[arg(help = "Text to analyze")]
         text: String,
     },
 
-    /// Run in daemon mode (background)
+    #[command(about = "Run in daemon mode")]
     Daemon {
-        /// Action to perform
-        #[arg(value_enum)]
+        #[arg(value_enum, help = "Action")]
         action: DaemonAction,
     },
 
-    /// Session management
+    #[command(about = "Session management")]
     Session {
-        /// Session action
-        #[arg(value_enum)]
+        #[arg(value_enum, help = "Session action")]
         action: SessionAction,
 
-        /// Session ID (for restore)
-        #[arg(short, long)]
+        #[arg(short, long, help = "Session ID")]
         id: Option<String>,
     },
 
-    /// Validate content against SENA rules
+    #[command(about = "Validate content")]
     Validate {
-        /// Content to validate
+        #[arg(help = "Content to validate")]
         content: String,
 
-        /// Validation strictness
-        #[arg(short, long, default_value_t = false)]
+        #[arg(short, long, default_value_t = false, help = "Strict mode")]
         strict: bool,
     },
 
-    /// Generate formatted output
+    #[command(about = "Generate formatted output")]
     Format {
-        /// Format type
-        #[arg(value_enum)]
+        #[arg(value_enum, help = "Format type")]
         format_type: FormatOutputType,
 
-        /// Title for the output
-        #[arg(short, long)]
+        #[arg(short, long, help = "Title")]
         title: Option<String>,
 
-        /// Data (JSON string)
+        #[arg(help = "Data (JSON)")]
         data: String,
     },
 
-    /// Collaboration Hub commands
+    #[command(about = "Collaboration Hub")]
     Hub {
-        /// Hub action
         #[command(subcommand)]
         action: HubAction,
     },
 
-    /// Join the collaboration hub
+    #[command(about = "Join collaboration hub")]
     Join {
-        /// Role (android, web, backend, iot, general)
-        #[arg(short, long)]
+        #[arg(short, long, help = "Role")]
         role: String,
 
-        /// Display name
-        #[arg(short, long)]
+        #[arg(short, long, help = "Display name")]
         name: Option<String>,
     },
 
-    /// List who's online in the hub
+    #[command(about = "List online sessions")]
     Who,
 
-    /// Send a message to another session
+    #[command(about = "Send message")]
     Tell {
-        /// Target session (role name or session ID)
+        #[arg(help = "Target session")]
         target: String,
 
-        /// Message to send
+        #[arg(help = "Message")]
         message: String,
     },
 
-    /// Check inbox for messages
+    #[command(about = "Check inbox")]
     Inbox,
 
-    /// Task management
+    #[command(about = "Task management")]
     Task {
-        /// Task action
         #[command(subcommand)]
         action: TaskAction,
     },
 
-    /// Watch live collaboration dashboard
+    #[command(about = "Watch live dashboard")]
     Watch,
 
-    /// Show current sync status
+    #[command(about = "Show sync status")]
     Sync,
 }
 
-/// Hook types
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum HookType {
-    /// User prompt submit hook
     UserPromptSubmit,
-    /// Assistant response hook
     AssistantResponse,
-    /// Tool execution hook
     ToolExecution,
-    /// Pre-validation hook
     PreValidation,
-    /// Post-validation hook
     PostValidation,
 }
 
-/// Metric categories
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum MetricCategory {
-    /// Overall health metrics
     Health,
-    /// Innovation metrics
     Innovation,
-    /// Test results
     Tests,
-    /// Configuration status
     Config,
-    /// Phase status
     Phase,
-    /// All metrics
     All,
 }
 
-/// Daemon actions
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum DaemonAction {
-    /// Start the daemon
     Start,
-    /// Stop the daemon
     Stop,
-    /// Restart the daemon
     Restart,
-    /// Check daemon status
     Status,
 }
 
-/// Session actions
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum SessionAction {
-    /// Start new session
     Start,
-    /// End current session
     End,
-    /// Get current session info
     Info,
-    /// List session history
     List,
-    /// Restore a previous session
     Restore,
 }
 
-/// Format output types
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum FormatOutputType {
-    /// Table format
     Table,
-    /// Progress bar
     Progress,
-    /// Brilliant thinking format
     BrilliantThinking,
-    /// Truth verification format
     TruthVerification,
-    /// Code analysis format
     CodeAnalysis,
 }
 
-/// Hub actions
 #[derive(Subcommand, Debug, Clone)]
 pub enum HubAction {
-    /// Start the collaboration hub daemon
+    #[command(about = "Start hub daemon")]
     Start,
-    /// Stop the hub daemon
+    #[command(about = "Stop hub daemon")]
     Stop,
-    /// Check hub status
+    #[command(about = "Check hub status")]
     Status,
-    /// Show all conflicts
+    #[command(about = "Show conflicts")]
     Conflicts,
-    /// Clear all hub data
+    #[command(about = "Clear hub data")]
     Clear,
 }
 
-/// Task actions
 #[derive(Subcommand, Debug, Clone)]
 pub enum TaskAction {
-    /// Create a new task
+    #[command(about = "Create task")]
     New {
-        /// Task title
+        #[arg(help = "Task title")]
         title: String,
 
-        /// Assignee (role or session ID)
-        #[arg(short, long)]
+        #[arg(short, long, help = "Assignee")]
         to: String,
 
-        /// Priority (critical, high, medium, low)
-        #[arg(short, long, default_value = "medium")]
+        #[arg(short, long, default_value = "medium", help = "Priority")]
         priority: String,
     },
 
-    /// List all tasks
+    #[command(about = "List tasks")]
     List {
-        /// Filter by status
-        #[arg(short, long)]
+        #[arg(short, long, help = "Filter by status")]
         status: Option<String>,
     },
 
-    /// List my tasks
+    #[command(about = "My tasks")]
     Mine,
 
-    /// Mark task as done
+    #[command(about = "Mark done")]
     Done {
-        /// Task ID
+        #[arg(help = "Task ID")]
         id: u64,
     },
 
-    /// Update task status
+    #[command(about = "Update status")]
     Update {
-        /// Task ID
+        #[arg(help = "Task ID")]
         id: u64,
 
-        /// New status (pending, in_progress, blocked, done)
+        #[arg(help = "New status")]
         status: String,
     },
 
-    /// Reassign task
+    #[command(about = "Reassign task")]
     Assign {
-        /// Task ID
+        #[arg(help = "Task ID")]
         id: u64,
 
-        /// New assignee
+        #[arg(help = "New assignee")]
         to: String,
     },
 
-    /// Delete a task
+    #[command(about = "Delete task")]
     Delete {
-        /// Task ID
+        #[arg(help = "Task ID")]
         id: u64,
     },
 }
 
 impl Cli {
-    /// Parse CLI arguments
     pub fn parse_args() -> Self {
         Cli::parse()
     }

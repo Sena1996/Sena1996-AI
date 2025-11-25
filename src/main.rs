@@ -1,8 +1,8 @@
-//! SENA Controller v7.0 - Main Binary
+//! SENA Controller v8.0 - Main Binary
 //!
-//! Collaboration Hub - Multi-Session Support
+//! Unified Intelligence - Knowledge, Reasoning & Self-Improvement
 //!
-//! This binary provides a CLI interface to the SENA v7.0 system.
+//! This binary provides a CLI interface to the SENA v8.0 system.
 //! Supports multiple modes:
 //! - MCP server mode for Claude Code integration
 //! - Hook mode for Claude Code hooks
@@ -10,7 +10,7 @@
 //! - Command mode for single operations
 
 use clap::Parser;
-use sena_v7::{
+use sena_v8::{
     Cli, Commands, execute_command,
     create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
 };
