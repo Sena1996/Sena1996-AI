@@ -10,7 +10,7 @@
 
 use std::io::{self, Write};
 use std::time::{Duration, Instant};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 /// ANSI Escape Codes for terminal control

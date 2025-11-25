@@ -1,11 +1,7 @@
-//! SENA Auto Integration System
-//! Automatic keyword detection and format application
-
+use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-/// Format type for SENA responses
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FormatType {
     BrilliantThinking,
@@ -16,7 +12,6 @@ pub enum FormatType {
 }
 
 impl FormatType {
-    /// Get format name
     pub fn name(&self) -> &'static str {
         match self {
             Self::BrilliantThinking => "brilliant_thinking",
@@ -28,15 +23,6 @@ impl FormatType {
     }
 }
 
-/// Trigger configuration
-#[derive(Debug, Clone)]
-struct TriggerConfig {
-    keywords: Vec<&'static str>,
-    patterns: Vec<Regex>,
-    format: FormatType,
-}
-
-/// Format instructions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormatInstructions {
     pub title: String,
@@ -44,130 +30,114 @@ pub struct FormatInstructions {
     pub use_boxes: bool,
 }
 
-/// Auto Integration for SENA format detection
-pub struct AutoIntegration {
-    triggers: HashMap<&'static str, TriggerConfig>,
-}
+static BRILLIANT_THINKING_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)\bwhy\s+(?:does|is|are|do|did|would|should)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bhow\s+(?:does|is|are|do|did|can|could|should)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bexplain\s+(?:why|how|what|the)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bwhat(?:'s|\s+is)\s+the\s+(?:reason|logic|rationale)\b").expect("valid regex"),
+    ]
+});
+
+static TRUTH_VERIFICATION_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)\bis\s+(?:it|this|that)\s+(?:true|false|correct|accurate|real|valid)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bis\s+(?:the|a)\s+\w+\s+(?:flat|round|hollow|fake|real)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bis\s+\w+\s+(?:true|false|correct|accurate|valid|real)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:fact\s+check|verify|confirm)\s+(?:that|if|whether)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bmyth\s+(?:or|vs|versus)\s+(?:fact|reality|truth)\b").expect("valid regex"),
+    ]
+});
+
+static CODE_ANALYSIS_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)\b(?:analyze|review)\s+(?:this|the|my)?\s*code\b").expect("valid regex"),
+        Regex::new(r"(?i)\bcode\s+(?:review|analysis|quality)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:refactor|optimize|debug|fix)\s+(?:this|the|my)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bcheck\s+(?:for|the)\s+(?:bugs|errors|issues)\b").expect("valid regex"),
+    ]
+});
+
+static TABLE_FORMAT_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)\b(?:in|as|with)?\s*(?:a\s+)?table\b").expect("valid regex"),
+        Regex::new(r"(?i)\btabular\s+(?:format|form|data)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:show|display|present)\s+(?:in|as)\s+(?:table|grid)\b").expect("valid regex"),
+    ]
+});
+
+static PROGRESS_DISPLAY_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"(?i)\b(?:find|search|locate)\s+(?:all|the|files|in)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:scan|process|analyze)\s+(?:multiple|all|the)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:read|check|examine)\s+(?:multiple|several|all)\b").expect("valid regex"),
+    ]
+});
+
+const BRILLIANT_THINKING_KEYWORDS: &[&str] = &["why", "how", "explain", "reasoning", "understanding", "logic", "rationale", "because"];
+const CODE_ANALYSIS_KEYWORDS: &[&str] = &["analyze", "review", "quality", "refactor", "optimize", "debug", "fix", "improve"];
+const TABLE_FORMAT_KEYWORDS: &[&str] = &["table", "tabular", "grid", "matrix", "columns", "rows"];
+const PROGRESS_DISPLAY_KEYWORDS: &[&str] = &["find", "search", "locate", "scan", "process"];
+
+pub struct AutoIntegration;
 
 impl AutoIntegration {
-    /// Create new auto integration instance
     pub fn new() -> Self {
-        let mut triggers = HashMap::new();
-
-        // Brilliant Thinking triggers
-        triggers.insert(
-            "brilliant_thinking",
-            TriggerConfig {
-                keywords: vec!["why", "how", "explain", "reasoning", "understanding", "logic", "rationale", "because"],
-                patterns: vec![
-                    Regex::new(r"(?i)\bwhy\s+(?:does|is|are|do|did|would|should)\b").unwrap(),
-                    Regex::new(r"(?i)\bhow\s+(?:does|is|are|do|did|can|could|should)\b").unwrap(),
-                    Regex::new(r"(?i)\bexplain\s+(?:why|how|what|the)\b").unwrap(),
-                    Regex::new(r"(?i)\bwhat(?:'s|\s+is)\s+the\s+(?:reason|logic|rationale)\b").unwrap(),
-                ],
-                format: FormatType::BrilliantThinking,
-            },
-        );
-
-        // Truth Verification triggers
-        triggers.insert(
-            "truth_verification",
-            TriggerConfig {
-                keywords: vec![],
-                patterns: vec![
-                    Regex::new(r"(?i)\bis\s+(?:it|this|that)\s+(?:true|false|correct|accurate|real|valid)\b").unwrap(),
-                    Regex::new(r"(?i)\bis\s+(?:the|a)\s+\w+\s+(?:flat|round|hollow|fake|real)\b").unwrap(),
-                    Regex::new(r"(?i)\bis\s+\w+\s+(?:true|false|correct|accurate|valid|real)\b").unwrap(),
-                    Regex::new(r"(?i)\b(?:fact\s+check|verify|confirm)\s+(?:that|if|whether)\b").unwrap(),
-                    Regex::new(r"(?i)\bmyth\s+(?:or|vs|versus)\s+(?:fact|reality|truth)\b").unwrap(),
-                ],
-                format: FormatType::TruthVerification,
-            },
-        );
-
-        // Code Analysis triggers
-        triggers.insert(
-            "code_analysis",
-            TriggerConfig {
-                keywords: vec!["analyze", "review", "quality", "refactor", "optimize", "debug", "fix", "improve"],
-                patterns: vec![
-                    Regex::new(r"(?i)\b(?:analyze|review)\s+(?:this|the|my)?\s*code\b").unwrap(),
-                    Regex::new(r"(?i)\bcode\s+(?:review|analysis|quality)\b").unwrap(),
-                    Regex::new(r"(?i)\b(?:refactor|optimize|debug|fix)\s+(?:this|the|my)\b").unwrap(),
-                    Regex::new(r"(?i)\bcheck\s+(?:for|the)\s+(?:bugs|errors|issues)\b").unwrap(),
-                ],
-                format: FormatType::CodeAnalysis,
-            },
-        );
-
-        // Table Format triggers
-        triggers.insert(
-            "table_format",
-            TriggerConfig {
-                keywords: vec!["table", "tabular", "grid", "matrix", "columns", "rows"],
-                patterns: vec![
-                    Regex::new(r"(?i)\b(?:in|as|with)?\s*(?:a\s+)?table\b").unwrap(),
-                    Regex::new(r"(?i)\btabular\s+(?:format|form|data)\b").unwrap(),
-                    Regex::new(r"(?i)\b(?:show|display|present)\s+(?:in|as)\s+(?:table|grid)\b").unwrap(),
-                ],
-                format: FormatType::TableFormat,
-            },
-        );
-
-        // Progress Display triggers
-        triggers.insert(
-            "progress_display",
-            TriggerConfig {
-                keywords: vec!["find", "search", "locate", "scan", "process"],
-                patterns: vec![
-                    Regex::new(r"(?i)\b(?:find|search|locate)\s+(?:all|the|files|in)\b").unwrap(),
-                    Regex::new(r"(?i)\b(?:scan|process|analyze)\s+(?:multiple|all|the)\b").unwrap(),
-                    Regex::new(r"(?i)\b(?:read|check|examine)\s+(?:multiple|several|all)\b").unwrap(),
-                ],
-                format: FormatType::ProgressDisplay,
-            },
-        );
-
-        Self { triggers }
+        Self
     }
 
-    /// Detect format from user input
     pub fn detect_format(&self, user_input: &str) -> Option<FormatType> {
         let input_lower = user_input.to_lowercase();
 
-        // Process in priority order
-        let priority_order = [
-            "table_format",
-            "code_analysis",
-            "brilliant_thinking",
-            "truth_verification",
-            "progress_display",
-        ];
+        if self.matches_table(&input_lower) {
+            return Some(FormatType::TableFormat);
+        }
 
-        for trigger_type in priority_order {
-            if let Some(config) = self.triggers.get(trigger_type) {
-                // Check keywords
-                for keyword in &config.keywords {
-                    if input_lower.contains(keyword) {
-                        return Some(config.format.clone());
-                    }
-                }
+        if self.matches_code_analysis(&input_lower) {
+            return Some(FormatType::CodeAnalysis);
+        }
 
-                // Check patterns
-                for pattern in &config.patterns {
-                    if pattern.is_match(&input_lower) {
-                        return Some(config.format.clone());
-                    }
-                }
-            }
+        if self.matches_brilliant_thinking(&input_lower) {
+            return Some(FormatType::BrilliantThinking);
+        }
+
+        if self.matches_truth_verification(&input_lower) {
+            return Some(FormatType::TruthVerification);
+        }
+
+        if self.matches_progress_display(&input_lower) {
+            return Some(FormatType::ProgressDisplay);
         }
 
         None
     }
 
-    /// Check if progress bars should be shown
+    fn matches_table(&self, input: &str) -> bool {
+        TABLE_FORMAT_KEYWORDS.iter().any(|kw| input.contains(kw))
+            || TABLE_FORMAT_PATTERNS.iter().any(|p| p.is_match(input))
+    }
+
+    fn matches_code_analysis(&self, input: &str) -> bool {
+        CODE_ANALYSIS_KEYWORDS.iter().any(|kw| input.contains(kw))
+            || CODE_ANALYSIS_PATTERNS.iter().any(|p| p.is_match(input))
+    }
+
+    fn matches_brilliant_thinking(&self, input: &str) -> bool {
+        BRILLIANT_THINKING_KEYWORDS.iter().any(|kw| input.contains(kw))
+            || BRILLIANT_THINKING_PATTERNS.iter().any(|p| p.is_match(input))
+    }
+
+    fn matches_truth_verification(&self, input: &str) -> bool {
+        TRUTH_VERIFICATION_PATTERNS.iter().any(|p| p.is_match(input))
+    }
+
+    fn matches_progress_display(&self, input: &str) -> bool {
+        PROGRESS_DISPLAY_KEYWORDS.iter().any(|kw| input.contains(kw))
+            || PROGRESS_DISPLAY_PATTERNS.iter().any(|p| p.is_match(input))
+    }
+
     pub fn should_show_progress(&self, operation_type: &str, step_count: usize) -> bool {
-        let progress_operations = [
+        const PROGRESS_OPERATIONS: &[&str] = &[
             "file_search",
             "multi_read",
             "code_analysis",
@@ -176,10 +146,9 @@ impl AutoIntegration {
             "research",
         ];
 
-        progress_operations.contains(&operation_type) || step_count >= 2
+        PROGRESS_OPERATIONS.contains(&operation_type) || step_count >= 2
     }
 
-    /// Get format instructions
     pub fn get_format_instructions(&self, format_type: &FormatType) -> FormatInstructions {
         match format_type {
             FormatType::BrilliantThinking => FormatInstructions {
@@ -212,13 +181,13 @@ impl AutoIntegration {
                 use_boxes: true,
             },
             FormatType::TableFormat => FormatInstructions {
-                title: "".to_string(),
-                sections: vec![],
+                title: String::new(),
+                sections: Vec::new(),
                 use_boxes: false,
             },
             FormatType::ProgressDisplay => FormatInstructions {
                 title: "SENA 🦁 TASK PROGRESS".to_string(),
-                sections: vec![],
+                sections: Vec::new(),
                 use_boxes: true,
             },
         }
@@ -231,12 +200,10 @@ impl Default for AutoIntegration {
     }
 }
 
-/// Helper function to check user input
 pub fn check_user_input(text: &str) -> Option<FormatType> {
     AutoIntegration::new().detect_format(text)
 }
 
-/// Helper function to check if progress should be shown
 pub fn should_show_progress(op_type: &str, steps: usize) -> bool {
     AutoIntegration::new().should_show_progress(op_type, steps)
 }
@@ -247,8 +214,7 @@ mod tests {
 
     #[test]
     fn test_auto_integration_creation() {
-        let ai = AutoIntegration::new();
-        assert!(!ai.triggers.is_empty());
+        let _ai = AutoIntegration::new();
     }
 
     #[test]

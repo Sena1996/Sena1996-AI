@@ -26,7 +26,7 @@ pub fn is_running() -> bool {
             // Check if process exists (Unix)
             #[cfg(unix)]
             {
-                use std::os::unix::process::CommandExt;
+                
                 let result = Command::new("kill")
                     .args(["-0", &pid.to_string()])
                     .stdout(Stdio::null())

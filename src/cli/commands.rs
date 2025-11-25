@@ -394,7 +394,7 @@ fn execute_format(format_type: FormatOutputType, title: Option<String>, data: &s
 // ================================
 
 async fn execute_hub(action: HubAction) -> Result<String, String> {
-    use crate::hub::{Hub, HubConfig, HubServer};
+    use crate::hub::{Hub, HubConfig};
 
     match action {
         HubAction::Start => {

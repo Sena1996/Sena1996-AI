@@ -9,7 +9,7 @@
 //! Applied to AI: Embed recovery mechanisms in failure pathways.
 //! Systems should heal themselves when damaged.
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;

@@ -1,11 +1,13 @@
-//! SENA Controller v8.0 - Unified Intelligence
+//! SENA Controller v9.0 - Production Ready
 //!
-//! This version combines ALL capabilities:
+//! This version features robust error handling and configuration support:
 //! - 3,000 years of ancient engineering wisdom (7 layers)
 //! - Multi-session collaboration hub
 //! - Multi-level knowledge system
 //! - Extended thinking & specialized sub-agents
 //! - Self-improvement evolution engine
+//! - Configuration file support (~/.sena/config.toml)
+//! - Robust error handling throughout
 //!
 //! Core Principle: Build systems that embody truth, learn continuously, and improve autonomously.
 //!
@@ -19,7 +21,7 @@
 //! - **Layer 5**: Harmony Validation Engine (Antikythera, 150 BCE)
 //! - **Layer 6**: Millennium Test Framework (All Ancient Wisdom)
 //!
-//! # NEW: Knowledge System
+//! # Knowledge System
 //!
 //! - Multi-level memory (Session, Project, Global, Permanent)
 //! - Reasoning frameworks (First Principles, 5 Whys, Systems Thinking)
@@ -27,16 +29,16 @@
 //! - Performance patterns (Big O, Caching, Async)
 //! - Architecture patterns (SOLID, Design Patterns, DDD)
 //!
-//! # NEW: Intelligence Engine
+//! # Intelligence Engine
 //!
-//! - Extended thinking mode (like /deep-think)
+//! - Extended thinking mode (unlimited capacity)
 //! - Specialized sub-agents (Security, Performance, Architecture)
 //! - Multi-model routing (Fast/Balanced/Powerful)
 //! - Autonomous skills (auto-activating capabilities)
 //!
-//! # NEW: Evolution System
+//! # Evolution System
 //!
-//! - Pattern learning from successful interactions
+//! - Pattern learning (unlimited storage)
 //! - Self-optimization for quality, speed, accuracy
 //! - Feedback loop for continuous improvement
 //! - Knowledge evolution over time
@@ -51,7 +53,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v8::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
+//! use sena_v9::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -71,11 +73,12 @@
 //! }
 //! ```
 //!
-//! Version: 8.0.0
+//! Version: 9.0.1
 //! Date: 2025-11-25
 
 pub mod ancient;
 pub mod base;
+pub mod config;
 pub mod session;
 pub mod sync;
 pub mod metrics;
@@ -105,8 +108,10 @@ pub use base::{
     IVerifier, IStorage, IExecutor, IPermissionManager, ICodebaseMemory, IResearchSystem,
 };
 
-// Re-export session management (DEPRECATED - use hub::Session and hub::SessionRegistry instead)
-#[deprecated(since = "7.0.0", note = "Use hub::Session and hub::SessionRegistry instead")]
+// Re-export configuration
+pub use config::{SenaConfig, ConfigError};
+
+// Session management (legacy - use hub::Session and hub::SessionRegistry for new code)
 pub use session::{SessionManager, SessionState};
 
 // Re-export sync
@@ -172,9 +177,8 @@ pub use evolution::{
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const CODENAME: &str = "Unified Intelligence";
+pub const CODENAME: &str = "Production Ready";
 
-/// Errors for the unified system
 #[derive(Error, Debug)]
 pub enum SenaError {
     #[error("Processing failed: {0}")]
@@ -187,6 +191,10 @@ pub enum SenaError {
     ComponentError(String),
     #[error("Configuration error: {0}")]
     ConfigurationError(String),
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
 }
 
 /// Processing phases in the pipeline

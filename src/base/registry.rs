@@ -3,8 +3,8 @@
 
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, RwLock};
-use std::time::{Duration, Instant};
+use std::sync::RwLock;
+use std::time::Instant;
 
 /// Error when circular dependency is detected
 #[derive(Debug, Clone)]
@@ -293,6 +293,7 @@ impl std::error::Error for ComponentRegistryError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, RwLock};
 
     #[test]
     fn test_registry_creation() {

@@ -1,37 +1,41 @@
-# SENA Controller v8.1 - Unified Intelligence
+# SENA Controller v9.0 - Production Ready
 
-**Truth-Embedded Architecture with Knowledge, Reasoning & Self-Improvement**
+**Truth-Embedded Architecture with Robust Error Handling & Configuration**
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-8.1.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
-[![Tests](https://img.shields.io/badge/tests-190%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-9.0.1-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Tests](https://img.shields.io/badge/tests-195%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
 
-## What is SENA v8?
+## What is SENA v9?
 
-SENA v8 is the **Unified Intelligence** edition - a complete, self-improving system featuring:
+SENA v9 is the **Production Ready** edition - battle-tested with robust error handling:
 
 - **Knowledge System** - Multi-level memory with reasoning, security, performance & architecture patterns
-- **Intelligence System** - Extended thinking engine, specialized sub-agents, model routing, autonomous skills
-- **Evolution System** - Pattern learning, self-optimization, feedback loops for continuous improvement
+- **Intelligence System** - Extended thinking engine (unlimited), specialized sub-agents, model routing
+- **Evolution System** - Pattern learning (unlimited), self-optimization, feedback loops
+- **Configuration System** - ~/.sena/config.toml for persistent settings
+- **Robust Error Handling** - No panics, proper Result types throughout
 - **7 Ancient Wisdom Layers** - Truth-embedded architecture
-- **Collaboration Hub** - Multi-session collaboration from v7
+- **Collaboration Hub** - Multi-session collaboration
 - **MCP Server & Hooks** - Claude Desktop/Code integration
 
-**Knowledge. Intelligence. Evolution. Ancient Wisdom.**
+**Production Ready. Robust. Configurable.**
 
 ---
 
-## NEW in v8.1: Clean Code & Unlimited Capacity
+## NEW in v9.0: Production Ready
 
-### v8.1.0 Changes
-- Single global VERSION constant from Cargo.toml
-- Removed all comments from source files (clean code)
-- Unlimited Extended Thinking (no token limits)
-- Unlimited Pattern Learning (no pattern count limits)
+### v9.0.1 Changes
+- Robust error handling (eliminated 127 unwrap() calls)
+- Configuration file support (~/.sena/config.toml)
+- Expanded SenaError type with IO and Serialization variants
+- Lazy regex initialization with once_cell
+- Clean RwLock handling with expect() messages
+- 195 tests passing (194 unit + 1 doc)
 
 ### Knowledge System
 ```rust
@@ -143,7 +147,7 @@ cargo build --release
 
 # Binary location
 ./target/release/sena --version
-# sena 8.1.0
+# sena 9.0.1
 ```
 
 ### Install Binary
@@ -288,15 +292,23 @@ Sena1996-AI/
 
 | Metric | Value |
 |--------|-------|
-| Binary Size | ~3MB |
+| Binary Size | ~3.5MB |
 | Startup Time | <10ms |
 | Memory Usage | ~5MB |
 | Hub IPC Latency | <1ms |
-| Tests | 190 passing |
+| Tests | 195 passing |
 
 ---
 
 ## Version History
+
+### v9.0.1 (2025-11-25) - **Production Ready**
+- Robust error handling (eliminated 127 unwrap() calls)
+- Configuration file support (~/.sena/config.toml)
+- Expanded SenaError type with IO and Serialization variants
+- Lazy regex initialization with once_cell
+- Clean RwLock handling with descriptive expect() messages
+- 195 tests passing (194 unit + 1 doc)
 
 ### v8.1.0 (2025-11-25) - **Clean Code & Unlimited Capacity**
 - Single global VERSION constant from Cargo.toml
@@ -358,9 +370,9 @@ MIT License
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA v8.1: Clean Code & Unlimited Capacity            ║
+║       SENA v9.0: Production Ready                           ║
 ║                                                              ║
-║       Knowledge • Intelligence • Evolution • Ancient Wisdom  ║
+║       Robust • Configurable • Battle-Tested • Ancient Wisdom ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```

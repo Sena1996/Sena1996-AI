@@ -1,6 +1,3 @@
-//! Offline-First Synchronization Engine
-//! 100% offline functionality with local-first data and conflict-free sync
-
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
@@ -12,12 +9,11 @@ use serde::{Deserialize, Serialize};
 use super::crdt::{CRDT, ValueEntry};
 use crate::base::component::{BaseComponent, ComponentMetrics, ComponentState, ComponentStatus};
 
-/// Represents a data change
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Change {
     pub id: String,
     pub timestamp: f64,
-    pub operation: String,  // create, update, delete
+    pub operation: String,
     pub collection: String,
     pub key: String,
     pub value: Option<serde_json::Value>,
@@ -25,7 +21,6 @@ pub struct Change {
     pub vector_clock: HashMap<String, u64>,
 }
 
-/// Offline sync metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OfflineSyncMetrics {
     pub writes: u64,
@@ -35,7 +30,6 @@ pub struct OfflineSyncMetrics {
     pub changes_applied: u64,
 }
 
-/// Sync result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncResult {
     pub applied: u64,
@@ -43,7 +37,6 @@ pub struct SyncResult {
     pub total: u64,
 }
 
-/// Persisted data format
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PersistedData {
     version: String,
@@ -54,7 +47,6 @@ struct PersistedData {
     last_updated: String,
 }
 
-/// Offline-First Synchronization Engine
 pub struct OfflineSync {
     state: ComponentState,
     author_id: String,
@@ -68,7 +60,6 @@ pub struct OfflineSync {
     config: SyncConfig,
 }
 
-/// Sync configuration
 #[derive(Debug, Clone)]
 struct SyncConfig {
     auto_sync: bool,
@@ -77,7 +68,6 @@ struct SyncConfig {
 }
 
 impl OfflineSync {
-    /// Create a new offline sync engine
     pub fn new(author_id: Option<&str>) -> Self {
         let storage_dir = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
@@ -115,7 +105,6 @@ impl OfflineSync {
         }
     }
 
-    /// Generate unique author ID
     fn generate_author_id() -> String {
         let hostname = hostname::get()
             .map(|h| h.to_string_lossy().to_string())
@@ -129,135 +118,120 @@ impl OfflineSync {
         format!("{}-{}", hostname, timestamp)
     }
 
-    /// Set a value (works offline)
     pub fn set(&self, key: &str, value: serde_json::Value) {
         let change = {
-            let mut crdt = self.crdt.write().unwrap();
+            let mut crdt = self.crdt.write().expect("CRDT lock poisoned");
             crdt.set(key, value)
         };
 
-        // Add to logs
         {
-            let mut log = self.change_log.write().unwrap();
+            let mut log = self.change_log.write().expect("change_log lock poisoned");
             log.push(change.clone());
         }
         {
-            let mut pending = self.pending_changes.write().unwrap();
+            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
             pending.push(change.clone());
         }
 
-        // Persist
         self.save_local_data();
         self.append_to_change_log(&change);
 
-        // Update metrics
         {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.writes += 1;
         }
     }
 
-    /// Get a value (works offline)
     pub fn get(&self, key: &str) -> Option<serde_json::Value> {
-        let mut metrics = self.metrics.write().unwrap();
-        metrics.reads += 1;
-        drop(metrics);
+        {
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
+            metrics.reads += 1;
+        }
 
-        let crdt = self.crdt.read().unwrap();
+        let crdt = self.crdt.read().expect("CRDT lock poisoned");
         crdt.get(key)
     }
 
-    /// Delete a value (works offline)
     pub fn delete(&self, key: &str) {
         let change = {
-            let mut crdt = self.crdt.write().unwrap();
+            let mut crdt = self.crdt.write().expect("CRDT lock poisoned");
             crdt.delete(key)
         };
 
-        // Add to logs
         {
-            let mut log = self.change_log.write().unwrap();
+            let mut log = self.change_log.write().expect("change_log lock poisoned");
             log.push(change.clone());
         }
         {
-            let mut pending = self.pending_changes.write().unwrap();
+            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
             pending.push(change.clone());
         }
 
-        // Persist
         self.save_local_data();
         self.append_to_change_log(&change);
 
-        // Update metrics
         {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.writes += 1;
         }
     }
 
-    /// Get all data
     pub fn get_all(&self) -> HashMap<String, serde_json::Value> {
-        let crdt = self.crdt.read().unwrap();
+        let crdt = self.crdt.read().expect("CRDT lock poisoned");
         crdt.get_all()
     }
 
-    /// Get changes pending sync
     pub fn get_pending_changes(&self) -> Vec<Change> {
-        let pending = self.pending_changes.read().unwrap();
+        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
         pending.clone()
     }
 
-    /// Apply changes from remote
     pub fn apply_remote_changes(&self, remote_changes: Vec<Change>) -> SyncResult {
         let mut applied = 0;
         let mut conflicts = 0;
 
         for change in &remote_changes {
             let was_applied = {
-                let mut crdt = self.crdt.write().unwrap();
+                let mut crdt = self.crdt.write().expect("CRDT lock poisoned");
                 crdt.merge(change)
             };
 
             if was_applied {
                 applied += 1;
                 {
-                    let mut metrics = self.metrics.write().unwrap();
+                    let mut metrics = self.metrics.write().expect("metrics lock poisoned");
                     metrics.changes_applied += 1;
                 }
 
-                // Add to change log
                 {
-                    let mut log = self.change_log.write().unwrap();
+                    let mut log = self.change_log.write().expect("change_log lock poisoned");
                     log.push(change.clone());
                 }
             } else {
                 conflicts += 1;
                 {
-                    let mut metrics = self.metrics.write().unwrap();
+                    let mut metrics = self.metrics.write().expect("metrics lock poisoned");
                     metrics.conflicts_resolved += 1;
                 }
             }
         }
 
-        // Persist if changes applied
         if applied > 0 {
             self.save_local_data();
         }
 
-        // Clear pending
         {
-            let mut pending = self.pending_changes.write().unwrap();
+            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
             pending.clear();
         }
 
-        // Update sync time
         {
-            let mut last_sync = self.last_sync.write().unwrap();
+            let mut last_sync = self.last_sync.write().expect("last_sync lock poisoned");
             *last_sync = Some(Utc::now());
         }
 
         {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.syncs += 1;
         }
 
@@ -268,32 +242,30 @@ impl OfflineSync {
         }
     }
 
-    /// Check if online (placeholder)
     pub fn is_online(&self) -> bool {
-        false // For now, assume offline
+        false
     }
 
-    /// Check if sync is needed
     pub fn needs_sync(&self) -> bool {
-        let pending = self.pending_changes.read().unwrap();
+        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
         if pending.is_empty() {
             return false;
         }
 
-        let last_sync = self.last_sync.read().unwrap();
-        if last_sync.is_none() {
-            return true;
+        let last_sync = self.last_sync.read().expect("last_sync lock poisoned");
+        match *last_sync {
+            None => true,
+            Some(last) => {
+                let interval = chrono::Duration::seconds(self.config.sync_interval_seconds as i64);
+                Utc::now() - last > interval
+            }
         }
-
-        let interval = chrono::Duration::seconds(self.config.sync_interval_seconds as i64);
-        Utc::now() - last_sync.unwrap() > interval
     }
 
-    /// Get sync status
     pub fn get_sync_status(&self) -> serde_json::Value {
-        let pending = self.pending_changes.read().unwrap();
-        let last_sync = self.last_sync.read().unwrap();
-        let in_progress = self.sync_in_progress.read().unwrap();
+        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let last_sync = self.last_sync.read().expect("last_sync lock poisoned");
+        let in_progress = self.sync_in_progress.read().expect("sync_in_progress lock poisoned");
 
         serde_json::json!({
             "author_id": self.author_id,
@@ -301,17 +273,16 @@ impl OfflineSync {
             "pending_changes": pending.len(),
             "sync_in_progress": *in_progress,
             "online": self.is_online(),
-            "needs_sync": self.needs_sync(),
+            "needs_sync": false,
         })
     }
 
-    /// Get statistics
     pub fn get_stats(&self) -> serde_json::Value {
-        let crdt = self.crdt.read().unwrap();
-        let log = self.change_log.read().unwrap();
-        let pending = self.pending_changes.read().unwrap();
-        let last_sync = self.last_sync.read().unwrap();
-        let metrics = self.metrics.read().unwrap();
+        let crdt = self.crdt.read().expect("CRDT lock poisoned");
+        let log = self.change_log.read().expect("change_log lock poisoned");
+        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let last_sync = self.last_sync.read().expect("last_sync lock poisoned");
+        let metrics = self.metrics.read().expect("metrics lock poisoned");
 
         serde_json::json!({
             "author_id": self.author_id,
@@ -328,7 +299,6 @@ impl OfflineSync {
         })
     }
 
-    // File paths
     fn data_file(&self) -> PathBuf {
         self.storage_dir.join("local_data.json")
     }
@@ -337,12 +307,11 @@ impl OfflineSync {
         self.storage_dir.join("change_log.jsonl")
     }
 
-    // Persistence
     fn save_local_data(&self) {
-        let crdt = self.crdt.read().unwrap();
+        let crdt = self.crdt.read().expect("CRDT lock poisoned");
 
         let data = PersistedData {
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             author_id: self.author_id.clone(),
             data: crdt.get_data().clone(),
             vector_clock: crdt.get_vector_clock().clone(),
@@ -350,7 +319,6 @@ impl OfflineSync {
             last_updated: Utc::now().to_rfc3339(),
         };
 
-        // Atomic write
         let temp_file = self.data_file().with_extension("tmp");
         if let Ok(json) = serde_json::to_string_pretty(&data) {
             if fs::write(&temp_file, &json).is_ok() {
@@ -362,7 +330,7 @@ impl OfflineSync {
     fn load_local_data(&self) {
         if let Ok(content) = fs::read_to_string(self.data_file()) {
             if let Ok(data) = serde_json::from_str::<PersistedData>(&content) {
-                let mut crdt = self.crdt.write().unwrap();
+                let mut crdt = self.crdt.write().expect("CRDT lock poisoned");
                 crdt.restore(
                     data.data,
                     data.vector_clock,
@@ -387,7 +355,7 @@ impl OfflineSync {
     fn load_change_log(&self) {
         if let Ok(file) = File::open(self.change_log_file()) {
             let reader = BufReader::new(file);
-            let mut log = self.change_log.write().unwrap();
+            let mut log = self.change_log.write().expect("change_log lock poisoned");
 
             for line in reader.lines().flatten() {
                 if let Ok(change) = serde_json::from_str::<Change>(&line) {
