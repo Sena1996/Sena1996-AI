@@ -274,40 +274,52 @@ async fn execute_daemon(action: DaemonAction) -> Result<String, String> {
 }
 
 fn execute_session(action: SessionAction, id: Option<String>, format: OutputFormat) -> Result<String, String> {
-    use crate::session::SessionManager;
+    use crate::hub::{SessionRegistry, SessionRole, HubConfig};
 
-    let manager = SessionManager::new(100);
+    let config = HubConfig::default();
+    let mut registry = SessionRegistry::new(&config);
+    let _ = registry.load();
 
     let result = match action {
         SessionAction::Start => {
-            let session = manager.start_session();
-            serde_json::json!({
-                "action": "start",
-                "session_id": session.session_id,
-                "started_at": session.started_at.to_rfc3339(),
-            })
+            match registry.register(SessionRole::General, None) {
+                Ok(session) => serde_json::json!({
+                    "action": "start",
+                    "session_id": session.id,
+                    "started_at": session.joined_at,
+                }),
+                Err(e) => serde_json::json!({"error": e}),
+            }
         }
         SessionAction::End => {
-            manager.end_session();
+            if let Some(session_id) = id.clone() {
+                let _ = registry.unregister(&session_id);
+            }
             serde_json::json!({
                 "action": "end",
                 "status": "session ended",
             })
         }
         SessionAction::Info => {
-            match manager.get_current_session() {
-                Some(session) => serde_json::to_value(&session).unwrap_or_default(),
-                None => serde_json::json!({"error": "no active session"}),
+            match id.as_ref().and_then(|sid| registry.get(sid)) {
+                Some(session) => session.stats(),
+                None => {
+                    let active = registry.get_active();
+                    if active.is_empty() {
+                        serde_json::json!({"error": "no active session"})
+                    } else {
+                        serde_json::to_value(&active).unwrap_or_default()
+                    }
+                }
             }
         }
         SessionAction::List => {
-            let history = manager.get_session_history(10);
-            serde_json::to_value(&history).unwrap_or_default()
+            let sessions = registry.get_all();
+            serde_json::to_value(&sessions).unwrap_or_default()
         }
         SessionAction::Restore => {
             match id {
                 Some(session_id) => {
-                    // Restoration logic would go here
                     serde_json::json!({
                         "action": "restore",
                         "session_id": session_id,
@@ -711,7 +723,7 @@ async fn execute_watch() -> Result<String, String> {
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    let status = hub.status();
+    let _status = hub.status();
     let sessions = hub.who();
     let tasks = hub.get_tasks();
     let conflicts = hub.get_conflicts();

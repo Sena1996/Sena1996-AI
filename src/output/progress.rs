@@ -405,6 +405,7 @@ impl Default for LiveProgress {
 pub struct Spinner {
     message: String,
     index: usize,
+    #[allow(dead_code)]
     running: Arc<AtomicBool>,
     config: ProgressConfig,
 }

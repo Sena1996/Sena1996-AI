@@ -211,7 +211,7 @@ impl Agent {
         format!("General Analysis:\nTask received: {}\nReady for detailed analysis.", task)
     }
 
-    fn generate_recommendations(&self, task: &str) -> Vec<String> {
+    fn generate_recommendations(&self, _task: &str) -> Vec<String> {
         match self.agent_type {
             AgentType::Security => vec![
                 "Review OWASP Top 10 checklist".to_string(),

@@ -131,6 +131,7 @@ impl Broadcast {
 }
 
 /// Persisted messages data
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MessagesData {
     version: String,

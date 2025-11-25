@@ -160,7 +160,7 @@ impl Skill {
         output
     }
 
-    fn execute_code_review(&self, context: &str) -> String {
+    fn execute_code_review(&self, _context: &str) -> String {
         let mut output = String::new();
         output.push_str("╔══════════════════════════════════════════════════════════════╗\n");
         output.push_str("║              📝 CODE REVIEW                                  ║\n");

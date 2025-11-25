@@ -131,6 +131,7 @@ async fn handle_pre_tool(input: &str) -> Result<HookResult, String> {
 }
 
 /// Post-tool hook - process tool results
+#[allow(dead_code)]
 async fn handle_post_tool(input: &str) -> Result<HookResult, String> {
     let tool_result: serde_json::Value = serde_json::from_str(input)
         .map_err(|e| format!("Invalid tool result: {}", e))?;

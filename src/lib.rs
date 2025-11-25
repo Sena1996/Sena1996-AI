@@ -79,7 +79,6 @@
 pub mod ancient;
 pub mod base;
 pub mod config;
-pub mod session;
 pub mod sync;
 pub mod metrics;
 pub mod integration;
@@ -110,9 +109,6 @@ pub use base::{
 
 // Re-export configuration
 pub use config::{SenaConfig, ConfigError};
-
-// Session management (legacy - use hub::Session and hub::SessionRegistry for new code)
-pub use session::{SessionManager, SessionState};
 
 // Re-export sync
 pub use sync::{OfflineSync, CRDT, Change};
@@ -542,7 +538,7 @@ impl SenaUnifiedSystem {
         let mut output = HashMap::new();
 
         // Identify and register a constraint from the request
-        let constraint_id = self.constraint_feature.identify_constraint(
+        let _constraint_id = self.constraint_feature.identify_constraint(
             format!("Request constraint: {}", &request.request_type),
             ConstraintType::Functional,
             format!("Processing {} request", request.request_type),

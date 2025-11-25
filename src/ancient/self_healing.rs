@@ -370,6 +370,7 @@ pub struct EmbeddedSelfHealing {
     healing_results: HashMap<String, HealingResult>,
     strategy: HealingStrategy,
     auto_heal: bool,
+    #[allow(dead_code)]
     max_healing_attempts: u32,
     total_heals: AtomicU64,
     total_damages: AtomicU64,

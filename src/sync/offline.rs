@@ -62,8 +62,10 @@ pub struct OfflineSync {
 
 #[derive(Debug, Clone)]
 struct SyncConfig {
+    #[allow(dead_code)]
     auto_sync: bool,
     sync_interval_seconds: u64,
+    #[allow(dead_code)]
     max_change_log_size: usize,
 }
 
