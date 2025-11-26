@@ -10,30 +10,40 @@ use super::handlers::handle_request;
 pub async fn run_server() -> Result<String, String> {
     use std::io::BufReader;
 
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut stdout_lock = stdout.lock();
-    let reader = BufReader::new(stdin.lock());
-
     eprintln!("SENA MCP Server v{} starting...", crate::VERSION);
 
-    for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
+    let stdin = io::stdin();
+    let stdout = io::stdout();
+
+    let stdin_handle = stdin.lock();
+    let mut stdout_handle = stdout.lock();
+    let mut reader = BufReader::new(stdin_handle);
+
+    let mut line = String::new();
+
+    loop {
+        line.clear();
+
+        match reader.read_line(&mut line) {
+            Ok(0) => {
+                eprintln!("EOF received, shutting down");
+                break;
+            }
+            Ok(_) => {}
             Err(e) => {
                 eprintln!("Error reading stdin: {}", e);
                 break;
             }
-        };
+        }
 
-        if line.trim().is_empty() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
             continue;
         }
 
-        eprintln!("Received: {}", &line[..line.len().min(100)]);
+        eprintln!("Received: {}", &trimmed[..trimmed.len().min(100)]);
 
-        // Parse JSON-RPC request
-        let request: JsonRpcRequest = match serde_json::from_str(&line) {
+        let request: JsonRpcRequest = match serde_json::from_str(trimmed) {
             Ok(req) => req,
             Err(e) => {
                 eprintln!("Parse error: {}", e);
@@ -43,30 +53,27 @@ pub async fn run_server() -> Result<String, String> {
                     &format!("Parse error: {}", e),
                 );
                 let response_str = serde_json::to_string(&error_response).unwrap_or_default();
-                let _ = writeln!(stdout_lock, "{}", response_str);
-                let _ = stdout_lock.flush();
+                let _ = writeln!(stdout_handle, "{}", response_str);
+                let _ = stdout_handle.flush();
                 continue;
             }
         };
 
-        // Handle request
         let response = handle_request(&request);
 
-        // Skip response for notifications (requests without id)
         if request.id.is_none() {
             eprintln!("Notification received: {}", request.method);
             continue;
         }
 
-        // Send response
         let response_str = serde_json::to_string(&response).unwrap_or_default();
         eprintln!("Sending: {}", &response_str[..response_str.len().min(100)]);
 
-        if let Err(e) = writeln!(stdout_lock, "{}", response_str) {
+        if let Err(e) = writeln!(stdout_handle, "{}", response_str) {
             eprintln!("Error writing response: {}", e);
             break;
         }
-        if let Err(e) = stdout_lock.flush() {
+        if let Err(e) = stdout_handle.flush() {
             eprintln!("Error flushing stdout: {}", e);
             break;
         }

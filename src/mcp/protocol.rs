@@ -99,8 +99,11 @@ pub struct ClientInfo {
 /// Server capabilities
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServerCapabilities {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<ToolsCapability>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resources: Option<ResourcesCapability>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prompts: Option<PromptsCapability>,
 }
 

@@ -423,6 +423,7 @@ setup_claude_code_config() {
       "Bash($SENA_PATH detect *)",
       "Bash($SENA_PATH format *)",
       "Bash($SENA_PATH setup *)",
+      "Bash($SENA_PATH session *)",
       "Bash(sena *)"
     ],
     "deny": []
@@ -431,6 +432,16 @@ setup_claude_code_config() {
     "UserPromptSubmit": [
       {
         "command": "$SENA_PATH hook user-prompt-submit"
+      }
+    ],
+    "AssistantResponse": [
+      {
+        "command": "$SENA_PATH hook assistant-response"
+      }
+    ],
+    "ToolUse": [
+      {
+        "command": "$SENA_PATH hook tool-execution"
       }
     ]
   }
