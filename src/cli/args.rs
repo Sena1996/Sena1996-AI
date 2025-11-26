@@ -83,6 +83,9 @@ pub enum Commands {
 
         #[arg(short, long, help = "Session ID")]
         id: Option<String>,
+
+        #[arg(short, long, help = "Session name")]
+        name: Option<String>,
     },
 
     #[command(about = "Validate content")]

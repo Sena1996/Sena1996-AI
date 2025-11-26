@@ -41,8 +41,8 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
             execute_daemon(*action).await
         }
 
-        Some(Commands::Session { action, id }) => {
-            execute_session(*action, id.clone(), cli.format)
+        Some(Commands::Session { action, id, name }) => {
+            execute_session(*action, id.clone(), name.clone(), cli.format)
         }
 
         Some(Commands::Validate { content, strict }) => {
@@ -298,7 +298,7 @@ async fn execute_daemon(action: DaemonAction) -> Result<String, String> {
     }
 }
 
-fn execute_session(action: SessionAction, id: Option<String>, format: OutputFormat) -> Result<String, String> {
+fn execute_session(action: SessionAction, id: Option<String>, name: Option<String>, format: OutputFormat) -> Result<String, String> {
     use crate::hub::{SessionRegistry, SessionRole, HubConfig};
 
     let config = HubConfig::default();
@@ -307,12 +307,19 @@ fn execute_session(action: SessionAction, id: Option<String>, format: OutputForm
 
     let result = match action {
         SessionAction::Start => {
-            match registry.register(SessionRole::General, None) {
-                Ok(session) => serde_json::json!({
-                    "action": "start",
-                    "session_id": session.id,
-                    "started_at": session.joined_at,
-                }),
+            match registry.register(SessionRole::General, name.clone()) {
+                Ok(mut session) => {
+                    if let Some(n) = name {
+                        session.name = n.clone();
+                        let _ = registry.save();
+                    }
+                    serde_json::json!({
+                        "action": "start",
+                        "session_id": session.id,
+                        "session_name": session.name,
+                        "started_at": session.joined_at,
+                    })
+                },
                 Err(e) => serde_json::json!({"error": e}),
             }
         }
