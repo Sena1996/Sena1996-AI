@@ -135,29 +135,39 @@ sena daemon start      # Start background daemon
 
 ## Quick Installation
 
-### From Source
+### Setup Wizard (Recommended)
 
 ```bash
 # Clone repository
 git clone https://github.com/Sena1996/Sena1996-AI.git
 cd Sena1996-AI
 
+# Run interactive setup wizard
+./setup.sh
+```
+
+The setup wizard offers three installation modes:
+
+| Mode | Best For | What It Does |
+|------|----------|--------------|
+| **Fresh** | New users | Cleans everything, installs optimal config |
+| **Merge** | Existing setups | Keeps your config, adds SENA on top |
+| **Minimal** | Advanced users | Binary only, manual config |
+
+See [SETUP.md](SETUP.md) for detailed instructions.
+
+### Manual Installation
+
+```bash
 # Build release binary
 cargo build --release
 
-# Binary location
-./target/release/sena --version
-# sena 9.0.3
-```
-
-### Install Binary
-
-```bash
 # Copy to local bin
 cp target/release/sena ~/.local/bin/
 
-# Or system-wide
-sudo cp target/release/sena /usr/local/bin/
+# Verify
+sena --version
+# sena 9.0.4
 ```
 
 ---
