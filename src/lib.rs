@@ -1,6 +1,6 @@
-//! SENA Controller v9.0 - Production Ready
+//! SENA Controller v10.0 - Full Agent Suite
 //!
-//! This version features robust error handling and configuration support:
+//! This version features domain-specific agents for complete development support:
 //! - 3,000 years of ancient engineering wisdom (7 layers)
 //! - Multi-session collaboration hub
 //! - Multi-level knowledge system
@@ -53,7 +53,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v9::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
+//! use sena_v10::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -91,6 +91,7 @@ pub mod hub;
 pub mod knowledge;
 pub mod intelligence;
 pub mod evolution;
+pub mod agents;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -172,8 +173,14 @@ pub use evolution::{
     FeedbackLoop, FeedbackEntry, FeedbackType,
 };
 
+// Re-export domain agents
+pub use agents::{
+    DomainAgentType, DomainAgentPool, DomainAnalysis, Finding, Severity,
+    BackendAgent, IoTAgent, IOSAgent, AndroidAgent, WebAgent,
+};
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const CODENAME: &str = "Production Ready";
+pub const CODENAME: &str = "Full Agent Suite";
 
 #[derive(Error, Debug)]
 pub enum SenaError {

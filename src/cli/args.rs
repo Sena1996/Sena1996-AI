@@ -189,6 +189,75 @@ pub enum Commands {
         #[arg(short, long, help = "Context")]
         context: Option<String>,
     },
+
+    #[command(about = "Backend development agent")]
+    Backend {
+        #[arg(value_enum, help = "Analysis type")]
+        analysis: BackendAnalysisType,
+
+        #[arg(help = "Code or file content to analyze")]
+        input: String,
+    },
+
+    #[command(about = "IoT development agent")]
+    Iot {
+        #[arg(value_enum, help = "Analysis type")]
+        analysis: IoTAnalysisType,
+
+        #[arg(help = "Code or file content to analyze")]
+        input: String,
+    },
+
+    #[command(about = "iOS development agent")]
+    Ios {
+        #[arg(value_enum, help = "Analysis type")]
+        analysis: IOSAnalysisType,
+
+        #[arg(help = "Code or file content to analyze")]
+        input: String,
+    },
+
+    #[command(about = "Android development agent")]
+    Android {
+        #[arg(value_enum, help = "Analysis type")]
+        analysis: AndroidAnalysisType,
+
+        #[arg(help = "Code or file content to analyze")]
+        input: String,
+    },
+
+    #[command(about = "Web development agent")]
+    Web {
+        #[arg(value_enum, help = "Analysis type")]
+        analysis: WebAnalysisType,
+
+        #[arg(help = "Code or file content to analyze")]
+        input: String,
+    },
+
+    #[command(about = "Interactive setup wizard")]
+    Setup {
+        #[arg(value_enum, help = "Installation type")]
+        install_type: Option<InstallationType>,
+
+        #[arg(short, long, help = "Project name")]
+        name: Option<String>,
+
+        #[arg(short, long, help = "Skip confirmation prompts")]
+        yes: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum InstallationType {
+    Mcp,
+    Hook,
+    Full,
+    Backend,
+    Iot,
+    Ios,
+    Android,
+    Web,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -394,6 +463,60 @@ pub enum FeedbackTypeArg {
     Bug,
     Feature,
     Correction,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum BackendAnalysisType {
+    Map,
+    Flow,
+    Auth,
+    Secrets,
+    Security,
+    Full,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum IoTAnalysisType {
+    Protocol,
+    Debug,
+    Power,
+    Connect,
+    Sensor,
+    Firmware,
+    Full,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum IOSAnalysisType {
+    Ui,
+    Hig,
+    Perf,
+    A11y,
+    Device,
+    Memory,
+    Full,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum AndroidAnalysisType {
+    Ui,
+    Material,
+    Perf,
+    Lifecycle,
+    Compat,
+    A11y,
+    Full,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
+pub enum WebAnalysisType {
+    Vitals,
+    A11y,
+    Seo,
+    Bundle,
+    Perf,
+    Audit,
+    Full,
 }
 
 impl Cli {

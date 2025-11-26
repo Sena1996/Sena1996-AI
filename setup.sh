@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="9.0.4"
+SENA_VERSION="10.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 RED='\033[0;31m'

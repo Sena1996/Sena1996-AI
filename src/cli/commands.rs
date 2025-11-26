@@ -3,6 +3,7 @@
 //! Handles execution of CLI commands
 
 use crate::cli::args::*;
+use std::path::PathBuf;
 use crate::integration::AutoIntegration;
 use crate::metrics::SenaHealth;
 use crate::output::{TableBuilder, ProgressBar, FormatBox};
@@ -103,6 +104,30 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
         Some(Commands::Feedback { feedback_type, message, context }) => {
             execute_feedback(*feedback_type, message, context.clone(), cli.format).await
+        }
+
+        Some(Commands::Backend { analysis, input }) => {
+            execute_backend(*analysis, input, cli.format).await
+        }
+
+        Some(Commands::Iot { analysis, input }) => {
+            execute_iot(*analysis, input, cli.format).await
+        }
+
+        Some(Commands::Ios { analysis, input }) => {
+            execute_ios(*analysis, input, cli.format).await
+        }
+
+        Some(Commands::Android { analysis, input }) => {
+            execute_android(*analysis, input, cli.format).await
+        }
+
+        Some(Commands::Web { analysis, input }) => {
+            execute_web(*analysis, input, cli.format).await
+        }
+
+        Some(Commands::Setup { install_type, name, yes }) => {
+            execute_setup(*install_type, name.clone(), *yes, cli.format).await
         }
 
         None => {
@@ -1290,4 +1315,473 @@ async fn execute_feedback(
             Ok(format!("{} Feedback recorded: {:?} - {}", emoji, feedback_type, message))
         }
     }
+}
+
+// ================================
+// Domain Agent Commands
+// ================================
+
+async fn execute_backend(
+    analysis: BackendAnalysisType,
+    input: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::agents::BackendAgent;
+
+    let agent = BackendAgent::new();
+
+    let command = match analysis {
+        BackendAnalysisType::Map => "map",
+        BackendAnalysisType::Flow => "flow",
+        BackendAnalysisType::Auth => "auth",
+        BackendAnalysisType::Secrets => "secrets",
+        BackendAnalysisType::Security => "security",
+        BackendAnalysisType::Full => "full",
+    };
+
+    let result = agent.analyze(command, input);
+    format_domain_analysis("BACKEND", &analysis_type_name(&analysis), result, format)
+}
+
+async fn execute_iot(
+    analysis: IoTAnalysisType,
+    input: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::agents::IoTAgent;
+
+    let agent = IoTAgent::new();
+
+    let command = match analysis {
+        IoTAnalysisType::Protocol => "protocol",
+        IoTAnalysisType::Debug => "debug",
+        IoTAnalysisType::Power => "power",
+        IoTAnalysisType::Connect => "connect",
+        IoTAnalysisType::Sensor => "sensor",
+        IoTAnalysisType::Firmware => "firmware",
+        IoTAnalysisType::Full => "full",
+    };
+
+    let result = agent.analyze(command, input);
+    format_domain_analysis("IOT", &iot_analysis_type_name(&analysis), result, format)
+}
+
+async fn execute_ios(
+    analysis: IOSAnalysisType,
+    input: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::agents::IOSAgent;
+
+    let agent = IOSAgent::new();
+
+    let command = match analysis {
+        IOSAnalysisType::Ui | IOSAnalysisType::Hig => "ui",
+        IOSAnalysisType::Perf => "perf",
+        IOSAnalysisType::A11y => "a11y",
+        IOSAnalysisType::Device => "device",
+        IOSAnalysisType::Memory => "memory",
+        IOSAnalysisType::Full => "full",
+    };
+
+    let result = agent.analyze(command, input);
+    format_domain_analysis("IOS", &ios_analysis_type_name(&analysis), result, format)
+}
+
+async fn execute_android(
+    analysis: AndroidAnalysisType,
+    input: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::agents::AndroidAgent;
+
+    let agent = AndroidAgent::new();
+
+    let command = match analysis {
+        AndroidAnalysisType::Ui | AndroidAnalysisType::Material => "ui",
+        AndroidAnalysisType::Perf => "perf",
+        AndroidAnalysisType::Lifecycle => "lifecycle",
+        AndroidAnalysisType::Compat => "compat",
+        AndroidAnalysisType::A11y => "a11y",
+        AndroidAnalysisType::Full => "full",
+    };
+
+    let result = agent.analyze(command, input);
+    format_domain_analysis("ANDROID", &android_analysis_type_name(&analysis), result, format)
+}
+
+async fn execute_web(
+    analysis: WebAnalysisType,
+    input: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::agents::WebAgent;
+
+    let agent = WebAgent::new();
+
+    let command = match analysis {
+        WebAnalysisType::Vitals => "vitals",
+        WebAnalysisType::A11y => "a11y",
+        WebAnalysisType::Seo => "seo",
+        WebAnalysisType::Bundle => "bundle",
+        WebAnalysisType::Perf => "perf",
+        WebAnalysisType::Audit => "audit",
+        WebAnalysisType::Full => "full",
+    };
+
+    let result = agent.analyze(command, input);
+    format_domain_analysis("WEB", &web_analysis_type_name(&analysis), result, format)
+}
+
+fn format_domain_analysis(
+    agent_name: &str,
+    analysis_name: &str,
+    result: crate::agents::DomainAnalysis,
+    format: OutputFormat,
+) -> Result<String, String> {
+    match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(&serde_json::json!({
+                "agent": agent_name,
+                "analysis_type": analysis_name,
+                "category": result.category,
+                "score": result.score,
+                "findings": result.findings.iter().map(|f| {
+                    serde_json::json!({
+                        "severity": format!("{:?}", f.severity),
+                        "title": f.title,
+                        "description": f.description,
+                        "location": f.location,
+                        "suggestion": f.suggestion,
+                    })
+                }).collect::<Vec<_>>(),
+                "recommendations": result.recommendations,
+            })).map_err(|e| e.to_string())
+        }
+        OutputFormat::Pretty => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new(&format!("SENA 🦁 {} AGENT - {}", agent_name, analysis_name.to_uppercase())).render());
+            output.push('\n');
+            output.push_str(&format!("Score: {}/100\n", result.score));
+            output.push_str(&format!("Category: {}\n\n", result.category));
+
+            if result.findings.is_empty() {
+                output.push_str("✅ No issues found.\n");
+            } else {
+                output.push_str("═══════════════════════════════════════════\n");
+                output.push_str("  FINDINGS\n");
+                output.push_str("═══════════════════════════════════════════\n\n");
+
+                for finding in &result.findings {
+                    let emoji = match finding.severity {
+                        crate::agents::Severity::Critical => "🔴",
+                        crate::agents::Severity::Warning => "⚠️ ",
+                        crate::agents::Severity::Info => "ℹ️ ",
+                        crate::agents::Severity::Success => "✅",
+                    };
+                    output.push_str(&format!("{} {}\n", emoji, finding.title));
+                    output.push_str(&format!("   {}\n", finding.description));
+                    if let Some(loc) = &finding.location {
+                        output.push_str(&format!("   📍 {}\n", loc));
+                    }
+                    if let Some(sug) = &finding.suggestion {
+                        output.push_str(&format!("   💡 {}\n", sug));
+                    }
+                    output.push('\n');
+                }
+            }
+
+            if !result.recommendations.is_empty() {
+                output.push_str("═══════════════════════════════════════════\n");
+                output.push_str("  RECOMMENDATIONS\n");
+                output.push_str("═══════════════════════════════════════════\n\n");
+                for (i, rec) in result.recommendations.iter().enumerate() {
+                    output.push_str(&format!("{}. {}\n", i + 1, rec));
+                }
+            }
+            Ok(output)
+        }
+        OutputFormat::Text => {
+            let mut output = format!("{} {} Analysis (Score: {}/100):\n", agent_name, analysis_name, result.score);
+            output.push_str(&format!("Category: {}\n\n", result.category));
+
+            if result.findings.is_empty() {
+                output.push_str("No issues found.\n");
+            } else {
+                for finding in &result.findings {
+                    let prefix = match finding.severity {
+                        crate::agents::Severity::Critical => "CRITICAL",
+                        crate::agents::Severity::Warning => "WARNING",
+                        crate::agents::Severity::Info => "INFO",
+                        crate::agents::Severity::Success => "OK",
+                    };
+                    output.push_str(&format!("[{}] {}: {}\n", prefix, finding.title, finding.description));
+                }
+            }
+            Ok(output)
+        }
+    }
+}
+
+fn analysis_type_name(analysis: &BackendAnalysisType) -> String {
+    match analysis {
+        BackendAnalysisType::Map => "API Mapping".to_string(),
+        BackendAnalysisType::Flow => "Data Flow".to_string(),
+        BackendAnalysisType::Auth => "Auth Audit".to_string(),
+        BackendAnalysisType::Secrets => "Secrets Scan".to_string(),
+        BackendAnalysisType::Security => "Security Scan".to_string(),
+        BackendAnalysisType::Full => "Full Analysis".to_string(),
+    }
+}
+
+fn iot_analysis_type_name(analysis: &IoTAnalysisType) -> String {
+    match analysis {
+        IoTAnalysisType::Protocol => "Protocol Analysis".to_string(),
+        IoTAnalysisType::Debug => "Device Debug".to_string(),
+        IoTAnalysisType::Power => "Power Analysis".to_string(),
+        IoTAnalysisType::Connect => "Connectivity".to_string(),
+        IoTAnalysisType::Sensor => "Sensor Analysis".to_string(),
+        IoTAnalysisType::Firmware => "Firmware Analysis".to_string(),
+        IoTAnalysisType::Full => "Full Analysis".to_string(),
+    }
+}
+
+fn ios_analysis_type_name(analysis: &IOSAnalysisType) -> String {
+    match analysis {
+        IOSAnalysisType::Ui | IOSAnalysisType::Hig => "UI/HIG Compliance".to_string(),
+        IOSAnalysisType::Perf => "Performance".to_string(),
+        IOSAnalysisType::A11y => "Accessibility".to_string(),
+        IOSAnalysisType::Device => "Device Features".to_string(),
+        IOSAnalysisType::Memory => "Memory Analysis".to_string(),
+        IOSAnalysisType::Full => "Full Analysis".to_string(),
+    }
+}
+
+fn android_analysis_type_name(analysis: &AndroidAnalysisType) -> String {
+    match analysis {
+        AndroidAnalysisType::Ui | AndroidAnalysisType::Material => "UI/Material Design".to_string(),
+        AndroidAnalysisType::Perf => "Performance".to_string(),
+        AndroidAnalysisType::Lifecycle => "Lifecycle".to_string(),
+        AndroidAnalysisType::Compat => "Compatibility".to_string(),
+        AndroidAnalysisType::A11y => "Accessibility".to_string(),
+        AndroidAnalysisType::Full => "Full Analysis".to_string(),
+    }
+}
+
+fn web_analysis_type_name(analysis: &WebAnalysisType) -> String {
+    match analysis {
+        WebAnalysisType::Vitals => "Core Web Vitals".to_string(),
+        WebAnalysisType::A11y => "Accessibility".to_string(),
+        WebAnalysisType::Seo => "SEO".to_string(),
+        WebAnalysisType::Bundle => "Bundle Analysis".to_string(),
+        WebAnalysisType::Perf => "Performance".to_string(),
+        WebAnalysisType::Audit => "Security Audit".to_string(),
+        WebAnalysisType::Full => "Full Analysis".to_string(),
+    }
+}
+
+async fn execute_setup(
+    install_type: Option<InstallationType>,
+    name: Option<String>,
+    auto_yes: bool,
+    format: OutputFormat,
+) -> Result<String, String> {
+    let project_name = name.unwrap_or_else(|| "sena-project".to_string());
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let sena_binary = format!("{}/.local/bin/sena", home);
+
+    match install_type {
+        Some(InstallationType::Mcp) => {
+            setup_mcp_server(&home, &sena_binary, format)
+        }
+        Some(InstallationType::Hook) => {
+            setup_claude_hooks(&home, &sena_binary, format)
+        }
+        Some(InstallationType::Full) => {
+            setup_full_installation(&home, &sena_binary, &project_name, format)
+        }
+        Some(InstallationType::Backend) => {
+            setup_agent_project(&home, "backend", &project_name, format)
+        }
+        Some(InstallationType::Iot) => {
+            setup_agent_project(&home, "iot", &project_name, format)
+        }
+        Some(InstallationType::Ios) => {
+            setup_agent_project(&home, "ios", &project_name, format)
+        }
+        Some(InstallationType::Android) => {
+            setup_agent_project(&home, "android", &project_name, format)
+        }
+        Some(InstallationType::Web) => {
+            setup_agent_project(&home, "web", &project_name, format)
+        }
+        None => {
+            if auto_yes {
+                setup_full_installation(&home, &sena_binary, &project_name, format)
+            } else {
+                show_setup_menu(format)
+            }
+        }
+    }
+}
+
+fn show_setup_menu(format: OutputFormat) -> Result<String, String> {
+    let mut output = String::new();
+    output.push_str(&FormatBox::new("SENA 🦁 SETUP WIZARD v10.0.0").render());
+    output.push('\n');
+    output.push_str("Run setup.sh for interactive installation:\n\n");
+    output.push_str("  bash setup.sh\n\n");
+    output.push_str("Or use CLI options:\n\n");
+    output.push_str("  sena setup mcp         - Setup MCP server for Claude Desktop\n");
+    output.push_str("  sena setup hook        - Setup hooks for Claude Code\n");
+    output.push_str("  sena setup full        - Full installation (MCP + Hooks + Rules)\n");
+    output.push_str("  sena setup backend     - Setup Backend development project\n");
+    output.push_str("  sena setup iot         - Setup IoT development project\n");
+    output.push_str("  sena setup ios         - Setup iOS development project\n");
+    output.push_str("  sena setup android     - Setup Android development project\n");
+    output.push_str("  sena setup web         - Setup Web development project\n");
+    output.push_str("\nOptions:\n");
+    output.push_str("  -n, --name <NAME>      - Project name\n");
+    output.push_str("  -y, --yes              - Skip confirmation prompts\n");
+    Ok(output)
+}
+
+fn setup_mcp_server(home: &str, sena_path: &str, _format: OutputFormat) -> Result<String, String> {
+    let config_dir = PathBuf::from(home).join("Library/Application Support/Claude");
+    let config_file = config_dir.join("claude_desktop_config.json");
+
+    std::fs::create_dir_all(&config_dir).map_err(|e| e.to_string())?;
+
+    let config = serde_json::json!({
+        "mcpServers": {
+            "sena": {
+                "command": sena_path,
+                "args": ["mcp"]
+            }
+        }
+    });
+
+    let config_str = serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?;
+    std::fs::write(&config_file, config_str).map_err(|e| e.to_string())?;
+
+    let mut output = String::new();
+    output.push_str(&FormatBox::new("SENA 🦁 MCP SERVER SETUP").render());
+    output.push('\n');
+    output.push_str("✅ MCP server configured!\n\n");
+    output.push_str(&format!("Config: {}\n", config_file.display()));
+    output.push_str("\nNext steps:\n");
+    output.push_str("  1. Restart Claude Desktop\n");
+    output.push_str("  2. SENA will appear in MCP servers list\n");
+    Ok(output)
+}
+
+fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Result<String, String> {
+    let claude_dir = PathBuf::from(home).join(".claude");
+    let settings_file = claude_dir.join("settings.json");
+
+    std::fs::create_dir_all(&claude_dir).map_err(|e| e.to_string())?;
+
+    let settings = serde_json::json!({
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "command": format!("{} hook user-prompt-submit", sena_path)
+                }
+            ]
+        }
+    });
+
+    let settings_str = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    std::fs::write(&settings_file, settings_str).map_err(|e| e.to_string())?;
+
+    let mut output = String::new();
+    output.push_str(&FormatBox::new("SENA 🦁 HOOKS SETUP").render());
+    output.push('\n');
+    output.push_str("✅ Claude Code hooks configured!\n\n");
+    output.push_str(&format!("Config: {}\n", settings_file.display()));
+    output.push_str("\nNext steps:\n");
+    output.push_str("  1. Start a new Claude Code session\n");
+    output.push_str("  2. SENA will process your prompts\n");
+    Ok(output)
+}
+
+fn setup_full_installation(home: &str, sena_path: &str, _name: &str, _format: OutputFormat) -> Result<String, String> {
+    setup_mcp_server(home, sena_path, OutputFormat::Text)?;
+    setup_claude_hooks(home, sena_path, OutputFormat::Text)?;
+
+    let claude_md_src = std::env::current_dir()
+        .map_err(|e| e.to_string())?
+        .join("CLAUDE.md");
+    let claude_md_dst = PathBuf::from(home).join(".claude/CLAUDE.md");
+
+    if claude_md_src.exists() {
+        std::fs::copy(&claude_md_src, &claude_md_dst).map_err(|e| e.to_string())?;
+    }
+
+    let mut output = String::new();
+    output.push_str(&FormatBox::new("SENA 🦁 FULL INSTALLATION COMPLETE").render());
+    output.push('\n');
+    output.push_str("✅ All components installed!\n\n");
+    output.push_str("Installed:\n");
+    output.push_str("  • MCP Server for Claude Desktop\n");
+    output.push_str("  • Hooks for Claude Code\n");
+    output.push_str("  • SENA Elite Coding Standards\n");
+    output.push_str("\nNext steps:\n");
+    output.push_str("  1. Restart Claude Desktop\n");
+    output.push_str("  2. Start a new Claude Code session\n");
+    output.push_str("  3. Run: sena health\n");
+    Ok(output)
+}
+
+fn setup_agent_project(home: &str, agent: &str, name: &str, _format: OutputFormat) -> Result<String, String> {
+    let project_dir = PathBuf::from(home).join("Projects").join(name);
+    std::fs::create_dir_all(&project_dir).map_err(|e| e.to_string())?;
+
+    let sena_config = project_dir.join(".sena.toml");
+    let config_content = format!(
+        r#"# SENA Project Configuration
+[project]
+name = "{}"
+agent = "{}"
+version = "10.0.0"
+
+[agent.{}]
+enabled = true
+auto_analyze = true
+"#,
+        name, agent, agent
+    );
+    std::fs::write(&sena_config, config_content).map_err(|e| e.to_string())?;
+
+    let claude_md = project_dir.join("CLAUDE.md");
+    let claude_content = format!(
+        r#"# {} Project
+
+This project uses SENA {} Agent for specialized analysis.
+
+## Quick Commands
+
+```bash
+sena {} full "analyze this code"
+sena health
+```
+"#,
+        name,
+        agent.to_uppercase(),
+        agent
+    );
+    std::fs::write(&claude_md, claude_content).map_err(|e| e.to_string())?;
+
+    let mut output = String::new();
+    output.push_str(&FormatBox::new(&format!("SENA 🦁 {} PROJECT SETUP", agent.to_uppercase())).render());
+    output.push('\n');
+    output.push_str(&format!("✅ {} project created!\n\n", agent.to_uppercase()));
+    output.push_str(&format!("Location: {}\n\n", project_dir.display()));
+    output.push_str("Created:\n");
+    output.push_str("  • .sena.toml (project config)\n");
+    output.push_str("  • CLAUDE.md (project rules)\n");
+    output.push_str("\nNext steps:\n");
+    output.push_str(&format!("  cd {}\n", project_dir.display()));
+    output.push_str(&format!("  sena {} full \"<your code>\"\n", agent));
+    Ok(output)
 }

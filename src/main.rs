@@ -1,16 +1,17 @@
-//! SENA Controller v9.0 - Main Binary
+//! SENA Controller v10.0 - Main Binary
 //!
-//! Production Ready - Robust Error Handling & Configuration
+//! Full Agent Suite - Backend, IoT, iOS, Android, Web
 //!
-//! This binary provides a CLI interface to the SENA v9.0 system.
+//! This binary provides a CLI interface to the SENA v10.0 system.
 //! Supports multiple modes:
 //! - MCP server mode for Claude Code integration
 //! - Hook mode for Claude Code hooks
 //! - Interactive mode for direct usage
 //! - Command mode for single operations
+//! - Domain agent mode for specialized analysis
 
 use clap::Parser;
-use sena_v9::{
+use sena_v10::{
     Cli, execute_command,
     create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
 };
