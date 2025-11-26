@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="11.0.0"
+SENA_VERSION="11.0.2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 USER_NAME=""
@@ -425,32 +425,39 @@ install_binary() {
 }
 
 clean_claude_code() {
-    print_info "Cleaning Claude Code config..."
+    print_info "Resetting Claude Code config (preserving projects data)..."
 
-    if [ -d "$HOME/.claude" ]; then
-        rm -rf "$HOME/.claude"
-        print_success "Removed ~/.claude"
+    CLAUDE_DIR="$HOME/.claude"
+
+    mkdir -p "$CLAUDE_DIR"
+
+    if [ -f "$CLAUDE_DIR/settings.json" ]; then
+        cp "$CLAUDE_DIR/settings.json" "$CLAUDE_DIR/settings.json.backup.$(date +%Y%m%d%H%M%S)"
+        print_info "Backed up existing settings.json"
     fi
 
-    mkdir -p "$HOME/.claude"
+    if [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
+        cp "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md.backup.$(date +%Y%m%d%H%M%S)"
+        print_info "Backed up existing CLAUDE.md"
+    fi
+
+    print_success "Claude Code config ready (data preserved)"
 }
 
 clean_claude_desktop() {
-    print_info "Cleaning Claude Desktop config..."
+    print_info "Resetting Claude Desktop MCP config (preserving credentials)..."
 
     CLAUDE_APP_SUPPORT="$HOME/Library/Application Support/Claude"
-
-    if [ -d "$CLAUDE_APP_SUPPORT" ]; then
-        rm -rf "$CLAUDE_APP_SUPPORT"
-        print_success "Removed Claude Desktop data"
-    fi
-
-    rm -rf "$HOME/Library/Caches/claude-cli-nodejs" 2>/dev/null || true
-    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop" 2>/dev/null || true
-    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop.ShipIt" 2>/dev/null || true
-    rm -f "$HOME/Library/Preferences/com.anthropic.claudefordesktop.plist" 2>/dev/null || true
+    CLAUDE_DESKTOP_CONFIG="$CLAUDE_APP_SUPPORT/claude_desktop_config.json"
 
     mkdir -p "$CLAUDE_APP_SUPPORT"
+
+    if [ -f "$CLAUDE_DESKTOP_CONFIG" ]; then
+        cp "$CLAUDE_DESKTOP_CONFIG" "$CLAUDE_DESKTOP_CONFIG.backup.$(date +%Y%m%d%H%M%S)"
+        print_info "Backed up existing config"
+    fi
+
+    print_success "Claude Desktop config ready (credentials preserved)"
 }
 
 setup_claude_code_config() {

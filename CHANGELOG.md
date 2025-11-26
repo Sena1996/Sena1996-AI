@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sena task new "task" --to Android` now works (no need for session ID)
 - Hook shows unread messages at start of each prompt
 
+### Fixed
+- Setup script no longer deletes Claude Desktop credentials
+- Setup script now preserves existing configs with backups
+- Fresh install now only resets SENA-related configs, not entire Claude data
+
 ## [11.0.1] - 2025-11-26
 
 ### Added
