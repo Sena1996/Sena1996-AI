@@ -8,29 +8,35 @@ use super::handlers::handle_request;
 
 /// Run the MCP server (stdio mode)
 pub async fn run_server() -> Result<String, String> {
+    use std::io::BufReader;
+
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut stdout_lock = stdout.lock();
+    let reader = BufReader::new(stdin.lock());
 
     eprintln!("SENA MCP Server v{} starting...", crate::VERSION);
 
-    for line in stdin.lock().lines() {
+    for line in reader.lines() {
         let line = match line {
             Ok(l) => l,
             Err(e) => {
                 eprintln!("Error reading stdin: {}", e);
-                continue;
+                break;
             }
         };
 
-        if line.is_empty() {
+        if line.trim().is_empty() {
             continue;
         }
+
+        eprintln!("Received: {}", &line[..line.len().min(100)]);
 
         // Parse JSON-RPC request
         let request: JsonRpcRequest = match serde_json::from_str(&line) {
             Ok(req) => req,
             Err(e) => {
+                eprintln!("Parse error: {}", e);
                 let error_response = JsonRpcResponse::error(
                     None,
                     error_codes::PARSE_ERROR,
@@ -47,20 +53,26 @@ pub async fn run_server() -> Result<String, String> {
         let response = handle_request(&request);
 
         // Skip response for notifications (requests without id)
-        if request.id.is_none() && response.result == Some(serde_json::Value::Null) {
+        if request.id.is_none() {
+            eprintln!("Notification received: {}", request.method);
             continue;
         }
 
         // Send response
         let response_str = serde_json::to_string(&response).unwrap_or_default();
+        eprintln!("Sending: {}", &response_str[..response_str.len().min(100)]);
+
         if let Err(e) = writeln!(stdout_lock, "{}", response_str) {
             eprintln!("Error writing response: {}", e);
+            break;
         }
         if let Err(e) = stdout_lock.flush() {
             eprintln!("Error flushing stdout: {}", e);
+            break;
         }
     }
 
+    eprintln!("MCP Server loop ended");
     Ok("MCP Server stopped".to_string())
 }
 

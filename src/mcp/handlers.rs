@@ -27,8 +27,14 @@ pub fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
 }
 
 fn handle_initialize(request: &JsonRpcRequest) -> JsonRpcResponse {
+    let requested_version = request.params
+        .as_ref()
+        .and_then(|p| p.get("protocolVersion"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("2024-11-05");
+
     let result = InitializeResult {
-        protocol_version: "2024-11-05".to_string(),
+        protocol_version: requested_version.to_string(),
         capabilities: ServerCapabilities {
             tools: Some(ToolsCapability { list_changed: false }),
             resources: Some(ResourcesCapability {
