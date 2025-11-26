@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="10.0.0"
+SENA_VERSION="10.0.5"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 USER_NAME=""
