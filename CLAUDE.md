@@ -13,7 +13,7 @@ This rule cannot be skipped. It ensures all other rules are remembered.
 
 ---
 
-## CRITICAL RULES (🔴 MUST FIX) - 15 Rules
+## CRITICAL RULES (🔴 MUST FIX) - 16 Rules
 
 ### Error Handling (4)
 - **YOU MUST** use `Result<T, SenaError>` for all fallible operations
@@ -37,6 +37,9 @@ This rule cannot be skipped. It ensures all other rules are remembered.
 - **YOU MUST** have zero warnings: `cargo build --release`
 - **YOU MUST** pass all tests: `cargo test`
 - **YOU MUST** pass clippy: `cargo clippy -- -D warnings`
+
+### Git (1)
+- **NEVER** add Claude credits/co-author in git commits
 
 ---
 
@@ -120,10 +123,10 @@ This rule cannot be skipped. It ensures all other rules are remembered.
 
 | Level | Symbol | Count | Percentage |
 |-------|--------|-------|------------|
-| CRITICAL | 🔴 | 15 | 30% |
+| CRITICAL | 🔴 | 16 | 31% |
 | IMPORTANT | ⚠️ | 20 | 40% |
 | BEST PRACTICE | ℹ️ | 15 | 30% |
-| **TOTAL** | | **50** | **100%** |
+| **TOTAL** | | **51** | **100%** |
 
 ---
 
