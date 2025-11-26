@@ -62,15 +62,51 @@ async fn handle_pre_prompt(input: &str) -> Result<HookResult, String> {
     // Check for SENA trigger keywords
     let triggers = detect_triggers(input);
 
-    let result = HookResult::success("Pre-prompt analysis complete")
+    // Check inbox for messages from other sessions
+    let inbox_messages = check_inbox_messages();
+
+    let mut message = String::from("Pre-prompt analysis complete");
+    if !inbox_messages.is_empty() {
+        message = format!(
+            "You have {} new message(s) from other sessions:\n{}",
+            inbox_messages.len(),
+            inbox_messages.join("\n")
+        );
+    }
+
+    let result = HookResult::success(&message)
         .with_data(serde_json::json!({
             "detected_format": detected.as_ref().map(|f| f.name()),
             "triggers": triggers,
             "input_length": input.len(),
             "word_count": input.split_whitespace().count(),
+            "inbox_count": inbox_messages.len(),
+            "inbox_messages": inbox_messages,
         }));
 
     Ok(result)
+}
+
+fn check_inbox_messages() -> Vec<String> {
+    use crate::hub::{Hub, Message};
+
+    let mut hub = match Hub::new() {
+        Ok(h) => h,
+        Err(_) => return Vec::new(),
+    };
+
+    if hub.load().is_err() {
+        return Vec::new();
+    }
+
+    let messages: Vec<Message> = hub.inbox("local")
+        .into_iter()
+        .filter(|m| !m.read)
+        .collect();
+
+    messages.iter().map(|m| {
+        format!("  [{}] {}: {}", m.time_display(), m.from, m.content)
+    }).collect()
 }
 
 /// Post-response hook - validate Claude's response

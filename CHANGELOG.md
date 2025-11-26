@@ -5,6 +5,18 @@ All notable changes to SENA Controller will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [11.0.2] - 2025-11-27
+
+### Added
+- Session name support in `tell` and `task` commands (use name instead of ID)
+- Auto-check inbox on prompt submit via hook
+- `resolve_session()` method to find session by name or ID
+
+### Changed
+- `sena tell Android "message"` now works (no need for session ID)
+- `sena task new "task" --to Android` now works (no need for session ID)
+- Hook shows unread messages at start of each prompt
+
 ## [11.0.1] - 2025-11-26
 
 ### Added

@@ -596,14 +596,17 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    // For now, use "local" as sender - in real implementation, would get from current session
-    hub.tell("local", target, message)?;
+    let resolved_target = hub.sessions.resolve_session(target)
+        .ok_or_else(|| format!("Session '{}' not found. Use 'sena who' to see active sessions.", target))?;
+
+    hub.tell("local", &resolved_target, message)?;
     hub.save()?;
 
     match format {
         OutputFormat::Json => Ok(serde_json::json!({
             "sent": true,
-            "to": target,
+            "to": resolved_target,
+            "target_input": target,
             "message": message
         }).to_string()),
         _ => Ok(format!("Message sent to {}", target)),
@@ -660,7 +663,8 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
     match action {
         TaskAction::New { title, to, priority } => {
             let prio = TaskPriority::parse(&priority);
-            let task = hub.create_task(&title, &to, prio)?;
+            let resolved_to = hub.sessions.resolve_session(&to).unwrap_or_else(|| to.clone());
+            let task = hub.create_task(&title, &resolved_to, prio)?;
             hub.save()?;
 
             match format {

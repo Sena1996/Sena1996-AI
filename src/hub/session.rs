@@ -336,6 +336,22 @@ impl SessionRegistry {
         self.sessions.values().find(|s| s.role == role && !s.is_stale())
     }
 
+    /// Get a session by name (case-insensitive)
+    pub fn get_by_name(&self, name: &str) -> Option<&Session> {
+        let name_lower = name.to_lowercase();
+        self.sessions.values().find(|s| {
+            !s.is_stale() && s.name.to_lowercase() == name_lower
+        })
+    }
+
+    /// Resolve session identifier (can be ID or name) to session ID
+    pub fn resolve_session(&self, identifier: &str) -> Option<String> {
+        if self.sessions.contains_key(identifier) {
+            return Some(identifier.to_string());
+        }
+        self.get_by_name(identifier).map(|s| s.id.clone())
+    }
+
     /// Get all active sessions
     pub fn get_active(&self) -> Vec<Session> {
         self.sessions
