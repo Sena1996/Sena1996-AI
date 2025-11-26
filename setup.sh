@@ -403,6 +403,30 @@ setup_claude_code_config() {
 
     cat > "$HOME/.claude/settings.json" << EOF
 {
+  "permissions": {
+    "allow": [
+      "Bash($SENA_PATH *)",
+      "Bash($SENA_PATH hook:*)",
+      "Bash($SENA_PATH health*)",
+      "Bash($SENA_PATH metrics*)",
+      "Bash($SENA_PATH backend *)",
+      "Bash($SENA_PATH iot *)",
+      "Bash($SENA_PATH ios *)",
+      "Bash($SENA_PATH android *)",
+      "Bash($SENA_PATH web *)",
+      "Bash($SENA_PATH think *)",
+      "Bash($SENA_PATH agent *)",
+      "Bash($SENA_PATH knowledge *)",
+      "Bash($SENA_PATH evolve *)",
+      "Bash($SENA_PATH process *)",
+      "Bash($SENA_PATH validate *)",
+      "Bash($SENA_PATH detect *)",
+      "Bash($SENA_PATH format *)",
+      "Bash($SENA_PATH setup *)",
+      "Bash(sena *)"
+    ],
+    "deny": []
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -413,7 +437,7 @@ setup_claude_code_config() {
 }
 EOF
 
-    print_success "Created ~/.claude/settings.json with SENA hooks"
+    print_success "Created ~/.claude/settings.json with SENA permissions & hooks"
 }
 
 setup_claude_desktop_config() {
