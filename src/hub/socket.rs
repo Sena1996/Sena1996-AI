@@ -113,12 +113,12 @@ impl HubServer {
         listener.set_nonblocking(true)
             .map_err(|e| format!("Cannot set non-blocking: {}", e))?;
 
-        *self.running.lock().unwrap() = true;
+        *self.running.lock().expect("running lock poisoned") = true;
 
         eprintln!("Hub server listening on {:?}", self.socket_path);
 
         // Accept connections
-        while *self.running.lock().unwrap() {
+        while *self.running.lock().expect("running lock poisoned") {
             match listener.accept() {
                 Ok((stream, _)) => {
                     thread::spawn(move || {
@@ -145,7 +145,7 @@ impl HubServer {
 
     /// Stop the server
     pub fn stop(&self) {
-        *self.running.lock().unwrap() = false;
+        *self.running.lock().expect("running lock poisoned") = false;
     }
 
     /// Handle a client connection
@@ -347,7 +347,7 @@ mod tests {
     #[test]
     fn test_hub_command_serialization() {
         let cmd = HubCommand::Ping;
-        let json = serde_json::to_string(&cmd).unwrap();
+        let json = serde_json::to_string(&cmd).expect("serialization failed");
         assert!(json.contains("Ping"));
     }
 

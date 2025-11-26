@@ -136,9 +136,10 @@ impl PatternLearner {
         let pattern = LearnedPattern::new(context, outcome);
 
         if let Some(similar) = self.find_similar(context) {
-            let existing = self.patterns.get_mut(&similar).unwrap();
-            existing.record_usage(true);
-            return;
+            if let Some(existing) = self.patterns.get_mut(&similar) {
+                existing.record_usage(true);
+                return;
+            }
         }
 
         self.patterns.insert(pattern.id.clone(), pattern);

@@ -621,12 +621,12 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
             hub.save()?;
 
             match format {
-                OutputFormat::Json => Ok(serde_json::to_string_pretty(&serde_json::json!({
+                OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
                     "created": true,
                     "id": task.id,
                     "title": task.title,
                     "assignee": task.assignee,
-                })).unwrap()),
+                })).map_err(|e| e.to_string()),
                 _ => Ok(format!("Task #{} created: {} (assigned to {})", task.id, task.title, task.assignee)),
             }
         }
@@ -795,12 +795,12 @@ async fn execute_sync(format: OutputFormat) -> Result<String, String> {
     hub.save()?;
 
     match format {
-        OutputFormat::Json => Ok(serde_json::to_string_pretty(&serde_json::json!({
+        OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
             "synced": true,
             "sessions": status.online_sessions,
             "tasks": status.total_tasks,
             "conflicts": status.active_conflicts,
-        })).unwrap()),
+        })).map_err(|e| e.to_string()),
         _ => Ok(format!(
             "Sync complete. {} sessions, {} tasks, {} conflicts.",
             status.online_sessions,

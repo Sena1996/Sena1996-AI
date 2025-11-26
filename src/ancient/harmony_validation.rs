@@ -644,8 +644,11 @@ impl HarmonyValidationEngine {
             }
             RuleCondition::NumericRange { min, max } => {
                 // Extract numbers and check range
-                let re = regex::Regex::new(r"\d+\.?\d*").unwrap();
-                for cap in re.find_iter(content) {
+                use once_cell::sync::Lazy;
+                static NUMERIC_RE: Lazy<regex::Regex> = Lazy::new(|| {
+                    regex::Regex::new(r"\d+\.?\d*").expect("invalid numeric regex")
+                });
+                for cap in NUMERIC_RE.find_iter(content) {
                     if let Ok(num) = cap.as_str().parse::<f64>() {
                         if num < *min || num > *max {
                             return (

@@ -82,7 +82,7 @@ async fn run_interactive() {
 
     loop {
         print!("SENA 🦁> ");
-        stdout.flush().unwrap();
+        let _ = stdout.flush();
 
         let mut input = String::new();
         match stdin.lock().read_line(&mut input) {

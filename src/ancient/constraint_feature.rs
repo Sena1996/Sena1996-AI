@@ -436,13 +436,17 @@ impl ConstraintFeatureEngine {
 
         let feature_id = generate_id(&format!("{}{}", feature_name, constraint_id));
 
+        let constraint_name = self.constraints.get(constraint_id)
+            .map(|c| c.name.clone())
+            .unwrap_or_else(|| "unknown".to_string());
+
         let feature = Feature {
             id: feature_id.clone(),
             name: feature_name,
             feature_type,
             description: format!(
                 "Feature derived from constraint: {}",
-                self.constraints.get(constraint_id).unwrap().name
+                constraint_name
             ),
             source_constraint_id: constraint_id.to_string(),
             implementation: implementation.clone(),

@@ -86,7 +86,7 @@ impl ComponentRegistry {
     {
         let boxed_factory: Factory = Box::new(move || Box::new(factory()));
 
-        let mut factories = self.factories.write().unwrap();
+        let mut factories = self.factories.write().expect("factories lock poisoned");
         factories.insert(
             name.to_string(),
             FactoryInfo {
@@ -95,7 +95,7 @@ impl ComponentRegistry {
             },
         );
 
-        let mut metrics = self.metrics.write().unwrap();
+        let mut metrics = self.metrics.write().expect("metrics lock poisoned");
         metrics.total_components += 1;
     }
 
@@ -111,7 +111,7 @@ impl ComponentRegistry {
         name: &str,
     ) -> Result<T, ComponentRegistryError> {
         // Check if component exists
-        let factories = self.factories.read().unwrap();
+        let factories = self.factories.read().expect("factories lock poisoned");
         if !factories.contains_key(name) {
             return Err(ComponentRegistryError::NotFound(name.to_string()));
         }
@@ -119,7 +119,7 @@ impl ComponentRegistry {
 
         // Check for cached singleton instance
         {
-            let instances = self.instances.read().unwrap();
+            let instances = self.instances.read().expect("instances lock poisoned");
             if let Some(instance) = instances.get(name) {
                 if let Some(typed) = instance.downcast_ref::<T>() {
                     return Ok(typed.clone());
@@ -129,7 +129,7 @@ impl ComponentRegistry {
 
         // Check for circular dependency
         {
-            let initializing = self.initializing.read().unwrap();
+            let initializing = self.initializing.read().expect("initializing lock poisoned");
             if initializing.contains(name) {
                 return Err(ComponentRegistryError::CircularDependency(
                     CircularDependencyError {
@@ -142,15 +142,15 @@ impl ComponentRegistry {
 
         // Mark as initializing
         {
-            let mut initializing = self.initializing.write().unwrap();
+            let mut initializing = self.initializing.write().expect("initializing lock poisoned");
             initializing.insert(name.to_string());
         }
 
         // Create instance
         let start = Instant::now();
         let result = {
-            let factories = self.factories.read().unwrap();
-            let factory_info = factories.get(name).unwrap();
+            let factories = self.factories.read().expect("factories lock poisoned");
+            let factory_info = factories.get(name).expect("factory must exist after check");
             let instance = (factory_info.factory)();
             (instance, factory_info.singleton)
         };
@@ -159,23 +159,23 @@ impl ComponentRegistry {
 
         // Remove from initializing
         {
-            let mut initializing = self.initializing.write().unwrap();
+            let mut initializing = self.initializing.write().expect("initializing lock poisoned");
             initializing.remove(name);
         }
 
         // Cache if singleton
         if result.1 {
-            let mut instances = self.instances.write().unwrap();
+            let mut instances = self.instances.write().expect("instances lock poisoned");
             instances.insert(name.to_string(), result.0);
 
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.active_instances += 1;
             metrics
                 .initialization_time
                 .insert(name.to_string(), duration.as_secs_f64());
 
             // Get the cached instance
-            let instances = self.instances.read().unwrap();
+            let instances = self.instances.read().expect("instances lock poisoned");
             if let Some(instance) = instances.get(name) {
                 if let Some(typed) = instance.downcast_ref::<T>() {
                     return Ok(typed.clone());
@@ -188,43 +188,43 @@ impl ComponentRegistry {
 
     /// Check if component is registered
     pub fn has(&self, name: &str) -> bool {
-        let factories = self.factories.read().unwrap();
+        let factories = self.factories.read().expect("factories lock poisoned");
         factories.contains_key(name)
     }
 
     /// Check if component instance exists
     pub fn is_initialized(&self, name: &str) -> bool {
-        let instances = self.instances.read().unwrap();
+        let instances = self.instances.read().expect("instances lock poisoned");
         instances.contains_key(name)
     }
 
     /// Unregister a component
     pub fn unregister(&self, name: &str) {
-        let mut factories = self.factories.write().unwrap();
+        let mut factories = self.factories.write().expect("factories lock poisoned");
         if factories.remove(name).is_some() {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.total_components = metrics.total_components.saturating_sub(1);
         }
 
-        let mut instances = self.instances.write().unwrap();
+        let mut instances = self.instances.write().expect("instances lock poisoned");
         if instances.remove(name).is_some() {
-            let mut metrics = self.metrics.write().unwrap();
+            let mut metrics = self.metrics.write().expect("metrics lock poisoned");
             metrics.active_instances = metrics.active_instances.saturating_sub(1);
         }
     }
 
     /// Clear all components and cleanup
     pub fn clear(&self) {
-        let mut factories = self.factories.write().unwrap();
+        let mut factories = self.factories.write().expect("factories lock poisoned");
         factories.clear();
 
-        let mut instances = self.instances.write().unwrap();
+        let mut instances = self.instances.write().expect("instances lock poisoned");
         instances.clear();
 
-        let mut initializing = self.initializing.write().unwrap();
+        let mut initializing = self.initializing.write().expect("initializing lock poisoned");
         initializing.clear();
 
-        let mut metrics = self.metrics.write().unwrap();
+        let mut metrics = self.metrics.write().expect("metrics lock poisoned");
         *metrics = RegistryInternalMetrics {
             total_components: 0,
             active_instances: 0,
@@ -234,7 +234,7 @@ impl ComponentRegistry {
 
     /// Get registry metrics
     pub fn get_metrics(&self) -> RegistryMetrics {
-        let metrics = self.metrics.read().unwrap();
+        let metrics = self.metrics.read().expect("metrics lock poisoned");
 
         let avg_time = if metrics.initialization_time.is_empty() {
             0.0
@@ -253,13 +253,13 @@ impl ComponentRegistry {
 
     /// Get list of registered components
     pub fn get_registered_components(&self) -> Vec<String> {
-        let factories = self.factories.read().unwrap();
+        let factories = self.factories.read().expect("factories lock poisoned");
         factories.keys().cloned().collect()
     }
 
     /// Get list of initialized components
     pub fn get_initialized_components(&self) -> Vec<String> {
-        let instances = self.instances.read().unwrap();
+        let instances = self.instances.read().expect("instances lock poisoned");
         instances.keys().cloned().collect()
     }
 }
