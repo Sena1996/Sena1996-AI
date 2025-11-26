@@ -332,9 +332,9 @@ impl AgentResult {
     pub fn format(&self) -> String {
         let mut output = String::new();
 
-        output.push_str(&format!("╔══════════════════════════════════════════════════════════════╗\n"));
+        output.push_str("╔══════════════════════════════════════════════════════════════╗\n");
         output.push_str(&format!("║  {}                                             ║\n", self.agent));
-        output.push_str(&format!("╚══════════════════════════════════════════════════════════════╝\n\n"));
+        output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
         output.push_str(&format!("{}\n\n", self.analysis));
 

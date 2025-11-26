@@ -23,6 +23,7 @@ static COROUTINE_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 pub struct AndroidAgent {
+    #[allow(dead_code)]
     name: String,
 }
 
@@ -451,16 +452,16 @@ impl AndroidAgent {
             });
         }
 
-        if input_lower.contains("permission") {
-            if input.contains("requestPermissions") || input.contains("ActivityResultLauncher") {
-                findings.push(Finding {
-                    severity: Severity::Success,
-                    title: "Runtime permissions handled".to_string(),
-                    description: "Using runtime permission requests".to_string(),
-                    location: None,
-                    suggestion: None,
-                });
-            }
+        if input_lower.contains("permission")
+            && (input.contains("requestPermissions") || input.contains("ActivityResultLauncher"))
+        {
+            findings.push(Finding {
+                severity: Severity::Success,
+                title: "Runtime permissions handled".to_string(),
+                description: "Using runtime permission requests".to_string(),
+                location: None,
+                suggestion: None,
+            });
         }
 
         if input_lower.contains("desugaring") || input.contains("coreLibraryDesugaring") {

@@ -1,11 +1,12 @@
-//! SENA Daemon Module
+//! Daemon Module
 //!
-//! Background daemon for SENA services
+//! Background daemon for services
 
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::io::Write;
+use crate::config::SenaConfig;
 
 /// PID file location
 fn pid_file() -> PathBuf {
@@ -46,10 +47,10 @@ pub fn is_running() -> bool {
     false
 }
 
-/// Start the SENA daemon
 pub async fn start_daemon() -> Result<String, String> {
+    let brand = SenaConfig::brand();
     if is_running() {
-        return Err("SENA daemon is already running".to_string());
+        return Err(format!("{} daemon is already running", brand));
     }
 
     // Ensure directory exists
@@ -71,20 +72,20 @@ pub async fn start_daemon() -> Result<String, String> {
         .open(log_file())
         .map_err(|e| format!("Cannot open log: {}", e))?;
 
-    writeln!(log, "[{}] SENA daemon started (PID: {})",
+    writeln!(log, "[{}] {} daemon started (PID: {})",
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+        brand,
         pid
     ).ok();
 
-    Ok(format!("SENA daemon started (PID: {})", pid))
+    Ok(format!("{} daemon started (PID: {})", brand, pid))
 }
 
-/// Stop the SENA daemon
 pub async fn stop_daemon() -> Result<String, String> {
+    let brand = SenaConfig::brand();
     if !is_running() {
-        // Clean up stale PID file
         let _ = fs::remove_file(pid_file());
-        return Err("SENA daemon is not running".to_string());
+        return Err(format!("{} daemon is not running", brand));
     }
 
     let pid_str = fs::read_to_string(pid_file())
@@ -111,35 +112,35 @@ pub async fn stop_daemon() -> Result<String, String> {
     fs::remove_file(pid_file())
         .map_err(|e| format!("Cannot remove PID file: {}", e))?;
 
-    // Log shutdown
     if let Ok(mut log) = fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(log_file())
     {
-        writeln!(log, "[{}] SENA daemon stopped",
-            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S")
+        writeln!(log, "[{}] {} daemon stopped",
+            chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+            brand
         ).ok();
     }
 
-    Ok(format!("SENA daemon stopped (was PID: {})", pid))
+    Ok(format!("{} daemon stopped (was PID: {})", brand, pid))
 }
 
-/// Get daemon status
 pub async fn daemon_status() -> Result<String, String> {
+    let brand = SenaConfig::brand();
     if is_running() {
         let pid = fs::read_to_string(pid_file())
             .unwrap_or_else(|_| "unknown".to_string());
 
-        Ok(format!("SENA daemon is running (PID: {})", pid.trim()))
+        Ok(format!("{} daemon is running (PID: {})", brand, pid.trim()))
     } else {
-        Ok("SENA daemon is not running".to_string())
+        Ok(format!("{} daemon is not running", brand))
     }
 }
 
-/// Run the daemon loop (main event loop)
 pub async fn run_daemon_loop() -> Result<(), String> {
-    eprintln!("SENA daemon running...");
+    let brand = SenaConfig::brand();
+    eprintln!("{} daemon running...", brand);
 
     // Main daemon loop
     loop {

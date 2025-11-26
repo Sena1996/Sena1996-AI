@@ -53,7 +53,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v10::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
+//! use sena_v11::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -73,8 +73,8 @@
 //! }
 //! ```
 //!
-//! Version: 9.0.1
-//! Date: 2025-11-25
+//! Version: 11.0.0
+//! Date: 2025-11-26
 
 pub mod ancient;
 pub mod base;

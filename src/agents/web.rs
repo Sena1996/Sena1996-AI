@@ -22,6 +22,7 @@ static ARIA_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 pub struct WebAgent {
+    #[allow(dead_code)]
     name: String,
 }
 

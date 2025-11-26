@@ -14,6 +14,7 @@ static COAP_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(coap|constrained|observe)"#).expect("invalid coap regex")
 });
 
+#[allow(dead_code)]
 static GPIO_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(gpio|pin|digital|analog|pwm|adc)"#).expect("invalid gpio regex")
 });
@@ -27,6 +28,7 @@ static SLEEP_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 pub struct IoTAgent {
+    #[allow(dead_code)]
     name: String,
 }
 
@@ -63,7 +65,7 @@ impl IoTAgent {
             });
 
             if input_lower.contains("qos") {
-                let qos_level = if input_lower.contains("qos: 2") || input_lower.contains("qos=2") {
+                let _qos_level = if input_lower.contains("qos: 2") || input_lower.contains("qos=2") {
                     findings.push(Finding {
                         severity: Severity::Success,
                         title: "QoS 2 (Exactly Once) configured".to_string(),

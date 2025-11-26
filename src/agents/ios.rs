@@ -21,6 +21,7 @@ static MAIN_THREAD_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 pub struct IOSAgent {
+    #[allow(dead_code)]
     name: String,
 }
 
@@ -225,16 +226,16 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("list") || input_lower.contains("foreach") {
-            if !input_lower.contains("lazy") && !input.contains("List") {
-                findings.push(Finding {
-                    severity: Severity::Warning,
-                    title: "Consider lazy loading for lists".to_string(),
-                    description: "Large lists should use lazy containers".to_string(),
-                    location: None,
-                    suggestion: Some("Use LazyVStack/List instead of VStack/ForEach for large datasets".to_string()),
-                });
-            }
+        if (input_lower.contains("list") || input_lower.contains("foreach"))
+            && !input_lower.contains("lazy") && !input.contains("List")
+        {
+            findings.push(Finding {
+                severity: Severity::Warning,
+                title: "Consider lazy loading for lists".to_string(),
+                description: "Large lists should use lazy containers".to_string(),
+                location: None,
+                suggestion: Some("Use LazyVStack/List instead of VStack/ForEach for large datasets".to_string()),
+            });
         }
 
         if input.contains("Image(") && !input_lower.contains("resizable") {

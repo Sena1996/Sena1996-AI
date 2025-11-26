@@ -211,16 +211,18 @@ fn detect_triggers(text: &str) -> Vec<String> {
     triggers
 }
 
-/// Check if response has proper SENA formatting
 fn check_sena_format_compliance(text: &str) -> bool {
-    // Check for SENA markers
+    use crate::config::SenaConfig;
+    let user = SenaConfig::user();
+    let brand = user.brand();
+
     let markers = [
-        "SENA 🦁",
-        "SENA BRILLIANT THINKING",
-        "SENA TRUTH VERIFICATION",
-        "SENA CODE ANALYSIS",
-        "╔═",  // Box drawing
-        "┌─",  // Table
+        brand.as_str(),
+        &format!("{} BRILLIANT THINKING", user.prefix),
+        &format!("{} TRUTH VERIFICATION", user.prefix),
+        &format!("{} CODE ANALYSIS", user.prefix),
+        "╔═",
+        "┌─",
     ];
 
     markers.iter().any(|m| text.contains(m))
@@ -251,7 +253,9 @@ mod tests {
 
     #[test]
     fn test_sena_format_compliance() {
-        assert!(check_sena_format_compliance("SENA 🦁 Response here"));
+        use crate::config::SenaConfig;
+        let brand = SenaConfig::brand();
+        assert!(check_sena_format_compliance(&format!("{} Response here", brand)));
         assert!(check_sena_format_compliance("╔══════════════╗"));
         assert!(!check_sena_format_compliance("Plain text response"));
     }

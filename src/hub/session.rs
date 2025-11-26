@@ -53,7 +53,7 @@ impl SessionRole {
     }
 
     /// Parse from string
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "android" => SessionRole::Android,
             "web" | "frontend" => SessionRole::Web,
@@ -158,14 +158,16 @@ impl Session {
             .unwrap_or(0);
     }
 
-    /// Check if session is stale (no heartbeat for 60 seconds)
+    /// Check if session is stale (no heartbeat for 24 hours)
+    /// CLI sessions don't have continuous heartbeats, so we use a long timeout
     pub fn is_stale(&self) -> bool {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        now - self.last_heartbeat > 60
+        const STALE_TIMEOUT_SECONDS: u64 = 24 * 60 * 60;
+        now.saturating_sub(self.last_heartbeat) > STALE_TIMEOUT_SECONDS
     }
 
     /// Get time since last activity
@@ -563,10 +565,10 @@ mod tests {
 
     #[test]
     fn test_session_role_from_str() {
-        assert_eq!(SessionRole::from_str("android"), SessionRole::Android);
-        assert_eq!(SessionRole::from_str("web"), SessionRole::Web);
-        assert_eq!(SessionRole::from_str("frontend"), SessionRole::Web);
-        assert_eq!(SessionRole::from_str("backend"), SessionRole::Backend);
+        assert_eq!(SessionRole::parse("android"), SessionRole::Android);
+        assert_eq!(SessionRole::parse("web"), SessionRole::Web);
+        assert_eq!(SessionRole::parse("frontend"), SessionRole::Web);
+        assert_eq!(SessionRole::parse("backend"), SessionRole::Backend);
     }
 
     #[test]

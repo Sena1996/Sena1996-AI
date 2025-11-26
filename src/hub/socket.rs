@@ -249,7 +249,7 @@ impl HubClient {
         reader.read_line(&mut response_line)
             .map_err(|e| format!("Cannot read response: {}", e))?;
 
-        let response: HubResponse = serde_json::from_str(&response_line.trim())
+        let response: HubResponse = serde_json::from_str(response_line.trim())
             .map_err(|e| format!("Cannot parse response: {}", e))?;
 
         Ok(response)

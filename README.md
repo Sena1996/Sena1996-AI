@@ -1,72 +1,77 @@
-# SENA Controller v9.0 🦁 - Production Ready
+# SENA Controller v11.0.0 🦁 - User Customization Edition
 
-**Truth-Embedded Architecture with Robust Error Handling & Configuration**
+**Truth-Embedded Architecture with Personalized Branding & Session Management**
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-9.0.4-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
-[![Tests](https://img.shields.io/badge/tests-191%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-11.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Tests](https://img.shields.io/badge/tests-213%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
+[![Clippy](https://img.shields.io/badge/clippy-0%20warnings-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
 
-## What is SENA v9?
+## What is SENA v11?
 
-SENA v9 is the **Production Ready** edition - battle-tested with robust error handling:
+SENA v11 is the **User Customization Edition** - personalize your AI assistant:
 
-- **Knowledge System** - Multi-level memory with reasoning, security, performance & architecture patterns
-- **Intelligence System** - Extended thinking engine (unlimited), specialized sub-agents, model routing
-- **Evolution System** - Pattern learning (unlimited), self-optimization, feedback loops
-- **Configuration System** - ~/.sena/config.toml for persistent settings
-- **Robust Error Handling** - No panics, proper Result types throughout
+- **User Branding** - Configure name, emoji, prefix in `~/.sena/config.toml`
+- **Session Management** - Fixed 24-hour session persistence (was 60s)
+- **Domain Agents** - Backend, IoT, iOS, Android, Web specialized analysis
+- **Zero Clippy Warnings** - Clean code that passes `cargo clippy -- -D warnings`
+- **Proper Error Handling** - No silent `.ok()` calls, proper `?` propagation
+- **Knowledge System** - 47 patterns across reasoning, security, performance, architecture
+- **Intelligence System** - Extended thinking with Quick/Standard/Deep/Maximum
+- **Evolution System** - Pattern learning and self-optimization
 - **7 Ancient Wisdom Layers** - Truth-embedded architecture
 - **Collaboration Hub** - Multi-session collaboration
 - **MCP Server & Hooks** - Claude Desktop/Code integration
 
-**Production Ready. Robust. Configurable.**
+**Personalized. Clean. Production Ready.**
 
 ---
 
-## NEW in v9.0: Production Ready
+## NEW in v11.0.0: User Customization
 
-### v9.0.1 Changes
-- Robust error handling (eliminated 127 unwrap() calls)
-- Configuration file support (~/.sena/config.toml)
-- Expanded SenaError type with IO and Serialization variants
-- Lazy regex initialization with once_cell
-- Clean RwLock handling with expect() messages
-- 195 tests passing (194 unit + 1 doc)
+### Personalized Branding
+Configure your assistant's identity in `~/.sena/config.toml`:
 
-### Knowledge System
-```rust
-// Multi-level memory (Session, Project, Global, Permanent)
-// Reasoning frameworks (First Principles, 5 Whys, Systems Thinking...)
-// Security patterns (OWASP, Auth, Crypto, Secure Coding)
-// Performance patterns (O(n) optimization, Caching, N+1 fixes)
-// Architecture patterns (SOLID, DDD, Microservices, CQRS)
+```toml
+[user]
+name = "YourName"    # Your name or brand
+emoji = "🦁"          # Your chosen emoji
+prefix = "SENA"       # Prefix for all outputs
 ```
 
-### Intelligence System
-```rust
-// Extended Thinking Engine with depth levels
-// - Quick / Standard / Deep / Maximum (ALL UNLIMITED)
-
-// Specialized Sub-Agents
-// - Security Agent: OWASP analysis, vulnerability detection
-// - Performance Agent: Complexity analysis, optimization suggestions
-// - Architecture Agent: Design patterns, SOLID principles
-
-// Model Routing (Fast/Balanced/Powerful)
-// Autonomous Skills (Security Auditor, Performance Optimizer, Truth Verifier)
+All outputs now use your configured branding:
+```
+╔══════════════════════════════════════════════════════════════╗
+║                     SENA 🦁 HEALTH STATUS                     ║
+╚══════════════════════════════════════════════════════════════╝
 ```
 
-### Evolution System
-```rust
-// Pattern Learner - UNLIMITED pattern storage
-// Self-Optimizer - Improves quality, speed, accuracy, satisfaction
-// Feedback Loop - Collects and analyzes user feedback
-// Continuous improvement with persistence
+### Session Management Fixes
+- **24-hour stale timeout** - Sessions no longer expire after 60 seconds
+- **Consistent `who` and `session list`** - Both now show same sessions
+- **Proper error handling** - No more silent failures with `.ok()`
+
+### Domain-Specific Agents
+```bash
+sena backend map "GET /api/users"           # API endpoint analysis
+sena backend security "SELECT * FROM users" # SQL injection detection
+sena iot protocol "mqtt.connect(...)"       # Protocol analysis
+sena ios ui "struct ContentView: View"      # SwiftUI HIG compliance
+sena android lifecycle "AppCompatActivity"  # Lifecycle analysis
+sena web audit "<script>alert()</script>"   # XSS detection
 ```
+
+### Code Quality
+- Zero clippy warnings (`cargo clippy -- -D warnings`)
+- 213 tests passing
+- All `from_str` methods renamed to `parse` for clarity
+- Collapsible if statements fixed
+- Useless format! calls removed
+- Proper error propagation throughout
 
 ---
 
@@ -84,100 +89,121 @@ SENA v9 is the **Production Ready** edition - battle-tested with robust error ha
 
 ---
 
-## Features
+## Quick Start
 
-### Knowledge Commands
-```bash
-sena knowledge search "sql injection"   # Search knowledge base
-sena knowledge list reasoning           # List reasoning frameworks
-sena knowledge list security            # List security patterns
-sena knowledge list performance         # List performance patterns
-sena knowledge list architecture        # List architecture patterns
-```
-
-### Intelligence Commands
-```bash
-sena think <query>                      # Extended thinking analysis
-sena think --depth deep <query>         # Deep analysis (50K tokens)
-sena agent security <code>              # Security agent analysis
-sena agent performance <code>           # Performance agent analysis
-```
-
-### Evolution Commands
-```bash
-sena evolve                             # Trigger evolution cycle
-sena evolve learn <context> <outcome>   # Learn new pattern
-sena evolve optimize                    # Run self-optimization
-sena feedback positive "Great!"         # Add positive feedback
-sena feedback bug "Found issue"         # Report bug
-```
-
-### Collaboration Hub (v7)
-```bash
-sena hub start                          # Start collaboration hub
-sena join <role>                        # Join as android/web/backend/iot
-sena task new "Fix bug" --assign web    # Create and assign task
-sena tell android "API ready"           # Send message
-sena inbox                              # Check messages
-```
-
-### CLI Commands
-```bash
-sena                    # Interactive mode
-sena mcp               # Start MCP server
-sena hook <type>       # Handle Claude Code hooks
-sena health            # System health
-sena metrics           # System metrics
-sena daemon start      # Start background daemon
-```
-
----
-
-## Quick Installation
-
-### Setup Wizard (Recommended)
+### Installation
 
 ```bash
 # Clone repository
 git clone https://github.com/Sena1996/Sena1996-AI.git
 cd Sena1996-AI
 
-# Run interactive setup wizard
-./setup.sh
-```
-
-The setup wizard offers three installation modes:
-
-| Mode | Best For | What It Does |
-|------|----------|--------------|
-| **Fresh** | New users | Cleans everything, installs optimal config |
-| **Merge** | Existing setups | Keeps your config, adds SENA on top |
-| **Minimal** | Advanced users | Binary only, manual config |
-
-See [SETUP.md](SETUP.md) for detailed instructions.
-
-### Manual Installation
-
-```bash
-# Build release binary
+# Build release
 cargo build --release
 
-# Copy to local bin
+# Copy to PATH
 cp target/release/sena ~/.local/bin/
 
 # Verify
 sena --version
-# sena 9.0.4
+# sena 11.0.0
+```
+
+### Configuration
+
+Create `~/.sena/config.toml`:
+```toml
+[user]
+name = "YourName"
+emoji = "🦁"
+prefix = "SENA"
+
+[general]
+log_level = "info"
 ```
 
 ---
 
-## Configuration
+## CLI Commands
 
-### For Claude Desktop (MCP Server)
+### Health & Metrics
+```bash
+sena health                    # Quick health check
+sena health --detailed         # Detailed health report
+sena metrics                   # Full system metrics
+```
+
+### Session Management
+```bash
+sena session --name 'MySession' start   # Start named session
+sena session list                       # List active sessions
+sena session info                       # Current session info
+sena who                                # Who's online
+sena session --id <id> end              # End session
+```
+
+### Collaboration Hub
+```bash
+sena hub status                         # Hub status
+sena join --role backend --name 'API'   # Join as role
+sena task new 'Fix bug' --to <id>       # Create task
+sena task list                          # List tasks
+sena task done <id>                     # Complete task
+sena tell <id> 'message'                # Send message
+sena inbox                              # Check inbox
+```
+
+### Domain Agents
+```bash
+sena backend map <code>         # API mapping
+sena backend flow <code>        # Data flow analysis
+sena backend security <code>    # Security scan
+sena iot protocol <code>        # Protocol analysis
+sena iot power <code>           # Power optimization
+sena ios ui <code>              # SwiftUI HIG check
+sena ios perf <code>            # Performance analysis
+sena android lifecycle <code>   # Lifecycle check
+sena android compat <code>      # Compatibility check
+sena web audit <code>           # Security audit
+sena web a11y <code>            # Accessibility check
+```
+
+### Knowledge System
+```bash
+sena knowledge search "pattern"     # Search knowledge base
+sena knowledge list reasoning       # List reasoning frameworks
+sena knowledge list security        # List security patterns
+sena knowledge stats               # Knowledge statistics
+```
+
+### Intelligence System
+```bash
+sena think "How to optimize?"       # Quick analysis
+sena think --depth deep "query"     # Deep analysis
+sena agent security <code>          # Security agent
+sena agent performance <code>       # Performance agent
+```
+
+### Evolution System
+```bash
+sena evolve stats                   # Evolution statistics
+sena feedback positive "Great!"     # Submit feedback
+sena feedback bug "Issue found"     # Report bug
+```
+
+### Daemon & MCP
+```bash
+sena daemon status             # Daemon status
+sena mcp                       # Start MCP server
+```
+
+---
+
+## Claude Integration
+
+### Claude Desktop (MCP Server)
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
 ```json
 {
   "mcpServers": {
@@ -189,10 +215,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-### For Claude Code CLI (Hooks)
+### Claude Code (Hooks)
 
 Add to `~/.claude/settings.json`:
-
 ```json
 {
   "hooks": {
@@ -201,98 +226,14 @@ Add to `~/.claude/settings.json`:
         "command": "/path/to/sena hook user-prompt-submit"
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(sena:*)",
+      "Bash(./target/release/sena:*)"
+    ]
   }
 }
-```
-
----
-
-## Project Structure
-
-```
-Sena1996-AI/
-├── Cargo.toml              # Rust package manifest
-├── README.md               # This file
-└── src/
-    ├── lib.rs              # Library root
-    ├── main.rs             # CLI binary entry point
-    │
-    ├── ancient/            # 7 Ancient Wisdom Layers
-    │   ├── first_principles.rs
-    │   ├── constraint_feature.rs
-    │   ├── negative_space.rs
-    │   ├── relationship_model.rs
-    │   ├── self_healing.rs
-    │   ├── harmony_validation.rs
-    │   └── millennium_test.rs
-    │
-    ├── knowledge/          # Knowledge System (NEW in v8)
-    │   ├── mod.rs          # Knowledge hub
-    │   ├── memory.rs       # Multi-level memory
-    │   ├── reasoning.rs    # Reasoning frameworks
-    │   ├── security.rs     # Security patterns
-    │   ├── performance.rs  # Performance patterns
-    │   └── architecture.rs # Architecture patterns
-    │
-    ├── intelligence/       # Intelligence System (NEW in v8)
-    │   ├── mod.rs          # Intelligence hub
-    │   ├── thinking.rs     # Extended thinking engine
-    │   ├── agents.rs       # Specialized sub-agents
-    │   ├── routing.rs      # Model routing
-    │   └── skills.rs       # Autonomous skills
-    │
-    ├── evolution/          # Evolution System (NEW in v8)
-    │   ├── mod.rs          # Evolution hub
-    │   ├── learner.rs      # Pattern learner
-    │   ├── optimizer.rs    # Self-optimizer
-    │   └── feedback.rs     # Feedback loop
-    │
-    ├── hub/                # Collaboration Hub (v7)
-    │   ├── mod.rs          # Hub controller
-    │   ├── session.rs      # Session registry & roles
-    │   ├── state.rs        # CRDT state management
-    │   ├── tasks.rs        # Task board
-    │   ├── messages.rs     # Messaging system
-    │   ├── conflicts.rs    # Conflict detection
-    │   └── socket.rs       # Unix socket server
-    │
-    ├── base/               # Component Registry
-    ├── cli/                # Command Line Interface
-    ├── mcp/                # MCP Server
-    ├── hooks/              # Claude Code Hooks
-    ├── output/             # Unicode Formatting
-    ├── integration/        # Auto Format Detection
-    ├── metrics/            # Health & Metrics
-    ├── sync/               # CRDT & Offline Sync
-    └── daemon/             # Background Daemon
-```
-
----
-
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SENA v8.0 Unified Intelligence               │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  Knowledge  │  │Intelligence │  │  Evolution  │             │
-│  │   System    │  │   System    │  │   System    │             │
-│  ├─────────────┤  ├─────────────┤  ├─────────────┤             │
-│  │ • Memory    │  │ • Thinking  │  │ • Learner   │             │
-│  │ • Reasoning │  │ • Agents    │  │ • Optimizer │             │
-│  │ • Security  │  │ • Routing   │  │ • Feedback  │             │
-│  │ • Perform   │  │ • Skills    │  │             │             │
-│  │ • Architect │  │             │  │             │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-├─────────────────────────────────────────────────────────────────┤
-│            7 Ancient Wisdom Layers (Foundation)                 │
-│  ┌───┬───┬───┬───┬───┬───┬───┐                                 │
-│  │ 0 │ 1 │ 2 │ 3 │ 4 │ 5 │ 6 │                                 │
-│  └───┴───┴───┴───┴───┴───┴───┘                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  Collaboration Hub │ MCP Server │ Hooks │ CLI │ Daemon         │
-└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -304,88 +245,51 @@ Sena1996-AI/
 | Binary Size | ~3.5MB |
 | Startup Time | <10ms |
 | Memory Usage | ~5MB |
-| Hub IPC Latency | <1ms |
-| Tests | 191 passing |
+| Tests | 213 passing |
+| Clippy Warnings | 0 |
 
 ---
 
 ## Version History
 
-### v9.0.4 (2025-11-26) - **Zero unwrap() in Production**
-- Eliminated all unwrap() calls from production code
-- Replaced with descriptive expect() for lock operations (RwLock, Mutex)
-- Proper error propagation with ? operator and map_err()
-- Lazy static regex initialization with once_cell
-- Safe pattern matching for HashMap operations
-- 191 tests passing (190 unit + 1 doc)
+### v11.0.0 (2025-11-26) - **User Customization Edition**
+- User branding configuration (`~/.sena/config.toml`)
+- Configurable name, emoji, prefix for all outputs
+- Session stale timeout increased from 60s to 24 hours
+- Fixed `sena who` and `sena session list` consistency
+- Proper error handling (removed all `.ok()` silent failures)
+- Zero clippy warnings
+- Renamed `from_str` methods to `parse` for clarity
+- Fixed collapsible if statements
+- Removed useless format! calls
+- 213 tests passing
 
-### v9.0.3 (2025-11-26) - **Elite Coding Standards**
-- Added CLAUDE.md with 50 elite coding rules for Claude Code
-- Self-reminder rule (Rule 0) to prevent instruction forgetting
-- Balanced severity: 30% CRITICAL, 40% IMPORTANT, 30% BEST PRACTICE
-- Anti-forgetting optimizations based on Anthropic research
-- SOLID principles, Rust idioms, Clean Code, Performance rules
-- Quick reference anti-pattern table
-- Enforcement checklist for commits
+### v10.0.6 (2025-11-26)
+- System username as default when user skips name input
+- Session naming support
+- Auto-approve SENA commands (no bash prompts)
+- Full hooks configuration
 
-### v9.0.2 (2025-11-26) - **Complete CLI Commands**
-- Full CLI implementation for Knowledge, Intelligence & Evolution systems
-- Knowledge commands: `sena knowledge search`, `sena knowledge list`, `sena knowledge stats`
-- Intelligence commands: `sena think`, `sena agent security/performance/architecture`
-- Evolution commands: `sena evolve`, `sena evolve learn`, `sena evolve optimize`, `sena evolve patterns`
-- Feedback command: `sena feedback <type> <message>`
-- All 47 knowledge patterns accessible via CLI
-- Extended thinking with Quick/Standard/Deep/Maximum depth levels
+### v9.0.4 (2025-11-26)
+- Zero unwrap() in production code
+- Lazy static regex initialization
+- 191 tests passing
 
-### v9.0.1 (2025-11-25) - **Production Ready**
-- Robust error handling (eliminated 127 unwrap() calls)
-- Configuration file support (~/.sena/config.toml)
-- Expanded SenaError type with IO and Serialization variants
-- Lazy regex initialization with once_cell
-- Clean RwLock handling with descriptive expect() messages
-- 195 tests passing (194 unit + 1 doc)
+### v9.0.0-v9.0.3
+- Production ready with robust error handling
+- Configuration file support
+- Elite coding standards (CLAUDE.md)
 
-### v8.1.0 (2025-11-25) - **Clean Code & Unlimited Capacity**
-- Single global VERSION constant from Cargo.toml
-- Removed all comments from source files (clean code philosophy)
-- Unlimited Extended Thinking (no token limits)
-- Unlimited Pattern Learning (no pattern count limits)
-- 191 tests passing (190 unit + 1 doc)
+### v8.x
+- Knowledge, Intelligence, Evolution systems
+- 47 knowledge patterns
 
-### v8.0.0 (2025-11-25) - **Unified Intelligence**
-- Knowledge System with multi-level memory (Session/Project/Global/Permanent)
-- Reasoning frameworks (First Principles, 5 Whys, Decision Matrix, etc.)
-- Security patterns library (OWASP, Auth, Crypto, Secure Coding)
-- Performance patterns library (Algorithm optimization, Caching, N+1)
-- Architecture patterns library (SOLID, Design Patterns, DDD, CQRS)
-- Intelligence System with extended thinking engine
-- Specialized sub-agents (Security, Performance, Architecture)
-- Multi-model routing (Fast/Balanced/Powerful)
-- Autonomous self-activating skills
-- Evolution System with pattern learner
-- Self-optimizer for quality/speed/accuracy/satisfaction
-- Feedback loop with sentiment analysis
-- 190 tests passing
+### v7.x
+- Collaboration Hub with multi-session support
 
-### v7.0.0 (2025-11-25) - **Collaboration Hub**
-- Multi-session collaboration (Android/Web/Backend/IoT)
-- Unix socket server for real-time IPC
-- Task management across sessions
-- Inter-session messaging
-- File conflict detection
-- CRDT state synchronization
-- 135 tests passing
-
-### v6.0.0 (2025-11-25) - **Live Progress**
-- Live ANSI progress bars
-- Real-time terminal updates
-- Enhanced output formatting
-
-### v5.0.0 (2025-11-25) - **Rust Rewrite**
-- Complete rewrite from Python to Rust
-- 7 Ancient Wisdom Layers
-- MCP Server & Claude Code Hooks
-- 3MB native binary
+### v5.x-v6.x
+- Rust rewrite from Python
+- Live progress bars
 
 ---
 
@@ -405,9 +309,9 @@ MIT License
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA 🦁 v9.0.4: Zero unwrap() in Production           ║
+║       SENA 🦁 v11.0.0: User Customization Edition           ║
 ║                                                              ║
-║       Robust • Clean Code • Battle-Tested • Ancient Wisdom   ║
+║     Personalized • Clean Code • 213 Tests • Zero Warnings   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```

@@ -244,7 +244,7 @@ impl HealingResult {
 
         Self {
             id,
-            damage_id: damage_id,
+            damage_id,
             mechanism_id: mechanism_id.into(),
             status: HealingStatus::Pending,
             started_at: Utc::now(),

@@ -359,7 +359,7 @@ impl OfflineSync {
             let reader = BufReader::new(file);
             let mut log = self.change_log.write().expect("change_log lock poisoned");
 
-            for line in reader.lines().flatten() {
+            for line in reader.lines().map_while(Result::ok) {
                 if let Ok(change) = serde_json::from_str::<Change>(&line) {
                     log.push(change);
                 }

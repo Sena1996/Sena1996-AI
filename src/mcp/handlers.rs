@@ -3,6 +3,7 @@
 //! Handles MCP protocol requests
 
 use super::protocol::*;
+use crate::config::SenaConfig;
 use crate::metrics::SenaHealth;
 use crate::integration::AutoIntegration;
 use crate::ancient::HarmonyValidationEngine;
@@ -252,8 +253,10 @@ fn call_health(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
     let text = if detailed {
         serde_json::to_string_pretty(&report).unwrap_or_default()
     } else {
+        let brand = SenaConfig::brand();
         format!(
-            "SENA v{} - Status: {} ({}%)",
+            "{} v{} - Status: {} ({}%)",
+            brand,
             report.version,
             report.overall_status,
             report.metrics.overall_health_percentage
@@ -401,22 +404,23 @@ fn call_progress(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
 }
 
 fn handle_resources_list(request: &JsonRpcRequest) -> JsonRpcResponse {
+    let brand = SenaConfig::brand();
     let resources = vec![
         Resource {
             uri: "sena://health".to_string(),
-            name: "SENA Health Status".to_string(),
-            description: Some("Current health status of SENA system".to_string()),
+            name: format!("{} Health Status", brand),
+            description: Some("Current health status of the system".to_string()),
             mime_type: Some("application/json".to_string()),
         },
         Resource {
             uri: "sena://metrics".to_string(),
-            name: "SENA Metrics".to_string(),
+            name: format!("{} Metrics", brand),
             description: Some("System metrics and statistics".to_string()),
             mime_type: Some("application/json".to_string()),
         },
         Resource {
             uri: "sena://config".to_string(),
-            name: "SENA Configuration".to_string(),
+            name: format!("{} Configuration", brand),
             description: Some("Current system configuration".to_string()),
             mime_type: Some("application/json".to_string()),
         },

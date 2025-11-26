@@ -1,8 +1,8 @@
-//! SENA Controller v10.0 - Main Binary
+//! SENA Controller v11.0 - Main Binary
 //!
-//! Full Agent Suite - Backend, IoT, iOS, Android, Web
+//! Full Agent Suite with User Customization
 //!
-//! This binary provides a CLI interface to the SENA v10.0 system.
+//! This binary provides a CLI interface to the SENA v11.0 system.
 //! Supports multiple modes:
 //! - MCP server mode for Claude Code integration
 //! - Hook mode for Claude Code hooks
@@ -11,9 +11,10 @@
 //! - Domain agent mode for specialized analysis
 
 use clap::Parser;
-use sena_v10::{
+use sena_v11::{
     Cli, execute_command,
     create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
+    config::SenaConfig,
 };
 use std::io::{self, BufRead, Write};
 
@@ -45,11 +46,13 @@ async fn main() {
 
 /// Run the interactive REPL mode
 async fn run_interactive() {
+    let user = SenaConfig::user();
+
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║                                                              ║");
-    println!("║     SENA Controller v{} - {}                  ║", VERSION, CODENAME);
+    println!("║     {} Controller v{} - {}           ║", user.prefix, VERSION, CODENAME);
     println!("║                                                              ║");
-    println!("║     Truth-Embedded Architecture in Rust                      ║");
+    println!("║     Welcome, {}!                                        ║", user.name);
     println!("║                                                              ║");
     println!("║     7 Ancient Wisdom Layers:                                 ║");
     println!("║       0. First Principles (Eratosthenes, 240 BCE)            ║");
@@ -82,7 +85,7 @@ async fn run_interactive() {
     let mut stdout = io::stdout();
 
     loop {
-        print!("SENA 🦁> ");
+        print!("{}", user.prompt());
         let _ = stdout.flush();
 
         let mut input = String::new();
@@ -227,8 +230,8 @@ async fn run_interactive() {
                 }
                 "/quit" | "/exit" | "/q" => {
                     println!();
-                    println!("Shutting down SENA system...");
-                    println!("Thank you for using SENA v{}! 🦁", VERSION);
+                    println!("Shutting down {} system...", user.prefix);
+                    println!("{}", user.farewell());
                     break;
                 }
                 _ => {

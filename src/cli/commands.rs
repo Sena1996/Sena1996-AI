@@ -4,6 +4,7 @@
 
 use crate::cli::args::*;
 use std::path::PathBuf;
+use crate::config::SenaConfig;
 use crate::integration::AutoIntegration;
 use crate::metrics::SenaHealth;
 use crate::output::{TableBuilder, ProgressBar, FormatBox};
@@ -139,7 +140,7 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
 async fn execute_mcp(debug: bool) -> Result<String, String> {
     if debug {
-        eprintln!("SENA MCP Server starting in debug mode...");
+        eprintln!("{} MCP Server starting in debug mode...", SenaConfig::brand());
     }
 
     // Start MCP server
@@ -184,7 +185,7 @@ async fn execute_process(content: &str, request_type: &str, format: OutputFormat
         }
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new("SENA 🦁 PROCESSING RESULT").render());
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROCESSING RESULT")).render());
             output.push('\n');
             output.push_str(&format!("Request ID: {}\n", result.request_id));
             output.push_str(&format!("Success: {}\n", result.success));
@@ -215,7 +216,7 @@ fn execute_health(detailed: bool, format: OutputFormat) -> Result<String, String
             let mut output = String::new();
 
             if detailed || format == OutputFormat::Pretty {
-                output.push_str(&FormatBox::new("SENA 🦁 HEALTH STATUS").render());
+                output.push_str(&FormatBox::new(&SenaConfig::brand_title("HEALTH STATUS")).render());
                 output.push('\n');
             }
 
@@ -224,7 +225,7 @@ fn execute_health(detailed: bool, format: OutputFormat) -> Result<String, String
             output.push_str(&format!("Health: {}%\n", report.metrics.overall_health_percentage));
 
             if detailed {
-                output.push_str(&format!("\nComponents:\n"));
+                output.push_str("\nComponents:\n");
                 output.push_str(&format!("  Core: {}\n", report.metrics.core_components));
                 output.push_str(&format!("  Memory: {}\n", report.metrics.memory_system));
                 output.push_str(&format!("  Hooks: {}\n", report.metrics.hooks));
@@ -303,20 +304,28 @@ fn execute_session(action: SessionAction, id: Option<String>, name: Option<Strin
 
     let config = HubConfig::default();
     let mut registry = SessionRegistry::new(&config);
-    let _ = registry.load();
+    registry.load()?;
 
     let result = match action {
         SessionAction::Start => {
             match registry.register(SessionRole::General, name.clone()) {
-                Ok(mut session) => {
-                    if let Some(n) = name {
-                        session.name = n.clone();
-                        let _ = registry.save();
-                    }
+                Ok(session) => {
+                    let session_id = session.id.clone();
+                    let final_name = if let Some(ref n) = name {
+                        if let Some(s) = registry.get_mut(&session_id) {
+                            s.name = n.clone();
+                        }
+                        if let Err(e) = registry.save() {
+                            return Err(format!("Failed to save session: {}", e));
+                        }
+                        n.clone()
+                    } else {
+                        session.name.clone()
+                    };
                     serde_json::json!({
                         "action": "start",
-                        "session_id": session.id,
-                        "session_name": session.name,
+                        "session_id": session_id,
+                        "session_name": final_name,
                         "started_at": session.joined_at,
                     })
                 },
@@ -325,7 +334,9 @@ fn execute_session(action: SessionAction, id: Option<String>, name: Option<Strin
         }
         SessionAction::End => {
             if let Some(session_id) = id.clone() {
-                let _ = registry.unregister(&session_id);
+                if let Err(e) = registry.unregister(&session_id) {
+                    return Err(format!("Failed to unregister session: {}", e));
+                }
             }
             serde_json::json!({
                 "action": "end",
@@ -346,7 +357,7 @@ fn execute_session(action: SessionAction, id: Option<String>, name: Option<Strin
             }
         }
         SessionAction::List => {
-            let sessions = registry.get_all();
+            let sessions = registry.get_active();
             serde_json::to_value(&sessions).unwrap_or_default()
         }
         SessionAction::Restore => {
@@ -393,7 +404,7 @@ fn execute_validate(content: &str, strict: bool, format: OutputFormat) -> Result
         OutputFormat::Json => serde_json::to_string_pretty(&output).map_err(|e| e.to_string()),
         OutputFormat::Pretty => {
             let mut out = String::new();
-            out.push_str(&FormatBox::new("SENA 🦁 VALIDATION RESULT").render());
+            out.push_str(&FormatBox::new(&SenaConfig::brand_title("VALIDATION RESULT")).render());
             out.push('\n');
             out.push_str(&format!("Valid: {}\n", result.is_valid()));
             out.push_str(&format!("Confidence: {:.1}%\n", result.overall_confidence * 100.0));
@@ -442,13 +453,13 @@ fn execute_format(format_type: FormatOutputType, title: Option<String>, data: &s
             }
         }
         FormatOutputType::BrilliantThinking => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| "SENA 🦁 BRILLIANT THINKING".to_string())).render())
+            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("BRILLIANT THINKING"))).render())
         }
         FormatOutputType::TruthVerification => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| "SENA 🦁 TRUTH VERIFICATION".to_string())).render())
+            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("TRUTH VERIFICATION"))).render())
         }
         FormatOutputType::CodeAnalysis => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| "SENA 🦁 CODE ANALYSIS".to_string())).render())
+            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("CODE ANALYSIS"))).render())
         }
     }
 }
@@ -513,7 +524,7 @@ async fn execute_join(role: &str, name: Option<String>, format: OutputFormat) ->
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    let session_role = SessionRole::from_str(role);
+    let session_role = SessionRole::parse(role);
     let session = hub.join(session_role, name)?;
     hub.save()?;
 
@@ -648,7 +659,7 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
 
     match action {
         TaskAction::New { title, to, priority } => {
-            let prio = TaskPriority::from_str(&priority);
+            let prio = TaskPriority::parse(&priority);
             let task = hub.create_task(&title, &to, prio)?;
             hub.save()?;
 
@@ -664,7 +675,7 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
         }
         TaskAction::List { status } => {
             let tasks = if let Some(s) = status {
-                let task_status = TaskStatus::from_str(&s);
+                let task_status = TaskStatus::parse(&s);
                 hub.tasks.get_by_status(task_status)
             } else {
                 hub.get_tasks()
@@ -730,7 +741,7 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
             Ok(format!("Task #{} marked as done.", id))
         }
         TaskAction::Update { id, status } => {
-            let task_status = TaskStatus::from_str(&status);
+            let task_status = TaskStatus::parse(&status);
             hub.update_task(id, task_status)?;
             hub.save()?;
             Ok(format!("Task #{} updated to {}.", id, task_status.name()))
@@ -763,7 +774,7 @@ async fn execute_watch() -> Result<String, String> {
     let mut output = String::new();
 
     // Header
-    output.push_str(&FormatBox::new("SENA 🦁 COLLABORATION HUB").render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title("COLLABORATION HUB")).render());
     output.push('\n');
 
     // Sessions
@@ -870,7 +881,7 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                 }
                 OutputFormat::Pretty => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 KNOWLEDGE SEARCH").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE SEARCH")).render());
                     output.push_str(&format!("\nQuery: \"{}\"\n", query));
                     output.push_str(&format!("Found: {} results\n\n", results.len()));
 
@@ -928,7 +939,7 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                 }
                 OutputFormat::Pretty => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&format!("SENA 🦁 {} PATTERNS", format!("{:?}", category).to_uppercase())).render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} PATTERNS", format!("{:?}", category).to_uppercase()))).render());
                     output.push_str(&format!("\nTotal: {} patterns\n\n", patterns.len()));
 
                     for pattern in &patterns {
@@ -958,7 +969,7 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 KNOWLEDGE STATISTICS").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE STATISTICS")).render());
                     output.push('\n');
                     output.push_str(&format!("Total Entries: {}\n", stats.total_entries));
                     output.push_str(&format!("Reasoning Frameworks: {}\n", stats.reasoning_count));
@@ -1011,7 +1022,7 @@ async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputForma
         }
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new("SENA 🦁 EXTENDED THINKING").render());
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title("EXTENDED THINKING")).render());
             output.push_str(&format!("\nDepth: {:?}\n", depth));
             output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
 
@@ -1083,7 +1094,7 @@ async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFo
         }
         OutputFormat::Pretty => {
             let mut output = String::new();
-            let title = format!("SENA 🦁 {:?} AGENT ANALYSIS", agent_type).to_uppercase();
+            let title = SenaConfig::brand_title(&format!("{:?} AGENT ANALYSIS", agent_type).to_uppercase());
             output.push_str(&FormatBox::new(&title).render());
             output.push_str(&format!("\nAgent: {:?}\n", agent_type));
             output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
@@ -1123,13 +1134,12 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
     use crate::evolution::{EvolutionSystem, OptimizationTarget as EvOptTarget};
 
     let mut evolution = EvolutionSystem::new();
-    let _ = evolution.load();
+    evolution.load().ok();
 
     match action {
         None => {
-            // Default: run evolution cycle
             let result = evolution.evolve();
-            let _ = evolution.save();
+            evolution.save().map_err(|e| format!("Failed to save evolution state: {}", e))?;
 
             match format {
                 OutputFormat::Json => {
@@ -1137,7 +1147,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 EVOLUTION CYCLE").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("EVOLUTION CYCLE")).render());
                     output.push('\n');
                     output.push_str(&format!("Patterns Applied: {}\n", result.patterns_applied));
                     output.push_str(&format!("Optimizations Made: {}\n", result.optimizations_made));
@@ -1149,7 +1159,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
         }
         Some(EvolveAction::Learn { context, outcome }) => {
             evolution.learn(&context, &outcome, true);
-            let _ = evolution.save();
+            evolution.save().map_err(|e| format!("Failed to save learned pattern: {}", e))?;
 
             match format {
                 OutputFormat::Json => Ok(serde_json::json!({
@@ -1171,7 +1181,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
             };
 
             let result = evolution.optimize(opt_target);
-            let _ = evolution.save();
+            evolution.save().map_err(|e| format!("Failed to save optimization: {}", e))?;
 
             match format {
                 OutputFormat::Json => {
@@ -1179,7 +1189,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 SELF-OPTIMIZATION").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("SELF-OPTIMIZATION")).render());
                     output.push('\n');
                     output.push_str(&format!("Target: {:?}\n", opt_target));
                     output.push_str(&format!("Success: {}\n", if result.success { "✅" } else { "❌" }));
@@ -1204,7 +1214,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 EVOLUTION STATISTICS").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("EVOLUTION STATISTICS")).render());
                     output.push('\n');
                     output.push_str(&format!("Patterns Learned: {}\n", stats.patterns_learned));
                     output.push_str(&format!("Optimizations Applied: {}\n", stats.optimizations_applied));
@@ -1234,7 +1244,7 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new("SENA 🦁 LEARNED PATTERNS").render());
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("LEARNED PATTERNS")).render());
                     output.push_str(&format!("\nShowing {} patterns:\n\n", patterns.len()));
 
                     if patterns.is_empty() {
@@ -1308,7 +1318,7 @@ async fn execute_feedback(
         }).to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new("SENA 🦁 FEEDBACK RECORDED").render());
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title("FEEDBACK RECORDED")).render());
             output.push('\n');
             output.push_str(&format!("{} Type: {:?}\n", emoji, feedback_type));
             output.push_str(&format!("Message: {}\n", message));
@@ -1467,7 +1477,7 @@ fn format_domain_analysis(
         }
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new(&format!("SENA 🦁 {} AGENT - {}", agent_name, analysis_name.to_uppercase())).render());
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} AGENT - {}", agent_name, analysis_name.to_uppercase()))).render());
             output.push('\n');
             output.push_str(&format!("Score: {}/100\n", result.score));
             output.push_str(&format!("Category: {}\n\n", result.category));
@@ -1632,9 +1642,9 @@ async fn execute_setup(
     }
 }
 
-fn show_setup_menu(format: OutputFormat) -> Result<String, String> {
+fn show_setup_menu(_format: OutputFormat) -> Result<String, String> {
     let mut output = String::new();
-    output.push_str(&FormatBox::new("SENA 🦁 SETUP WIZARD v10.0.0").render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("SETUP WIZARD v{}", crate::VERSION))).render());
     output.push('\n');
     output.push_str("Run setup.sh for interactive installation:\n\n");
     output.push_str("  bash setup.sh\n\n");
@@ -1672,7 +1682,7 @@ fn setup_mcp_server(home: &str, sena_path: &str, _format: OutputFormat) -> Resul
     std::fs::write(&config_file, config_str).map_err(|e| e.to_string())?;
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new("SENA 🦁 MCP SERVER SETUP").render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MCP SERVER SETUP")).render());
     output.push('\n');
     output.push_str("✅ MCP server configured!\n\n");
     output.push_str(&format!("Config: {}\n", config_file.display()));
@@ -1688,27 +1698,63 @@ fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Res
 
     std::fs::create_dir_all(&claude_dir).map_err(|e| e.to_string())?;
 
-    let settings = serde_json::json!({
-        "hooks": {
-            "UserPromptSubmit": [
-                {
-                    "command": format!("{} hook user-prompt-submit", sena_path)
-                }
-            ]
+    let existing_settings = if settings_file.exists() {
+        let content = std::fs::read_to_string(&settings_file).unwrap_or_default();
+        serde_json::from_str::<serde_json::Value>(&content).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+
+    let mut settings = existing_settings.clone();
+    let settings_obj = settings.as_object_mut().ok_or("Invalid settings format")?;
+
+    settings_obj.insert("hooks".to_string(), serde_json::json!({
+        "UserPromptSubmit": [
+            {
+                "command": format!("{} hook user-prompt-submit", sena_path)
+            }
+        ]
+    }));
+
+    let existing_tools = existing_settings
+        .get("permissions")
+        .and_then(|p| p.get("allow"))
+        .and_then(|a| a.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let sena_patterns = vec![
+        serde_json::json!("Bash(sena *)"),
+        serde_json::json!("Bash(sena)"),
+        serde_json::json!("Bash(~/.local/bin/sena *)"),
+        serde_json::json!("Bash(/Users/*/sena *)"),
+    ];
+
+    let mut combined_tools: Vec<serde_json::Value> = existing_tools;
+    for pattern in sena_patterns {
+        if !combined_tools.contains(&pattern) {
+            combined_tools.push(pattern);
         }
-    });
+    }
+
+    settings_obj.insert("permissions".to_string(), serde_json::json!({
+        "allow": combined_tools
+    }));
 
     let settings_str = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     std::fs::write(&settings_file, settings_str).map_err(|e| e.to_string())?;
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new("SENA 🦁 HOOKS SETUP").render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title("HOOKS SETUP")).render());
     output.push('\n');
     output.push_str("✅ Claude Code hooks configured!\n\n");
     output.push_str(&format!("Config: {}\n", settings_file.display()));
+    output.push_str("\nConfigured:\n");
+    output.push_str("  • UserPromptSubmit hook\n");
+    output.push_str("  • Auto-approve SENA bash commands\n");
     output.push_str("\nNext steps:\n");
     output.push_str("  1. Start a new Claude Code session\n");
-    output.push_str("  2. SENA will process your prompts\n");
+    output.push_str("  2. SENA commands will auto-execute without prompts\n");
     Ok(output)
 }
 
@@ -1726,7 +1772,7 @@ fn setup_full_installation(home: &str, sena_path: &str, _name: &str, _format: Ou
     }
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new("SENA 🦁 FULL INSTALLATION COMPLETE").render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title("FULL INSTALLATION COMPLETE")).render());
     output.push('\n');
     output.push_str("✅ All components installed!\n\n");
     output.push_str("Installed:\n");
@@ -1750,13 +1796,13 @@ fn setup_agent_project(home: &str, agent: &str, name: &str, _format: OutputForma
 [project]
 name = "{}"
 agent = "{}"
-version = "10.0.0"
+version = "{}"
 
 [agent.{}]
 enabled = true
 auto_analyze = true
 "#,
-        name, agent, agent
+        name, agent, crate::VERSION, agent
     );
     std::fs::write(&sena_config, config_content).map_err(|e| e.to_string())?;
 
@@ -1780,7 +1826,7 @@ sena health
     std::fs::write(&claude_md, claude_content).map_err(|e| e.to_string())?;
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new(&format!("SENA 🦁 {} PROJECT SETUP", agent.to_uppercase())).render());
+    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} PROJECT SETUP", agent.to_uppercase()))).render());
     output.push('\n');
     output.push_str(&format!("✅ {} project created!\n\n", agent.to_uppercase()));
     output.push_str(&format!("Location: {}\n\n", project_dir.display()));

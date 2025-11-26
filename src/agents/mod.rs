@@ -34,7 +34,7 @@ impl std::fmt::Display for DomainAgentType {
 }
 
 impl DomainAgentType {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "backend" | "api" | "server" => Some(DomainAgentType::Backend),
             "iot" | "embedded" | "device" => Some(DomainAgentType::IoT),
@@ -192,12 +192,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_domain_agent_type_from_str() {
-        assert_eq!(DomainAgentType::from_str("backend"), Some(DomainAgentType::Backend));
-        assert_eq!(DomainAgentType::from_str("ios"), Some(DomainAgentType::IOS));
-        assert_eq!(DomainAgentType::from_str("android"), Some(DomainAgentType::Android));
-        assert_eq!(DomainAgentType::from_str("iot"), Some(DomainAgentType::IoT));
-        assert_eq!(DomainAgentType::from_str("web"), Some(DomainAgentType::Web));
+    fn test_domain_agent_type_parse() {
+        assert_eq!(DomainAgentType::parse("backend"), Some(DomainAgentType::Backend));
+        assert_eq!(DomainAgentType::parse("ios"), Some(DomainAgentType::IOS));
+        assert_eq!(DomainAgentType::parse("android"), Some(DomainAgentType::Android));
+        assert_eq!(DomainAgentType::parse("iot"), Some(DomainAgentType::IoT));
+        assert_eq!(DomainAgentType::parse("web"), Some(DomainAgentType::Web));
     }
 
     #[test]

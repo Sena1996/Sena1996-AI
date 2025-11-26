@@ -276,8 +276,8 @@ impl SafeBoundary {
     pub fn is_within(&self, value: &BoundaryValue) -> bool {
         match (&self.boundary_type, value) {
             (BoundaryType::Numeric, BoundaryValue::Number(n)) => {
-                let above_min = self.min_value.map_or(true, |min| *n >= min);
-                let below_max = self.max_value.map_or(true, |max| *n <= max);
+                let above_min = self.min_value.is_none_or(|min| *n >= min);
+                let below_max = self.max_value.is_none_or(|max| *n <= max);
                 above_min && below_max
             }
             (BoundaryType::Enumerated, BoundaryValue::Text(s)) => {

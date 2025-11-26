@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::config::SenaConfig;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ThinkingDepth {
@@ -233,10 +234,11 @@ pub struct ThinkingResult {
 impl ThinkingResult {
     pub fn format_brilliant(&self) -> String {
         let mut output = String::new();
+        let title = SenaConfig::brand_title("BRILLIANT THINKING");
 
         output.push_str("╔══════════════════════════════════════════════════════════════╗\n");
         output.push_str("║                                                              ║\n");
-        output.push_str("║              SENA 🦁 BRILLIANT THINKING                      ║\n");
+        output.push_str(&format!("║              {:^44} ║\n", title));
         output.push_str("║                                                              ║\n");
         output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
@@ -356,7 +358,8 @@ mod tests {
         let engine = ThinkingEngine::new();
         let result = engine.analyze("Test problem", ThinkingDepth::Standard);
         let formatted = result.format_brilliant();
-        assert!(formatted.contains("SENA"));
+        let user = SenaConfig::user();
+        assert!(formatted.contains(&user.prefix));
         assert!(formatted.contains("BRILLIANT THINKING"));
     }
 }

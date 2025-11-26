@@ -27,6 +27,7 @@ static DB_CONNECTION_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 pub struct BackendAgent {
+    #[allow(dead_code)]
     name: String,
 }
 
@@ -480,7 +481,7 @@ impl BackendAgent {
         all_findings.extend(secrets_analysis.findings);
         all_findings.extend(security_analysis.findings);
 
-        let scores = vec![
+        let scores = [
             endpoint_analysis.score,
             flow_analysis.score,
             auth_analysis.score,

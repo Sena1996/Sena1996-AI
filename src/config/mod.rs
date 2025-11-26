@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+static GLOBAL_CONFIG: OnceLock<SenaConfig> = OnceLock::new();
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SenaConfig {
     #[serde(default)]
     pub user: UserConfig,
@@ -28,8 +31,30 @@ pub struct UserConfig {
     pub prefix: String,
 }
 
+impl UserConfig {
+    pub fn brand(&self) -> String {
+        format!("{} {}", self.prefix, self.emoji)
+    }
+
+    pub fn brand_title(&self, title: &str) -> String {
+        format!("{} {} {}", self.prefix, self.emoji, title)
+    }
+
+    pub fn prompt(&self) -> String {
+        format!("{} {}> ", self.prefix, self.emoji)
+    }
+
+    pub fn greeting(&self) -> String {
+        format!("Welcome, {}! {} is ready.", self.name, self.prefix)
+    }
+
+    pub fn farewell(&self) -> String {
+        format!("Thank you for using {} v{}! {}", self.prefix, crate::VERSION, self.emoji)
+    }
+}
+
 fn default_user_name() -> String {
-    "User".to_string()
+    whoami::username()
 }
 
 fn default_emoji() -> String {
@@ -182,18 +207,6 @@ impl Default for OutputConfig {
     }
 }
 
-impl Default for SenaConfig {
-    fn default() -> Self {
-        Self {
-            user: UserConfig::default(),
-            general: GeneralConfig::default(),
-            intelligence: IntelligenceConfig::default(),
-            evolution: EvolutionConfig::default(),
-            hub: HubConfig::default(),
-            output: OutputConfig::default(),
-        }
-    }
-}
 
 impl SenaConfig {
     pub fn config_path() -> PathBuf {
@@ -247,6 +260,22 @@ impl SenaConfig {
     pub fn generate_default_config() -> String {
         let config = Self::default();
         toml::to_string_pretty(&config).unwrap_or_default()
+    }
+
+    pub fn global() -> &'static SenaConfig {
+        GLOBAL_CONFIG.get_or_init(|| Self::load().unwrap_or_default())
+    }
+
+    pub fn user() -> &'static UserConfig {
+        &Self::global().user
+    }
+
+    pub fn brand() -> String {
+        Self::user().brand()
+    }
+
+    pub fn brand_title(title: &str) -> String {
+        Self::user().brand_title(title)
     }
 }
 

@@ -113,19 +113,19 @@ impl FormatBox {
     }
 }
 
-/// Create a SENA Brilliant Thinking box
 pub fn brilliant_thinking_box() -> String {
-    FormatBox::new("SENA 🦁 BRILLIANT THINKING").render()
+    use crate::config::SenaConfig;
+    FormatBox::new(&SenaConfig::brand_title("BRILLIANT THINKING")).render()
 }
 
-/// Create a SENA Truth Verification box
 pub fn truth_verification_box() -> String {
-    FormatBox::new("SENA 🦁 TRUTH VERIFICATION SYSTEM").render()
+    use crate::config::SenaConfig;
+    FormatBox::new(&SenaConfig::brand_title("TRUTH VERIFICATION SYSTEM")).render()
 }
 
-/// Create a SENA Code Analysis box
 pub fn code_analysis_box() -> String {
-    FormatBox::new("SENA 🦁 CODE QUALITY ANALYSIS").render()
+    use crate::config::SenaConfig;
+    FormatBox::new(&SenaConfig::brand_title("CODE QUALITY ANALYSIS")).render()
 }
 
 /// Create a section separator

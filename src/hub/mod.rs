@@ -149,13 +149,12 @@ impl Hub {
 
     /// Set working state for a session
     pub fn set_working_on(&mut self, session_id: &str, file_path: &str) -> Result<(), String> {
-        // Check for conflicts first
         if let Some(conflict) = self.conflicts.check_file(file_path, session_id, &self.state) {
-            // Still allow but return warning
             eprintln!("⚠️  Warning: {} is also editing {}", conflict.other_session, file_path);
         }
 
         self.state.set_working_on(session_id, file_path);
+        self.state.save()?;
         Ok(())
     }
 
@@ -194,7 +193,21 @@ impl Hub {
 
 impl Default for Hub {
     fn default() -> Self {
-        Self::new().expect("Failed to create hub")
+        match Self::new() {
+            Ok(hub) => hub,
+            Err(e) => {
+                eprintln!("Warning: Failed to create hub with defaults: {}", e);
+                let config = HubConfig::new();
+                Self {
+                    sessions: SessionRegistry::new(&config),
+                    state: HubState::new(&config),
+                    tasks: TaskBoard::new(&config),
+                    messages: MessageQueue::new(&config),
+                    conflicts: ConflictDetector::new(),
+                    config,
+                }
+            }
+        }
     }
 }
 

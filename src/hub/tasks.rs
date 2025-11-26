@@ -39,7 +39,7 @@ impl TaskPriority {
         }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "critical" | "crit" => TaskPriority::Critical,
             "high" | "h" => TaskPriority::High,
@@ -81,7 +81,7 @@ impl TaskStatus {
         }
     }
 
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "pending" | "p" => TaskStatus::Pending,
             "inprogress" | "in_progress" | "progress" | "ip" => TaskStatus::InProgress,
@@ -376,13 +376,13 @@ mod tests {
     #[test]
     fn test_task_priority() {
         assert_eq!(TaskPriority::Critical.emoji(), "🔥");
-        assert_eq!(TaskPriority::from_str("high"), TaskPriority::High);
+        assert_eq!(TaskPriority::parse("high"), TaskPriority::High);
     }
 
     #[test]
     fn test_task_status() {
         assert_eq!(TaskStatus::Done.emoji(), "✅");
-        assert_eq!(TaskStatus::from_str("done"), TaskStatus::Done);
+        assert_eq!(TaskStatus::parse("done"), TaskStatus::Done);
     }
 
     #[test]

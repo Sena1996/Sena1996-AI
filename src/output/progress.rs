@@ -5,13 +5,12 @@
 //! - Custom emoji/prefix support
 //! - Spinner animation
 //! - Color support
-//!
-//! SENA v5.0 - Personalized AI
 
 use std::io::{self, Write};
 use std::time::{Duration, Instant};
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use crate::config::SenaConfig;
 
 /// ANSI Escape Codes for terminal control
 pub mod ansi {
@@ -54,9 +53,10 @@ pub struct ProgressConfig {
 
 impl Default for ProgressConfig {
     fn default() -> Self {
+        let user = SenaConfig::user();
         Self {
-            prefix: "SENA".to_string(),
-            emoji: "🦁".to_string(),
+            prefix: user.prefix.clone(),
+            emoji: user.emoji.clone(),
             width: 30,
             show_emoji: true,
             show_percentage: true,
@@ -69,31 +69,7 @@ impl Default for ProgressConfig {
 }
 
 impl ProgressConfig {
-    /// Load config from user preferences file
     pub fn from_user_config() -> Self {
-        let config_path = dirs::home_dir()
-            .map(|h| h.join(".claude").join(".sena_user_config.json"))
-            .unwrap_or_default();
-
-        if let Ok(content) = std::fs::read_to_string(&config_path) {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-                let prefix = json.get("prefix")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("SENA")
-                    .to_string();
-                let emoji = json.get("emoji")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("🦁")
-                    .to_string();
-
-                return Self {
-                    prefix,
-                    emoji,
-                    ..Default::default()
-                };
-            }
-        }
-
         Self::default()
     }
 
@@ -383,7 +359,7 @@ impl LiveProgress {
         // Print final state (without clearing)
         let title = format!("{} {} COMPLETE!", self.config.prefix, self.config.emoji);
         println!("╔══════════════════════════════════════════════════════════════╗");
-        println!("║{}{}{}║", ansi::GREEN, format!("{:^62}", title), ansi::RESET);
+        println!("║{}{:^62}{}║", ansi::GREEN, title, ansi::RESET);
         println!("╚══════════════════════════════════════════════════════════════╝");
         println!();
         println!("┌──────────────────────────────────────────────────────────────┐");
@@ -585,8 +561,9 @@ mod tests {
     #[test]
     fn test_progress_config_default() {
         let config = ProgressConfig::default();
-        assert_eq!(config.prefix, "SENA");
-        assert_eq!(config.emoji, "🦁");
+        let user = SenaConfig::user();
+        assert_eq!(config.prefix, user.prefix);
+        assert_eq!(config.emoji, user.emoji);
         assert_eq!(config.width, 30);
     }
 }

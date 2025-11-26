@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use crate::config::SenaConfig;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FormatType {
@@ -152,7 +153,7 @@ impl AutoIntegration {
     pub fn get_format_instructions(&self, format_type: &FormatType) -> FormatInstructions {
         match format_type {
             FormatType::BrilliantThinking => FormatInstructions {
-                title: "SENA 🦁 BRILLIANT THINKING".to_string(),
+                title: SenaConfig::brand_title("BRILLIANT THINKING"),
                 sections: vec![
                     "QUESTION ANALYSIS".to_string(),
                     "FIRST PRINCIPLES BREAKDOWN".to_string(),
@@ -162,7 +163,7 @@ impl AutoIntegration {
                 use_boxes: true,
             },
             FormatType::TruthVerification => FormatInstructions {
-                title: "SENA 🦁 TRUTH VERIFICATION SYSTEM".to_string(),
+                title: SenaConfig::brand_title("TRUTH VERIFICATION SYSTEM"),
                 sections: vec![
                     "CLAIM BEING VERIFIED".to_string(),
                     "VERIFICATION ANALYSIS".to_string(),
@@ -172,7 +173,7 @@ impl AutoIntegration {
                 use_boxes: true,
             },
             FormatType::CodeAnalysis => FormatInstructions {
-                title: "SENA 🦁 CODE QUALITY ANALYSIS".to_string(),
+                title: SenaConfig::brand_title("CODE QUALITY ANALYSIS"),
                 sections: vec![
                     "CODE OVERVIEW".to_string(),
                     "QUALITY METRICS".to_string(),
@@ -186,7 +187,7 @@ impl AutoIntegration {
                 use_boxes: false,
             },
             FormatType::ProgressDisplay => FormatInstructions {
-                title: "SENA 🦁 TASK PROGRESS".to_string(),
+                title: SenaConfig::brand_title("TASK PROGRESS"),
                 sections: Vec::new(),
                 use_boxes: true,
             },

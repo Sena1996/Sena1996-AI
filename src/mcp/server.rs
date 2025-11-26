@@ -5,12 +5,13 @@
 use std::io::{self, BufRead, Write};
 use super::protocol::*;
 use super::handlers::handle_request;
+use crate::config::SenaConfig;
 
-/// Run the MCP server (stdio mode)
 pub async fn run_server() -> Result<String, String> {
     use std::io::BufReader;
 
-    eprintln!("SENA MCP Server v{} starting...", crate::VERSION);
+    let brand = SenaConfig::brand();
+    eprintln!("{} MCP Server v{} starting...", brand, crate::VERSION);
 
     let stdin = io::stdin();
     let stdout = io::stdout();
@@ -93,7 +94,8 @@ pub async fn run_server_async() -> Result<String, String> {
     let mut reader = BufReader::new(stdin);
     let mut stdout = stdout;
 
-    eprintln!("SENA MCP Server v{} starting (async)...", crate::VERSION);
+    let brand = SenaConfig::brand();
+    eprintln!("{} MCP Server v{} starting (async)...", brand, crate::VERSION);
 
     let mut line = String::new();
 

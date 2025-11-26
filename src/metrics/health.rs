@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -127,7 +126,7 @@ impl SenaHealth {
         }
 
         // Check memory system
-        let memory_files = vec![
+        let memory_files = [
             "reasoning-frameworks.md",
             "security-patterns.md",
             "performance-patterns.md",
@@ -214,7 +213,7 @@ impl SenaHealth {
         }
 
         // Feature check - count modules implemented
-        let feature_modules = vec![
+        let feature_modules = [
             "first_principles.rs",
             "constraint_feature.rs",
             "negative_space.rs",
@@ -329,7 +328,7 @@ mod tests {
     #[test]
     fn test_health_creation() {
         let health = SenaHealth::new();
-        assert!(health.sena_root.to_string_lossy().contains(".claude"));
+        assert!(health.sena_root.to_string_lossy().contains(".sena"));
     }
 
     #[test]
