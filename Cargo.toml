@@ -1,9 +1,9 @@
 [package]
 name = "sena_v11"
-version = "11.0.0"
+version = "11.0.1"
 edition = "2021"
 authors = ["SENA Team"]
-description = "SENA Controller v11.0 - Full Agent Suite with User Customization"
+description = "SENA Controller v11.0.1 - Custom Command Edition"
 license = "MIT"
 repository = "https://github.com/sena/sena-controller"
 keywords = ["ai", "ancient-wisdom", "truth-embedded", "knowledge", "intelligence", "evolution"]

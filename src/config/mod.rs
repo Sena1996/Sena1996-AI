@@ -29,6 +29,8 @@ pub struct UserConfig {
     pub emoji: String,
     #[serde(default = "default_prefix")]
     pub prefix: String,
+    #[serde(default = "default_command")]
+    pub command: String,
 }
 
 impl UserConfig {
@@ -51,6 +53,10 @@ impl UserConfig {
     pub fn farewell(&self) -> String {
         format!("Thank you for using {} v{}! {}", self.prefix, crate::VERSION, self.emoji)
     }
+
+    pub fn command_name(&self) -> &str {
+        &self.command
+    }
 }
 
 fn default_user_name() -> String {
@@ -63,6 +69,10 @@ fn default_emoji() -> String {
 
 fn default_prefix() -> String {
     "SENA".to_string()
+}
+
+fn default_command() -> String {
+    "sena".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,6 +162,7 @@ impl Default for UserConfig {
             name: default_user_name(),
             emoji: default_emoji(),
             prefix: default_prefix(),
+            command: default_command(),
         }
     }
 }

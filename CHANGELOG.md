@@ -5,6 +5,18 @@ All notable changes to SENA Controller will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [11.0.1] - 2025-11-26
+
+### Added
+- Custom CLI command names via symlinks
+- `command` field in `UserConfig` for custom command name
+- Setup wizard creates symlink: `~/.local/bin/{command} -> ~/.local/bin/sena`
+- Claude Code auto-approves custom commands (no bash prompts)
+
+### Changed
+- Setup script now asks for custom command name
+- Permissions configured for both `sena` and custom command
+
 ## [11.0.0] - 2025-11-26
 
 ### Added

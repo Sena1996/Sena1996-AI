@@ -2,12 +2,13 @@
 
 set -e
 
-SENA_VERSION="10.0.6"
+SENA_VERSION="11.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 USER_NAME=""
 USER_EMOJI="🦁"
 USER_PREFIX="SENA"
+USER_COMMAND="sena"
 THINKING_DEPTH="standard"
 PRIMARY_AGENT="general"
 
@@ -26,6 +27,7 @@ print_banner() {
     echo -e "${CYAN}║${NC}       ${BOLD}SENA 🦁 Controller v${SENA_VERSION} - Setup Wizard${NC}            ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                              ║${NC}"
     echo -e "${CYAN}║${NC}       Truth-Embedded Architecture • Ancient Wisdom          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}       ${BOLD}Now with Custom Command Names!${NC}                         ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                              ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
@@ -118,6 +120,35 @@ collect_user_preferences() {
 
     echo ""
 
+    # Get custom command name
+    echo -e "${BOLD}Choose your command name:${NC}"
+    echo "  This is what you'll type in terminal to run commands"
+    echo "  Examples: sena, sagar, jarvis, hal, friday, etc."
+    echo ""
+    DEFAULT_COMMAND=$(echo "$USER_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+    read -p "Command name? (default: $DEFAULT_COMMAND): " input_command
+    if [ -n "$input_command" ]; then
+        USER_COMMAND=$(echo "$input_command" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+    else
+        USER_COMMAND="$DEFAULT_COMMAND"
+    fi
+    print_success "Your command will be: $USER_COMMAND"
+    echo "  Example: $USER_COMMAND health, $USER_COMMAND session start, $USER_COMMAND who"
+
+    echo ""
+
+    # Get prefix for display (defaults to uppercase of command)
+    DEFAULT_PREFIX=$(echo "$USER_COMMAND" | tr '[:lower:]' '[:upper:]')
+    read -p "Display prefix? (default: $DEFAULT_PREFIX): " input_prefix
+    if [ -n "$input_prefix" ]; then
+        USER_PREFIX="$input_prefix"
+    else
+        USER_PREFIX="$DEFAULT_PREFIX"
+    fi
+    print_success "Display prefix: $USER_PREFIX"
+
+    echo ""
+
     # Get preferred emoji
     echo "Choose your assistant emoji:"
     echo "  1) 🦁 Lion (default)"
@@ -190,6 +221,16 @@ collect_user_preferences() {
     print_success "Primary agent: $PRIMARY_AGENT"
 
     echo ""
+
+    # Summary
+    echo -e "${BOLD}Your Configuration Summary:${NC}"
+    echo "  Name:    $USER_NAME"
+    echo "  Command: $USER_COMMAND"
+    echo "  Prefix:  $USER_PREFIX"
+    echo "  Emoji:   $USER_EMOJI"
+    echo ""
+    echo "  You'll use: ${BOLD}$USER_COMMAND health${NC}, ${BOLD}$USER_COMMAND session start${NC}, etc."
+    echo ""
 }
 
 setup_sena_config() {
@@ -205,6 +246,7 @@ setup_sena_config() {
 name = "$USER_NAME"
 emoji = "$USER_EMOJI"
 prefix = "$USER_PREFIX"
+command = "$USER_COMMAND"
 
 [general]
 log_level = "info"
@@ -244,22 +286,22 @@ EOF
     # Copy memory files
     if [ -d "$SCRIPT_DIR/memory" ]; then
         mkdir -p "$HOME/.claude/memory"
-        cp "$SCRIPT_DIR/memory/"*.md "$HOME/.claude/memory/" 2>/dev/null
+        cp "$SCRIPT_DIR/memory/"*.md "$HOME/.claude/memory/" 2>/dev/null || true
         print_success "Installed memory patterns"
     fi
 
     # Copy slash commands
     if [ -d "$SCRIPT_DIR/commands" ]; then
         mkdir -p "$HOME/.claude/commands"
-        cp "$SCRIPT_DIR/commands/"*.md "$HOME/.claude/commands/" 2>/dev/null
+        cp "$SCRIPT_DIR/commands/"*.md "$HOME/.claude/commands/" 2>/dev/null || true
         print_success "Installed slash commands"
     fi
 
     # Copy hook scripts (for reference)
     if [ -d "$SCRIPT_DIR/hooks" ]; then
         mkdir -p "$HOME/.sena/hooks"
-        cp "$SCRIPT_DIR/hooks/"*.sh "$HOME/.sena/hooks/" 2>/dev/null
-        chmod +x "$HOME/.sena/hooks/"*.sh 2>/dev/null
+        cp "$SCRIPT_DIR/hooks/"*.sh "$HOME/.sena/hooks/" 2>/dev/null || true
+        chmod +x "$HOME/.sena/hooks/"*.sh 2>/dev/null || true
         print_success "Installed hook scripts"
     fi
 }
@@ -275,12 +317,14 @@ show_menu() {
     echo -e "     • Backs up existing config first"
     echo -e "     • Removes all Claude configurations"
     echo -e "     • Installs SENA with optimal settings"
+    echo -e "     • ${BOLD}Creates custom command name${NC}"
     echo ""
     echo -e "  ${YELLOW}2)${NC} ${BOLD}Merge Installation${NC} (Keep existing + add SENA)"
     echo -e "     Keep your existing setup and add SENA on top"
     echo -e "     • Preserves your current hooks and rules"
     echo -e "     • Adds SENA MCP server to existing config"
     echo -e "     • Merges SENA rules with your CLAUDE.md"
+    echo -e "     • ${BOLD}Creates custom command name${NC}"
     echo ""
     echo -e "  ${BLUE}3)${NC} ${BOLD}Minimal Installation${NC} (Binary only)"
     echo -e "     Just build and install the SENA binary"
@@ -355,13 +399,28 @@ install_binary() {
     INSTALL_DIR="$HOME/.local/bin"
     mkdir -p "$INSTALL_DIR"
 
+    # Install the main binary as 'sena'
     cp "$SCRIPT_DIR/target/release/sena" "$INSTALL_DIR/sena"
     chmod +x "$INSTALL_DIR/sena"
+    print_success "Installed main binary: $INSTALL_DIR/sena"
 
-    print_success "Installed to: $INSTALL_DIR/sena"
+    # Create custom command symlink/copy if different from 'sena'
+    if [ "$USER_COMMAND" != "sena" ] && [ -n "$USER_COMMAND" ]; then
+        # Remove old symlink if exists
+        rm -f "$INSTALL_DIR/$USER_COMMAND" 2>/dev/null || true
+
+        # Create symlink to the main binary
+        ln -sf "$INSTALL_DIR/sena" "$INSTALL_DIR/$USER_COMMAND"
+        print_success "Created custom command: $INSTALL_DIR/$USER_COMMAND -> sena"
+        print_info "You can now use: $USER_COMMAND health, $USER_COMMAND session start, etc."
+    fi
 
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
         print_warning "Add to your PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo ""
+        echo "Add this to your ~/.bashrc or ~/.zshrc:"
+        echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        echo ""
     fi
 }
 
@@ -386,10 +445,10 @@ clean_claude_desktop() {
         print_success "Removed Claude Desktop data"
     fi
 
-    rm -rf "$HOME/Library/Caches/claude-cli-nodejs" 2>/dev/null
-    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop" 2>/dev/null
-    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop.ShipIt" 2>/dev/null
-    rm -f "$HOME/Library/Preferences/com.anthropic.claudefordesktop.plist" 2>/dev/null
+    rm -rf "$HOME/Library/Caches/claude-cli-nodejs" 2>/dev/null || true
+    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop" 2>/dev/null || true
+    rm -rf "$HOME/Library/Caches/com.anthropic.claudefordesktop.ShipIt" 2>/dev/null || true
+    rm -f "$HOME/Library/Preferences/com.anthropic.claudefordesktop.plist" 2>/dev/null || true
 
     mkdir -p "$CLAUDE_APP_SUPPORT"
 }
@@ -400,31 +459,20 @@ setup_claude_code_config() {
     mkdir -p "$HOME/.claude"
 
     SENA_PATH="$HOME/.local/bin/sena"
+    CMD_PATH="$HOME/.local/bin/$USER_COMMAND"
 
     cat > "$HOME/.claude/settings.json" << EOF
 {
   "permissions": {
     "allow": [
       "Bash($SENA_PATH *)",
-      "Bash($SENA_PATH hook:*)",
-      "Bash($SENA_PATH health*)",
-      "Bash($SENA_PATH metrics*)",
-      "Bash($SENA_PATH backend *)",
-      "Bash($SENA_PATH iot *)",
-      "Bash($SENA_PATH ios *)",
-      "Bash($SENA_PATH android *)",
-      "Bash($SENA_PATH web *)",
-      "Bash($SENA_PATH think *)",
-      "Bash($SENA_PATH agent *)",
-      "Bash($SENA_PATH knowledge *)",
-      "Bash($SENA_PATH evolve *)",
-      "Bash($SENA_PATH process *)",
-      "Bash($SENA_PATH validate *)",
-      "Bash($SENA_PATH detect *)",
-      "Bash($SENA_PATH format *)",
-      "Bash($SENA_PATH setup *)",
-      "Bash($SENA_PATH session *)",
-      "Bash(sena *)"
+      "Bash($SENA_PATH:*)",
+      "Bash($CMD_PATH *)",
+      "Bash($CMD_PATH:*)",
+      "Bash($USER_COMMAND *)",
+      "Bash($USER_COMMAND:*)",
+      "Bash(./target/release/sena *)",
+      "Bash(./target/release/sena:*)"
     ],
     "deny": []
   },
@@ -448,7 +496,8 @@ setup_claude_code_config() {
 }
 EOF
 
-    print_success "Created ~/.claude/settings.json with SENA permissions & hooks"
+    print_success "Created ~/.claude/settings.json"
+    print_info "Auto-approved commands: sena, $USER_COMMAND"
 }
 
 setup_claude_desktop_config() {
@@ -462,7 +511,7 @@ setup_claude_desktop_config() {
     cat > "$CLAUDE_CONFIG_DIR/claude_desktop_config.json" << EOF
 {
   "mcpServers": {
-    "sena": {
+    "$USER_COMMAND": {
       "command": "$SENA_PATH",
       "args": ["mcp"]
     }
@@ -470,7 +519,7 @@ setup_claude_desktop_config() {
 }
 EOF
 
-    print_success "Created Claude Desktop config with SENA MCP server"
+    print_success "Created Claude Desktop config with $USER_COMMAND MCP server"
 }
 
 setup_claude_md() {
@@ -511,28 +560,38 @@ fresh_installation() {
     echo ""
     echo -e "${GREEN}SENA v${SENA_VERSION} has been installed successfully!${NC}"
     echo ""
-    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your SENA is ready."
+    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your personalized AI assistant is ready."
     echo ""
     echo "What was installed:"
-    echo "  • SENA binary: ~/.local/bin/sena"
+    echo "  • Main binary: ~/.local/bin/sena"
+    if [ "$USER_COMMAND" != "sena" ]; then
+        echo "  • Your command: ~/.local/bin/$USER_COMMAND -> sena"
+    fi
     echo "  • SENA config: ~/.sena/config.toml"
-    echo "  • SENA data: ~/.sena/data/, patterns/, sessions/, hooks/"
-    echo "  • Memory patterns: ~/.claude/memory/"
-    echo "  • Slash commands: ~/.claude/commands/"
+    echo "  • SENA data: ~/.sena/data/, patterns/, sessions/"
     echo "  • Claude Code hooks: ~/.claude/settings.json"
     echo "  • Claude Desktop MCP: ~/Library/Application Support/Claude/"
     echo "  • SENA rules: ~/.claude/CLAUDE.md"
     echo ""
-    echo "Your preferences:"
-    echo "  • Name: $USER_NAME"
-    echo "  • Emoji: $USER_EMOJI"
-    echo "  • Thinking: $THINKING_DEPTH"
-    echo "  • Agent: $PRIMARY_AGENT"
+    echo "Your configuration:"
+    echo "  • Name:    $USER_NAME"
+    echo "  • Command: $USER_COMMAND"
+    echo "  • Prefix:  $USER_PREFIX"
+    echo "  • Emoji:   $USER_EMOJI"
+    echo "  • Depth:   $THINKING_DEPTH"
+    echo "  • Agent:   $PRIMARY_AGENT"
+    echo ""
+    echo -e "${BOLD}Try these commands:${NC}"
+    echo "  $USER_COMMAND health          # Check system health"
+    echo "  $USER_COMMAND session start   # Start a session"
+    echo "  $USER_COMMAND who             # Who's online"
+    echo "  $USER_COMMAND think \"query\"   # Extended thinking"
+    echo "  $USER_COMMAND backend map     # Backend analysis"
     echo ""
     echo "Next steps:"
     echo "  1. Restart Claude Desktop"
     echo "  2. Start a new Claude Code session"
-    echo "  3. Run: sena health"
+    echo "  3. Run: $USER_COMMAND health"
     echo ""
 }
 
@@ -566,10 +625,28 @@ import os
 
 settings_path = os.path.expanduser("~/.claude/settings.json")
 sena_path = "$SENA_PATH"
+user_command = "$USER_COMMAND"
 
 with open(settings_path, 'r') as f:
     settings = json.load(f)
 
+# Add permissions
+if 'permissions' not in settings:
+    settings['permissions'] = {'allow': [], 'deny': []}
+if 'allow' not in settings['permissions']:
+    settings['permissions']['allow'] = []
+
+new_perms = [
+    f"Bash({sena_path} *)",
+    f"Bash({sena_path}:*)",
+    f"Bash({user_command} *)",
+    f"Bash({user_command}:*)"
+]
+for perm in new_perms:
+    if perm not in settings['permissions']['allow']:
+        settings['permissions']['allow'].append(perm)
+
+# Add hooks
 if 'hooks' not in settings:
     settings['hooks'] = {}
 
@@ -583,7 +660,7 @@ if sena_hook not in settings['hooks']['UserPromptSubmit']:
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
 
-print("Merged SENA hook into settings.json")
+print("Merged SENA into settings.json")
 EOF
         else
             print_warning "Python3 not found, creating new settings.json"
@@ -605,6 +682,7 @@ import os
 
 config_path = os.path.expanduser("~/Library/Application Support/Claude/claude_desktop_config.json")
 sena_path = "$SENA_PATH"
+user_command = "$USER_COMMAND"
 
 with open(config_path, 'r') as f:
     config = json.load(f)
@@ -612,7 +690,7 @@ with open(config_path, 'r') as f:
 if 'mcpServers' not in config:
     config['mcpServers'] = {}
 
-config['mcpServers']['sena'] = {
+config['mcpServers'][user_command] = {
     "command": sena_path,
     "args": ["mcp"]
 }
@@ -620,7 +698,7 @@ config['mcpServers']['sena'] = {
 with open(config_path, 'w') as f:
     json.dump(config, f, indent=2)
 
-print("Added SENA MCP server to config")
+print(f"Added {user_command} MCP server to config")
 EOF
         else
             print_warning "Python3 not found, creating new config"
@@ -664,20 +742,23 @@ EOF
     echo ""
     echo -e "${GREEN}SENA v${SENA_VERSION} has been merged with your existing setup!${NC}"
     echo ""
-    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your SENA is ready."
+    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your personalized AI assistant is ready."
     echo ""
-    echo "Your existing configuration was preserved and SENA was added."
+    echo "Your configuration:"
+    echo "  • Name:    $USER_NAME"
+    echo "  • Command: $USER_COMMAND"
+    echo "  • Prefix:  $USER_PREFIX"
+    echo "  • Emoji:   $USER_EMOJI"
     echo ""
-    echo "Your preferences:"
-    echo "  • Name: $USER_NAME"
-    echo "  • Emoji: $USER_EMOJI"
-    echo "  • Thinking: $THINKING_DEPTH"
-    echo "  • Agent: $PRIMARY_AGENT"
+    echo -e "${BOLD}Try these commands:${NC}"
+    echo "  $USER_COMMAND health"
+    echo "  $USER_COMMAND session start"
+    echo "  $USER_COMMAND who"
     echo ""
     echo "Next steps:"
     echo "  1. Restart Claude Desktop"
     echo "  2. Start a new Claude Code session"
-    echo "  3. Run: sena health"
+    echo "  3. Run: $USER_COMMAND health"
     echo ""
 }
 
@@ -692,31 +773,54 @@ minimal_installation() {
         return
     fi
 
+    # Still ask for command name
+    echo ""
+    DEFAULT_COMMAND="sena"
+    read -p "Command name? (default: $DEFAULT_COMMAND): " input_command
+    if [ -n "$input_command" ]; then
+        USER_COMMAND=$(echo "$input_command" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+    else
+        USER_COMMAND="$DEFAULT_COMMAND"
+    fi
+
     build_sena
     install_binary
 
     print_step "Minimal Installation Complete! 🦁"
 
     echo ""
-    echo -e "${GREEN}SENA binary installed to ~/.local/bin/sena${NC}"
+    echo -e "${GREEN}SENA binary installed${NC}"
+    echo ""
+    echo "Installed:"
+    echo "  • ~/.local/bin/sena"
+    if [ "$USER_COMMAND" != "sena" ]; then
+        echo "  • ~/.local/bin/$USER_COMMAND -> sena"
+    fi
     echo ""
     echo "Manual setup required:"
     echo ""
-    echo "For Claude Code hooks, add to ~/.claude/settings.json:"
-    echo '  {'
-    echo '    "hooks": {'
-    echo '      "UserPromptSubmit": ['
-    echo '        {"command": "~/.local/bin/sena hook user-prompt-submit"}'
-    echo '      ]'
-    echo '    }'
-    echo '  }'
+    echo "1. Create ~/.sena/config.toml:"
+    echo "   [user]"
+    echo "   name = \"YourName\""
+    echo "   emoji = \"🦁\""
+    echo "   prefix = \"SENA\""
+    echo "   command = \"$USER_COMMAND\""
     echo ""
-    echo "For Claude Desktop MCP, add to claude_desktop_config.json:"
-    echo '  {'
-    echo '    "mcpServers": {'
-    echo '      "sena": {"command": "~/.local/bin/sena", "args": ["mcp"]}'
-    echo '    }'
-    echo '  }'
+    echo "2. For Claude Code hooks, add to ~/.claude/settings.json:"
+    echo '   {'
+    echo '     "hooks": {'
+    echo '       "UserPromptSubmit": ['
+    echo "         {\"command\": \"~/.local/bin/sena hook user-prompt-submit\"}"
+    echo '       ]'
+    echo '     }'
+    echo '   }'
+    echo ""
+    echo "3. For Claude Desktop MCP, add to claude_desktop_config.json:"
+    echo '   {'
+    echo '     "mcpServers": {'
+    echo "       \"$USER_COMMAND\": {\"command\": \"~/.local/bin/sena\", \"args\": [\"mcp\"]}"
+    echo '     }'
+    echo '   }'
     echo ""
 }
 
@@ -731,11 +835,24 @@ uninstall_sena() {
         return
     fi
 
+    # Remove main binary
     if [ -f "$HOME/.local/bin/sena" ]; then
         rm -f "$HOME/.local/bin/sena"
-        print_success "Removed SENA binary"
+        print_success "Removed sena binary"
     fi
 
+    # Remove any symlinks pointing to sena
+    for file in "$HOME/.local/bin/"*; do
+        if [ -L "$file" ]; then
+            target=$(readlink "$file")
+            if [[ "$target" == *"sena"* ]]; then
+                rm -f "$file"
+                print_success "Removed symlink: $(basename "$file")"
+            fi
+        fi
+    done
+
+    # Remove config
     if [ -d "$HOME/.sena" ]; then
         rm -rf "$HOME/.sena"
         print_success "Removed SENA config directory"
@@ -743,7 +860,7 @@ uninstall_sena() {
 
     print_info "Note: Claude configurations were not modified."
     print_info "You may want to manually remove SENA from:"
-    echo "  • ~/.claude/settings.json (hooks)"
+    echo "  • ~/.claude/settings.json (hooks & permissions)"
     echo "  • Claude Desktop config (MCP servers)"
     echo "  • ~/.claude/CLAUDE.md (rules)"
 

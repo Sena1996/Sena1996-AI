@@ -1,11 +1,11 @@
-# SENA Controller v11.0.0 🦁 - User Customization Edition
+# SENA Controller v11.0.1 🦁 - Custom Command Edition
 
-**Truth-Embedded Architecture with Personalized Branding & Session Management**
+**Truth-Embedded Architecture with Personalized CLI Commands**
 
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
-[![Version](https://img.shields.io/badge/version-11.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/version-11.0.1-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Tests](https://img.shields.io/badge/tests-213%20passing-success)](https://github.com/Sena1996/Sena1996-AI)
 [![Clippy](https://img.shields.io/badge/clippy-0%20warnings-success)](https://github.com/Sena1996/Sena1996-AI)
 
@@ -13,8 +13,9 @@
 
 ## What is SENA v11?
 
-SENA v11 is the **User Customization Edition** - personalize your AI assistant:
+SENA v11 is the **Custom Command Edition** - use your own name as the CLI command:
 
+- **Custom Command Names** - Run `sagar health` instead of `sena health`
 - **User Branding** - Configure name, emoji, prefix in `~/.sena/config.toml`
 - **Session Management** - Fixed 24-hour session persistence (was 60s)
 - **Domain Agents** - Backend, IoT, iOS, Android, Web specialized analysis
@@ -31,23 +32,37 @@ SENA v11 is the **User Customization Edition** - personalize your AI assistant:
 
 ---
 
-## NEW in v11.0.0: User Customization
+## NEW in v11.0.1: Custom Command Names
 
-### Personalized Branding
+### Use Your Own Name as CLI Command
+
+Run the setup wizard to configure your custom command:
+```bash
+./setup.sh
+```
+
+The setup will ask for your custom command name. Example:
+- If you choose `sagar`, you can run `sagar health`, `sagar session start`, etc.
+- A symlink is created: `~/.local/bin/sagar -> ~/.local/bin/sena`
+
+### Configuration
 Configure your assistant's identity in `~/.sena/config.toml`:
 
 ```toml
 [user]
-name = "YourName"    # Your name or brand
+name = "Sagar"        # Your name or brand
 emoji = "🦁"          # Your chosen emoji
-prefix = "SENA"       # Prefix for all outputs
+prefix = "SAGAR"      # Prefix for all outputs
+command = "sagar"     # CLI command name (symlink created by setup.sh)
 ```
 
-All outputs now use your configured branding:
-```
-╔══════════════════════════════════════════════════════════════╗
-║                     SENA 🦁 HEALTH STATUS                     ║
-╚══════════════════════════════════════════════════════════════╝
+All outputs and commands use your configured branding:
+```bash
+# Use your custom command for everything:
+sagar health                    # Health check
+sagar session start             # Start session
+sagar backend map "code"        # Domain agent
+sagar think "question"          # Intelligence
 ```
 
 ### Session Management Fixes
@@ -252,6 +267,13 @@ Add to `~/.claude/settings.json`:
 
 ## Version History
 
+### v11.0.1 (2025-11-26) - **Custom Command Edition**
+- Custom CLI command names via symlinks
+- Run `sagar health` instead of `sena health` (or any custom name)
+- Setup wizard creates symlink and configures permissions
+- Claude Code auto-approves custom command (no bash prompts)
+- `command` field in `[user]` config section
+
 ### v11.0.0 (2025-11-26) - **User Customization Edition**
 - User branding configuration (`~/.sena/config.toml`)
 - Configurable name, emoji, prefix for all outputs
@@ -309,9 +331,9 @@ MIT License
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║       SENA 🦁 v11.0.0: User Customization Edition           ║
+║       SENA 🦁 v11.0.1: Custom Command Edition               ║
 ║                                                              ║
-║     Personalized • Clean Code • 213 Tests • Zero Warnings   ║
+║       Your Name • Your Command • Your AI Assistant          ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
