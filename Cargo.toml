@@ -1,6 +1,6 @@
 [package]
 name = "sena_v10"
-version = "10.0.5"
+version = "10.0.6"
 edition = "2021"
 authors = ["SENA Team"]
 description = "SENA Controller v10.0 - Full Agent Suite (Backend, IoT, iOS, Android, Web)"

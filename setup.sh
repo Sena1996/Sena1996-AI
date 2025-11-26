@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="10.0.5"
+SENA_VERSION="10.0.6"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 USER_NAME=""
@@ -106,15 +106,15 @@ collect_user_preferences() {
     echo -e "${BOLD}Let's personalize your SENA installation${NC}"
     echo ""
 
-    # Get user name
-    read -p "What's your name? (press Enter to skip): " input_name
+    # Get user name - use system username as default
+    DEFAULT_NAME="$(whoami)"
+    read -p "What's your name? (default: $DEFAULT_NAME): " input_name
     if [ -n "$input_name" ]; then
         USER_NAME="$input_name"
-        print_success "Hello, $USER_NAME!"
     else
-        USER_NAME="User"
-        print_info "Using default name: User"
+        USER_NAME="$DEFAULT_NAME"
     fi
+    print_success "Hello, $USER_NAME!"
 
     echo ""
 
