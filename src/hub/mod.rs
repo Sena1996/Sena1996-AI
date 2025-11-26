@@ -1,6 +1,6 @@
 //! SENA Collaboration Hub v1.0
 //!
-//! Multi-session collaboration system for SENA v7.0.0
+//! Multi-session collaboration system for SENA v10.0.0
 //! Enables Android Claude, Web Claude, Backend Claude, IoT Claude to work together
 //!
 //! Features:

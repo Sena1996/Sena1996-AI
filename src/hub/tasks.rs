@@ -316,7 +316,7 @@ impl TaskBoard {
     /// Save tasks to disk
     pub fn save(&self) -> Result<(), String> {
         let data = TasksData {
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             next_id: self.next_id.load(Ordering::SeqCst),
             tasks: self.tasks.clone(),
             last_updated: SystemTime::now()

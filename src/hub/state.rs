@@ -176,7 +176,7 @@ impl HubState {
     /// Save state to disk
     pub fn save(&self) -> Result<(), String> {
         let data = HubStateData {
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             states: self.crdt.get_all(),
             session_states: self.session_states.clone(),
             last_updated: SystemTime::now()

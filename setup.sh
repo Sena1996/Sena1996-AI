@@ -5,6 +5,12 @@ set -e
 SENA_VERSION="10.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+USER_NAME=""
+USER_EMOJI="🦁"
+USER_PREFIX="SENA"
+THINKING_DEPTH="standard"
+PRIMARY_AGENT="general"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -91,6 +97,171 @@ detect_existing_setup() {
     fi
 
     echo ""
+}
+
+collect_user_preferences() {
+    print_step "User Preferences"
+
+    echo ""
+    echo -e "${BOLD}Let's personalize your SENA installation${NC}"
+    echo ""
+
+    # Get user name
+    read -p "What's your name? (press Enter to skip): " input_name
+    if [ -n "$input_name" ]; then
+        USER_NAME="$input_name"
+        print_success "Hello, $USER_NAME!"
+    else
+        USER_NAME="User"
+        print_info "Using default name: User"
+    fi
+
+    echo ""
+
+    # Get preferred emoji
+    echo "Choose your assistant emoji:"
+    echo "  1) 🦁 Lion (default)"
+    echo "  2) 🤖 Robot"
+    echo "  3) 🧠 Brain"
+    echo "  4) ⚡ Lightning"
+    echo "  5) 🔮 Crystal Ball"
+    echo "  6) Custom"
+    echo ""
+    read -p "Enter choice [1-6]: " emoji_choice
+
+    case $emoji_choice in
+        1) USER_EMOJI="🦁" ;;
+        2) USER_EMOJI="🤖" ;;
+        3) USER_EMOJI="🧠" ;;
+        4) USER_EMOJI="⚡" ;;
+        5) USER_EMOJI="🔮" ;;
+        6)
+            read -p "Enter your custom emoji: " custom_emoji
+            if [ -n "$custom_emoji" ]; then
+                USER_EMOJI="$custom_emoji"
+            fi
+            ;;
+        *) USER_EMOJI="🦁" ;;
+    esac
+    print_success "Emoji set to: $USER_EMOJI"
+
+    echo ""
+
+    # Get thinking depth preference
+    echo "Default thinking depth:"
+    echo "  1) Quick - Fast responses"
+    echo "  2) Standard - Balanced (default)"
+    echo "  3) Deep - Thorough analysis"
+    echo "  4) Maximum - Comprehensive reasoning"
+    echo ""
+    read -p "Enter choice [1-4]: " depth_choice
+
+    case $depth_choice in
+        1) THINKING_DEPTH="quick" ;;
+        2) THINKING_DEPTH="standard" ;;
+        3) THINKING_DEPTH="deep" ;;
+        4) THINKING_DEPTH="maximum" ;;
+        *) THINKING_DEPTH="standard" ;;
+    esac
+    print_success "Thinking depth: $THINKING_DEPTH"
+
+    echo ""
+
+    # Get primary agent
+    echo "Primary development focus:"
+    echo "  1) General - All-purpose (default)"
+    echo "  2) Backend - Server/API development"
+    echo "  3) IoT - Embedded systems"
+    echo "  4) iOS - Apple development"
+    echo "  5) Android - Android development"
+    echo "  6) Web - Frontend/Full-stack"
+    echo ""
+    read -p "Enter choice [1-6]: " agent_choice
+
+    case $agent_choice in
+        1) PRIMARY_AGENT="general" ;;
+        2) PRIMARY_AGENT="backend" ;;
+        3) PRIMARY_AGENT="iot" ;;
+        4) PRIMARY_AGENT="ios" ;;
+        5) PRIMARY_AGENT="android" ;;
+        6) PRIMARY_AGENT="web" ;;
+        *) PRIMARY_AGENT="general" ;;
+    esac
+    print_success "Primary agent: $PRIMARY_AGENT"
+
+    echo ""
+}
+
+setup_sena_config() {
+    print_step "Creating SENA Configuration"
+
+    mkdir -p "$HOME/.sena"
+
+    cat > "$HOME/.sena/config.toml" << EOF
+# SENA Controller v${SENA_VERSION} Configuration
+# Generated on $(date)
+
+[user]
+name = "$USER_NAME"
+emoji = "$USER_EMOJI"
+prefix = "$USER_PREFIX"
+
+[general]
+log_level = "info"
+telemetry = true
+
+[intelligence]
+default_thinking_depth = "$THINKING_DEPTH"
+default_model = "balanced"
+auto_agent_selection = true
+primary_agent = "$PRIMARY_AGENT"
+
+[evolution]
+pattern_learning = true
+self_optimization = true
+feedback_collection = true
+
+[hub]
+socket_path = "$HOME/.sena/hub.sock"
+auto_start = true
+timeout_seconds = 30
+
+[output]
+color = true
+unicode = true
+progress_bars = true
+EOF
+
+    print_success "Created ~/.sena/config.toml"
+
+    # Create data directories
+    mkdir -p "$HOME/.sena/data"
+    mkdir -p "$HOME/.sena/patterns"
+    mkdir -p "$HOME/.sena/sessions"
+
+    print_success "Created SENA data directories"
+
+    # Copy memory files
+    if [ -d "$SCRIPT_DIR/memory" ]; then
+        mkdir -p "$HOME/.claude/memory"
+        cp "$SCRIPT_DIR/memory/"*.md "$HOME/.claude/memory/" 2>/dev/null
+        print_success "Installed memory patterns"
+    fi
+
+    # Copy slash commands
+    if [ -d "$SCRIPT_DIR/commands" ]; then
+        mkdir -p "$HOME/.claude/commands"
+        cp "$SCRIPT_DIR/commands/"*.md "$HOME/.claude/commands/" 2>/dev/null
+        print_success "Installed slash commands"
+    fi
+
+    # Copy hook scripts (for reference)
+    if [ -d "$SCRIPT_DIR/hooks" ]; then
+        mkdir -p "$HOME/.sena/hooks"
+        cp "$SCRIPT_DIR/hooks/"*.sh "$HOME/.sena/hooks/" 2>/dev/null
+        chmod +x "$HOME/.sena/hooks/"*.sh 2>/dev/null
+        print_success "Installed hook scripts"
+    fi
 }
 
 show_menu() {
@@ -289,30 +460,44 @@ fresh_installation() {
         return
     fi
 
+    collect_user_preferences
     backup_existing
     build_sena
     install_binary
     clean_claude_code
     clean_claude_desktop
+    setup_sena_config
     setup_claude_code_config
     setup_claude_desktop_config
     setup_claude_md
 
-    print_step "Installation Complete! 🦁"
+    print_step "Installation Complete! $USER_EMOJI"
 
     echo ""
     echo -e "${GREEN}SENA v${SENA_VERSION} has been installed successfully!${NC}"
     echo ""
+    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your SENA is ready."
+    echo ""
     echo "What was installed:"
     echo "  • SENA binary: ~/.local/bin/sena"
+    echo "  • SENA config: ~/.sena/config.toml"
+    echo "  • SENA data: ~/.sena/data/, patterns/, sessions/, hooks/"
+    echo "  • Memory patterns: ~/.claude/memory/"
+    echo "  • Slash commands: ~/.claude/commands/"
     echo "  • Claude Code hooks: ~/.claude/settings.json"
     echo "  • Claude Desktop MCP: ~/Library/Application Support/Claude/"
     echo "  • SENA rules: ~/.claude/CLAUDE.md"
     echo ""
+    echo "Your preferences:"
+    echo "  • Name: $USER_NAME"
+    echo "  • Emoji: $USER_EMOJI"
+    echo "  • Thinking: $THINKING_DEPTH"
+    echo "  • Agent: $PRIMARY_AGENT"
+    echo ""
     echo "Next steps:"
     echo "  1. Restart Claude Desktop"
     echo "  2. Start a new Claude Code session"
-    echo "  3. Run: sena --version"
+    echo "  3. Run: sena health"
     echo ""
 }
 
@@ -327,9 +512,11 @@ merge_installation() {
         return
     fi
 
+    collect_user_preferences
     backup_existing
     build_sena
     install_binary
+    setup_sena_config
 
     print_step "Merging Claude Code Configuration"
 
@@ -437,17 +624,25 @@ EOF
         setup_claude_md
     fi
 
-    print_step "Merge Installation Complete! 🦁"
+    print_step "Merge Installation Complete! $USER_EMOJI"
 
     echo ""
     echo -e "${GREEN}SENA v${SENA_VERSION} has been merged with your existing setup!${NC}"
     echo ""
+    echo -e "Welcome, ${BOLD}$USER_NAME${NC}! Your SENA is ready."
+    echo ""
     echo "Your existing configuration was preserved and SENA was added."
+    echo ""
+    echo "Your preferences:"
+    echo "  • Name: $USER_NAME"
+    echo "  • Emoji: $USER_EMOJI"
+    echo "  • Thinking: $THINKING_DEPTH"
+    echo "  • Agent: $PRIMARY_AGENT"
     echo ""
     echo "Next steps:"
     echo "  1. Restart Claude Desktop"
     echo "  2. Start a new Claude Code session"
-    echo "  3. Run: sena --version"
+    echo "  3. Run: sena health"
     echo ""
 }
 

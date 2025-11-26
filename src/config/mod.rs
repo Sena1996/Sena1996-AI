@@ -5,6 +5,8 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SenaConfig {
     #[serde(default)]
+    pub user: UserConfig,
+    #[serde(default)]
     pub general: GeneralConfig,
     #[serde(default)]
     pub intelligence: IntelligenceConfig,
@@ -14,6 +16,28 @@ pub struct SenaConfig {
     pub hub: HubConfig,
     #[serde(default)]
     pub output: OutputConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserConfig {
+    #[serde(default = "default_user_name")]
+    pub name: String,
+    #[serde(default = "default_emoji")]
+    pub emoji: String,
+    #[serde(default = "default_prefix")]
+    pub prefix: String,
+}
+
+fn default_user_name() -> String {
+    "User".to_string()
+}
+
+fn default_emoji() -> String {
+    "🦁".to_string()
+}
+
+fn default_prefix() -> String {
+    "SENA".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,6 +58,12 @@ pub struct IntelligenceConfig {
     pub default_model: String,
     #[serde(default = "default_true")]
     pub auto_agent_selection: bool,
+    #[serde(default = "default_primary_agent")]
+    pub primary_agent: String,
+}
+
+fn default_primary_agent() -> String {
+    "general".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +121,16 @@ fn default_true() -> bool {
     true
 }
 
+impl Default for UserConfig {
+    fn default() -> Self {
+        Self {
+            name: default_user_name(),
+            emoji: default_emoji(),
+            prefix: default_prefix(),
+        }
+    }
+}
+
 impl Default for GeneralConfig {
     fn default() -> Self {
         Self {
@@ -107,6 +147,7 @@ impl Default for IntelligenceConfig {
             default_thinking_depth: default_thinking_depth(),
             default_model: default_model(),
             auto_agent_selection: true,
+            primary_agent: default_primary_agent(),
         }
     }
 }
@@ -144,6 +185,7 @@ impl Default for OutputConfig {
 impl Default for SenaConfig {
     fn default() -> Self {
         Self {
+            user: UserConfig::default(),
             general: GeneralConfig::default(),
             intelligence: IntelligenceConfig::default(),
             evolution: EvolutionConfig::default(),

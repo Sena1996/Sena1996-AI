@@ -396,7 +396,7 @@ impl SessionRegistry {
     /// Save sessions to disk
     pub fn save(&self) -> Result<(), String> {
         let data = SessionsData {
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             sessions: self.sessions.clone(),
             last_updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -467,7 +467,7 @@ impl SessionRegistry {
     /// Save global preferences to disk
     fn save_preferences(&self) -> Result<(), String> {
         let data = GlobalPreferencesData {
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             preferences: self.global_preferences.clone(),
             last_updated: SystemTime::now()
                 .duration_since(UNIX_EPOCH)

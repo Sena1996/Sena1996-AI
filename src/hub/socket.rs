@@ -183,7 +183,7 @@ impl HubServer {
             HubCommand::Status => {
                 HubResponse::ok_with_data("Hub status", serde_json::json!({
                     "running": true,
-                    "version": "7.0.0"
+                    "version": crate::VERSION
                 }))
             }
 

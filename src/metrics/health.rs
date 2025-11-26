@@ -87,9 +87,9 @@ impl SenaHealth {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
 
         Self {
-            sena_root: home.join(".claude").join("sena_controller_v3.0"),
+            sena_root: home.join(".sena"),
             memory_dir: home.join(".claude").join("memory"),
-            hooks_dir: home.join(".claude").join("hooks"),
+            hooks_dir: home.join(".claude"),
         }
     }
 
@@ -100,30 +100,18 @@ impl SenaHealth {
 
         // Core files to check
         let core_files = vec![
-            "src/lib.rs",
-            "src/main.rs",
-            "Cargo.toml",
+            "config.toml",
+            "data",
+            "patterns",
         ];
 
-        let rust_root = self.sena_root.join("v4_rust");
-
         for file in &core_files {
-            let file_path = rust_root.join(file);
+            let file_path = self.sena_root.join(file);
             let exists = file_path.exists();
 
-            let version_correct = if exists {
-                fs::read_to_string(&file_path)
-                    .map(|content| content.contains("7.0.0") || content.contains("v7"))
-                    .unwrap_or(false)
-            } else {
-                false
-            };
-
-            let status = if exists && version_correct {
+            let status = if exists {
                 components_healthy += 1;
                 "healthy"
-            } else if exists {
-                "warning"
             } else {
                 "missing"
             };
@@ -132,7 +120,7 @@ impl SenaHealth {
                 file.to_string(),
                 ComponentHealth {
                     exists,
-                    version: if version_correct { "7.0.0".to_string() } else { "unknown".to_string() },
+                    version: if exists { crate::VERSION.to_string() } else { "unknown".to_string() },
                     status: status.to_string(),
                 },
             );
@@ -151,25 +139,17 @@ impl SenaHealth {
             .filter(|f| self.memory_dir.join(f).exists())
             .count();
 
-        // Check hooks
-        let hook_files = vec![
-            "user-prompt-submit.sh",
-            "sena-enforcer.sh",
+        // Check Claude config files
+        let claude_files = vec![
+            ("settings.json", self.hooks_dir.join("settings.json")),
+            ("CLAUDE.md", self.hooks_dir.join("CLAUDE.md")),
         ];
 
-        let hooks_healthy: usize = hook_files
+        let hooks_healthy: usize = claude_files
             .iter()
-            .filter(|f| {
-                let path = self.hooks_dir.join(f);
-                if path.exists() {
-                    fs::metadata(&path)
-                        .map(|m| m.permissions().mode() & 0o111 != 0)
-                        .unwrap_or(false)
-                } else {
-                    false
-                }
-            })
+            .filter(|(_, path)| path.exists())
             .count();
+        let hook_files = claude_files;
 
         // Calculate overall health
         let total = core_files.len() + memory_files.len() + hook_files.len();
@@ -186,7 +166,7 @@ impl SenaHealth {
 
         HealthReport {
             timestamp: Utc::now().to_rfc3339(),
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             overall_status: overall_status.to_string(),
             components,
             metrics: HealthMetrics {
@@ -251,7 +231,7 @@ impl SenaHealth {
 
         InnovationMetrics {
             timestamp: Utc::now().to_rfc3339(),
-            version: "7.0.0".to_string(),
+            version: crate::VERSION.to_string(),
             features: FeatureMetrics {
                 active: features_active,
                 total: feature_modules.len(),
@@ -356,14 +336,14 @@ mod tests {
     fn test_get_health() {
         let health = SenaHealth::new();
         let report = health.get_health();
-        assert_eq!(report.version, "7.0.0");
+        assert_eq!(report.version, crate::VERSION);
     }
 
     #[test]
     fn test_get_innovation_metrics() {
         let health = SenaHealth::new();
         let metrics = health.get_innovation_metrics();
-        assert_eq!(metrics.version, "7.0.0");
+        assert_eq!(metrics.version, crate::VERSION);
     }
 
     #[test]
