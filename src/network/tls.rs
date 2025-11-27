@@ -29,13 +29,11 @@ impl TlsConfig {
         }
 
         let subject_alt_names = vec![peer_name.to_string(), "localhost".to_string()];
-        let cert = generate_simple_self_signed(subject_alt_names)
+        let certified_key = generate_simple_self_signed(subject_alt_names)
             .map_err(|e| format!("Failed to generate certificate: {}", e))?;
 
-        let cert_pem = cert
-            .serialize_pem()
-            .map_err(|e| format!("Failed to serialize certificate: {}", e))?;
-        let key_pem = cert.serialize_private_key_pem();
+        let cert_pem = certified_key.cert.pem();
+        let key_pem = certified_key.signing_key.serialize_pem();
 
         fs::write(&self.cert_path, cert_pem)
             .map_err(|e| format!("Failed to write certificate: {}", e))?;
