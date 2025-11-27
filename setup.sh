@@ -472,31 +472,20 @@ setup_claude_code_config() {
 {
   "permissions": {
     "allow": [
-      "Bash($SENA_PATH *)",
-      "Bash($SENA_PATH:*)",
-      "Bash($CMD_PATH *)",
-      "Bash($CMD_PATH:*)",
-      "Bash($USER_COMMAND *)",
+      "Bash(sena:*)",
+      "Bash(sena)",
       "Bash($USER_COMMAND:*)",
-      "Bash(./target/release/sena *)",
-      "Bash(./target/release/sena:*)"
-    ],
-    "deny": []
+      "Bash($USER_COMMAND)",
+      "Bash($SENA_PATH:*)",
+      "Bash($SENA_PATH)",
+      "Bash(./target/release/sena:*)",
+      "Bash(./target/release/sena)"
+    ]
   },
   "hooks": {
     "UserPromptSubmit": [
       {
         "command": "$SENA_PATH hook user-prompt-submit"
-      }
-    ],
-    "AssistantResponse": [
-      {
-        "command": "$SENA_PATH hook assistant-response"
-      }
-    ],
-    "ToolUse": [
-      {
-        "command": "$SENA_PATH hook tool-execution"
       }
     ]
   }
@@ -644,10 +633,14 @@ if 'allow' not in settings['permissions']:
     settings['permissions']['allow'] = []
 
 new_perms = [
-    f"Bash({sena_path} *)",
+    "Bash(sena:*)",
+    "Bash(sena)",
+    f"Bash({user_command}:*)",
+    f"Bash({user_command})",
     f"Bash({sena_path}:*)",
-    f"Bash({user_command} *)",
-    f"Bash({user_command}:*)"
+    f"Bash({sena_path})",
+    "Bash(./target/release/sena:*)",
+    "Bash(./target/release/sena)"
 ]
 for perm in new_perms:
     if perm not in settings['permissions']['allow']:
