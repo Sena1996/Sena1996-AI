@@ -566,10 +566,25 @@ install_binary() {
     INSTALL_DIR="$HOME/.local/bin"
     mkdir -p "$INSTALL_DIR"
 
+    # Check if existing binary exists and remove it
+    if [ -f "$INSTALL_DIR/sena" ]; then
+        print_info "Removing existing sena binary..."
+        rm -f "$INSTALL_DIR/sena"
+    fi
+
     # Install the main binary as 'sena'
     cp "$SCRIPT_DIR/target/release/sena" "$INSTALL_DIR/sena"
     chmod +x "$INSTALL_DIR/sena"
     print_success "Installed main binary: $INSTALL_DIR/sena"
+
+    # Verify installation
+    if [ -x "$INSTALL_DIR/sena" ]; then
+        local VERSION=$("$INSTALL_DIR/sena" --version 2>/dev/null || echo "unknown")
+        print_success "Verified: $VERSION"
+    else
+        print_error "Binary installation failed!"
+        return 1
+    fi
 
     # Create custom command symlink/copy if different from 'sena'
     if [ "$USER_COMMAND" != "sena" ] && [ -n "$USER_COMMAND" ]; then
