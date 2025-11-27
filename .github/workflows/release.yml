@@ -155,13 +155,3 @@ jobs:
           files: |
             sena-${{ matrix.target }}.${{ matrix.archive }}
 
-  publish-crate:
-    name: Publish to crates.io
-    needs: build-release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Publish
-        run: cargo publish --token ${{ secrets.SENA1996_AI_TOOL }} --allow-dirty
-        continue-on-error: true
