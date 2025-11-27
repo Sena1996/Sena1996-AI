@@ -10,3 +10,35 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Coverage
+*.profraw
+*.profdata
+tarpaulin-report.html
+coverage/
+lcov.info
+
+# Documentation
+/target/doc
+
+# Logs
+*.log
+debug.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Tauri (future desktop app)
+/sena-ui/node_modules/
+/sena-ui/dist/
+/sena-ui/src-tauri/target/
+
+# Test artifacts
+/test-results/

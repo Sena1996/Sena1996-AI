@@ -53,17 +53,11 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use sena_v11::{SenaUnifiedSystem, ProcessingRequest, KnowledgeSystem, IntelligenceSystem, ThinkingDepth};
+//! use sena1996_ai::{SenaUnifiedSystem, ProcessingRequest, ThinkingDepth};
 //!
 //! #[tokio::main]
 //! async fn main() {
 //!     let mut system = SenaUnifiedSystem::new();
-//!
-//!     // Search knowledge base
-//!     let results = system.knowledge().search("sql injection");
-//!
-//!     // Use extended thinking
-//!     let analysis = system.intelligence().analyze("complex problem", ThinkingDepth::Deep);
 //!
 //!     // Process request
 //!     let request = ProcessingRequest::new("Hello, SENA!", "greeting");
