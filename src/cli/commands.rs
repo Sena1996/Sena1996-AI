@@ -131,6 +131,18 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
             execute_setup(*install_type, name.clone(), *yes, cli.format).await
         }
 
+        Some(Commands::Network { action }) => {
+            execute_network(action.clone(), cli.format).await
+        }
+
+        Some(Commands::Peer { action }) => {
+            execute_peer(action.clone(), cli.format).await
+        }
+
+        Some(Commands::Discover { timeout }) => {
+            execute_discover(*timeout, cli.format).await
+        }
+
         None => {
             // No command - show status
             execute_health(false, cli.format)
@@ -1841,4 +1853,314 @@ sena health
     output.push_str(&format!("  cd {}\n", project_dir.display()));
     output.push_str(&format!("  sena {} full \"<your code>\"\n", agent));
     Ok(output)
+}
+
+async fn execute_network(action: NetworkAction, format: OutputFormat) -> Result<String, String> {
+    use crate::network::{NetworkManager, NetworkConfig};
+
+    let home = dirs::home_dir().ok_or("Cannot find home directory")?;
+    let data_dir = home.join(".sena").join("network");
+
+    match action {
+        NetworkAction::Start { port, name } => {
+            let config = NetworkConfig {
+                port,
+                enabled: true,
+                ..Default::default()
+            };
+
+            let mut manager = NetworkManager::new(config, data_dir)?;
+
+            if let Some(custom_name) = name {
+                manager.set_local_peer_name(&custom_name).await?;
+            }
+
+            manager.start().await?;
+
+            let status = manager.status().await;
+            format_network_status(&status, format, "Network server started")
+        }
+
+        NetworkAction::Stop => {
+            let config = NetworkConfig::default();
+            let mut manager = NetworkManager::new(config, data_dir)?;
+            manager.stop().await;
+            Ok("Network server stopped".to_string())
+        }
+
+        NetworkAction::Status => {
+            let config = NetworkConfig::default();
+            let manager = NetworkManager::new(config, data_dir)?;
+            let status = manager.status().await;
+            format_network_status(&status, format, "Network Status")
+        }
+
+        NetworkAction::Info => {
+            let config = NetworkConfig::default();
+            let manager = NetworkManager::new(config, data_dir)?;
+
+            let peer_id = manager.get_local_peer_id().await;
+            let peer_name = manager.get_local_peer_name().await;
+            let fingerprint = manager.get_certificate_fingerprint().unwrap_or_else(|_| "N/A".to_string());
+
+            match format {
+                OutputFormat::Json => {
+                    Ok(serde_json::json!({
+                        "peer_id": peer_id,
+                        "peer_name": peer_name,
+                        "certificate_fingerprint": fingerprint
+                    }).to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("NETWORK INFO")).render());
+                    output.push('\n');
+                    output.push_str(&format!("Peer ID: {}\n", peer_id));
+                    output.push_str(&format!("Peer Name: {}\n", peer_name));
+                    output.push_str(&format!("Certificate: {}\n", &fingerprint[..16.min(fingerprint.len())]));
+                    Ok(output)
+                }
+            }
+        }
+
+        NetworkAction::SetName { name } => {
+            let config = NetworkConfig::default();
+            let manager = NetworkManager::new(config, data_dir)?;
+            manager.set_local_peer_name(&name).await?;
+            Ok(format!("Peer name set to: {}", name))
+        }
+    }
+}
+
+fn format_network_status(status: &crate::network::NetworkStatus, format: OutputFormat, title: &str) -> Result<String, String> {
+    match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(status).map_err(|e| e.to_string())
+        }
+        _ => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title(title)).render());
+            output.push('\n');
+
+            let table = TableBuilder::new()
+                .row(vec!["Status".to_string(), if status.running { "Running" } else { "Stopped" }.to_string()])
+                .row(vec!["Port".to_string(), status.port.to_string()])
+                .row(vec!["Peers".to_string(), status.peer_count.to_string()])
+                .row(vec!["Authorized".to_string(), status.authorized_count.to_string()])
+                .row(vec!["Discovered".to_string(), status.discovered_count.to_string()])
+                .row(vec!["Connections".to_string(), status.connection_count.to_string()])
+                .row(vec!["TLS".to_string(), if status.tls_enabled { "Enabled" } else { "Disabled" }.to_string()])
+                .row(vec!["Discovery".to_string(), if status.discovery_enabled { "Enabled" } else { "Disabled" }.to_string()])
+                .build();
+
+            output.push_str(&table);
+            Ok(output)
+        }
+    }
+}
+
+async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String, String> {
+    use crate::network::{NetworkManager, NetworkConfig};
+
+    let home = dirs::home_dir().ok_or("Cannot find home directory")?;
+    let data_dir = home.join(".sena").join("network");
+    let config = NetworkConfig::default();
+    let manager = NetworkManager::new(config, data_dir)?;
+
+    match action {
+        PeerAction::List { authorized } => {
+            let peers = if authorized {
+                manager.get_authorized_peers().await
+            } else {
+                manager.get_peers().await
+            };
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&peers).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("PEERS")).render());
+                    output.push('\n');
+
+                    if peers.is_empty() {
+                        output.push_str("No peers found.\n");
+                        output.push_str("\nTo add a peer:\n");
+                        output.push_str("  sena peer add <ip> --port 9876 --name \"Peer Name\"\n");
+                    } else {
+                        for peer in &peers {
+                            let status = if peer.authorized { "✅" } else { "❌" };
+                            let online = if peer.is_online() { "🟢" } else { "⚫" };
+                            output.push_str(&format!(
+                                "{} {} {} ({}:{}) - {}\n",
+                                status, online, peer.name, peer.address, peer.port, &peer.id[..8]
+                            ));
+                        }
+                    }
+                    Ok(output)
+                }
+            }
+        }
+
+        PeerAction::Add { address, port, name } => {
+            let peer = manager.add_peer(&address, port, name.as_deref()).await?;
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&peer).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&format!("✅ Peer added: {} ({})\n", peer.name, &peer.id[..8]));
+                    output.push_str(&format!("   Address: {}:{}\n", peer.address, peer.port));
+                    output.push_str("\nTo authorize this peer:\n");
+                    output.push_str(&format!("  sena peer authorize {}\n", &peer.id[..8]));
+                    Ok(output)
+                }
+            }
+        }
+
+        PeerAction::Remove { peer_id } => {
+            let peers = manager.get_peers().await;
+            let matched = peers.iter().find(|p| p.id.starts_with(&peer_id));
+
+            match matched {
+                Some(peer) => {
+                    manager.remove_peer(&peer.id).await?;
+                    Ok(format!("✅ Peer removed: {}", peer.name))
+                }
+                None => Err(format!("Peer not found: {}", peer_id))
+            }
+        }
+
+        PeerAction::Authorize { peer_id, expires } => {
+            let peers = manager.get_peers().await;
+            let matched = peers.iter().find(|p| p.id.starts_with(&peer_id));
+
+            match matched {
+                Some(peer) => {
+                    let token = manager.authorize_peer(&peer.id).await?;
+
+                    match format {
+                        OutputFormat::Json => {
+                            Ok(serde_json::json!({
+                                "peer_id": peer.id,
+                                "token": token.token,
+                                "expires_in": expires
+                            }).to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&format!("✅ Peer authorized: {}\n\n", peer.name));
+                            output.push_str("Share this token with the peer:\n");
+                            output.push_str(&format!("  Token: {}\n", token.token));
+                            output.push_str(&format!("  Expires in: {} seconds\n", expires));
+                            output.push_str("\nPeer should run:\n");
+                            output.push_str(&format!(
+                                "  sena peer connect <your-ip> --token {}\n",
+                                token.token
+                            ));
+                            Ok(output)
+                        }
+                    }
+                }
+                None => Err(format!("Peer not found: {}", peer_id))
+            }
+        }
+
+        PeerAction::Connect { address, port, token } => {
+            let mut client = manager.connect_and_auth(&address, port, &token).await?;
+
+            let peer_name = client.remote_peer_name().unwrap_or("Unknown").to_string();
+            let peer_id = client.remote_peer_id().unwrap_or("").to_string();
+
+            client.disconnect().await?;
+
+            match format {
+                OutputFormat::Json => {
+                    Ok(serde_json::json!({
+                        "success": true,
+                        "peer_id": peer_id,
+                        "peer_name": peer_name
+                    }).to_string())
+                }
+                _ => {
+                    Ok(format!("✅ Connected to {} ({})", peer_name, &peer_id[..8.min(peer_id.len())]))
+                }
+            }
+        }
+
+        PeerAction::Revoke { peer_id } => {
+            let peers = manager.get_peers().await;
+            let matched = peers.iter().find(|p| p.id.starts_with(&peer_id));
+
+            match matched {
+                Some(peer) => {
+                    let home = dirs::home_dir().ok_or("Cannot find home directory")?;
+                    let data_dir = home.join(".sena").join("network");
+                    let mut registry = crate::network::PeerRegistry::load(data_dir.join("peers.json"))?;
+                    registry.revoke_peer(&peer.id)?;
+                    Ok(format!("✅ Authorization revoked for: {}", peer.name))
+                }
+                None => Err(format!("Peer not found: {}", peer_id))
+            }
+        }
+
+        PeerAction::Ping { target, port } => {
+            let mut client = manager.connect_to_peer(&target, port).await?;
+            let start = std::time::Instant::now();
+            let success = client.ping().await?;
+            let elapsed = start.elapsed();
+            client.disconnect().await?;
+
+            if success {
+                Ok(format!("✅ Pong from {} ({}ms)", target, elapsed.as_millis()))
+            } else {
+                Err("Ping failed".to_string())
+            }
+        }
+    }
+}
+
+async fn execute_discover(timeout: u64, format: OutputFormat) -> Result<String, String> {
+    use crate::network::discover_once;
+
+    let peers = discover_once(timeout).await?;
+
+    match format {
+        OutputFormat::Json => {
+            serde_json::to_string_pretty(&peers).map_err(|e| e.to_string())
+        }
+        _ => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title("DISCOVERED PEERS")).render());
+            output.push('\n');
+
+            if peers.is_empty() {
+                output.push_str("No peers discovered on network.\n");
+                output.push_str("\nMake sure:\n");
+                output.push_str("  • Other SENA instances are running: sena network start\n");
+                output.push_str("  • You're on the same local network\n");
+                output.push_str("  • Firewall allows mDNS (port 5353)\n");
+            } else {
+                output.push_str(&format!("Found {} peer(s):\n\n", peers.len()));
+                for peer in &peers {
+                    output.push_str(&format!(
+                        "🔍 {} ({})\n   Address: {}:{}\n   ID: {}\n\n",
+                        peer.peer_name,
+                        peer.address,
+                        peer.address,
+                        peer.port,
+                        &peer.peer_id[..8.min(peer.peer_id.len())]
+                    ));
+                }
+                output.push_str("To connect to a peer:\n");
+                output.push_str("  1. Add peer: sena peer add <ip> --name \"Name\"\n");
+                output.push_str("  2. Authorize: sena peer authorize <peer-id>\n");
+                output.push_str("  3. Share token with peer\n");
+            }
+            Ok(output)
+        }
+    }
 }

@@ -1,6 +1,8 @@
-# SENA Controller v9.0 - Setup Guide 🦁
+# Sena1996 AI Tool 🦁 - Setup Guide
 
-This guide covers all installation scenarios for SENA Controller with Claude Code and Claude Desktop.
+## Make Your AI Collaborative and Smarter™
+
+This guide covers all installation scenarios for Sena1996 AI Tool with Claude Code and Claude Desktop.
 
 ---
 
@@ -33,6 +35,7 @@ Best for users who:
 5. Sets up optimal Claude Code hooks
 6. Configures Claude Desktop MCP server
 7. Installs SENA Elite Coding Standards
+8. **Generates custom slash commands** based on your chosen name
 
 **Backup location:** `~/.sena_backup_YYYYMMDD_HHMMSS/`
 
@@ -74,6 +77,64 @@ Best for users who:
 
 ---
 
+## Custom Command Names
+
+During setup, you can choose a custom command name:
+
+```
+Enter custom command name (or press Enter for 'sena'): jarvis
+```
+
+This creates:
+- A symlink: `~/.local/bin/jarvis -> ~/.local/bin/sena`
+- Custom slash commands: `/jarvis-health`, `/jarvis-network`, etc.
+- Branded output: `JARVIS 🤖 HEALTH STATUS`
+
+### Available Custom Names Examples
+- `jarvis` - Iron Man's AI
+- `lucy` - Her movie AI
+- `friday` - Tony Stark's second AI
+- `hal` - 2001 Space Odyssey
+- Or any name you prefer!
+
+---
+
+## Network Collaboration Setup
+
+### Enable Network Features
+
+After installation, start the network server:
+
+```bash
+# Start network server
+sena network start --name "My Workstation"
+
+# Check status
+sena network status
+
+# View your peer info
+sena network info
+```
+
+### Connect to Other Machines
+
+```bash
+# Discover peers on local network
+sena discover
+
+# Add a peer manually
+sena peer add 192.168.1.100 --name "Other Mac"
+
+# Authorize the peer (generates token)
+sena peer authorize <peer-id>
+# Share this token with the other machine
+
+# On the other machine, connect with token
+sena peer connect 192.168.1.50 --token <auth-token>
+```
+
+---
+
 ## Manual Configuration
 
 ### Claude Code Hooks
@@ -87,6 +148,12 @@ Add to `~/.claude/settings.json`:
       {
         "command": "~/.local/bin/sena hook user-prompt-submit"
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(sena *)",
+      "Bash(./target/release/sena *)"
     ]
   }
 }
@@ -134,17 +201,59 @@ cp CLAUDE.md ~/.claude/CLAUDE.md
 
 ```
 ~/.local/bin/
-└── sena                    # SENA binary
+├── sena                    # SENA binary
+└── jarvis                  # Symlink to sena (if custom name chosen)
 
 ~/.claude/
 ├── settings.json           # Claude Code settings with SENA hooks
-└── CLAUDE.md               # SENA Elite Coding Standards
+├── CLAUDE.md               # SENA Elite Coding Standards
+└── commands/
+    ├── sena-health.md      # Slash commands (or jarvis-health.md)
+    ├── sena-network.md
+    └── ...
 
 ~/.sena/
-└── config.toml             # SENA configuration (created on first run)
+├── config.toml             # SENA configuration
+└── data/
+    ├── peers.json          # Network peer registry
+    ├── tokens.json         # Auth tokens
+    └── tls/                # TLS certificates
 
 ~/Library/Application Support/Claude/
 └── claude_desktop_config.json   # Claude Desktop with SENA MCP
+```
+
+---
+
+## Configuration File
+
+SENA stores its configuration at `~/.sena/config.toml`:
+
+```toml
+[user]
+name = "YourName"           # Your name
+emoji = "🦁"                # Your emoji
+prefix = "SENA"             # Display prefix
+command = "sena"            # CLI command name
+
+[general]
+log_level = "info"
+
+[intelligence]
+default_thinking_depth = "standard"
+default_model = "balanced"
+auto_agent_selection = true
+primary_agent = "general"
+
+[evolution]
+pattern_learning = true
+self_optimization = true
+feedback_collection = true
+
+[output]
+color = true
+unicode = true
+progress_bars = true
 ```
 
 ---
@@ -154,12 +263,13 @@ cp CLAUDE.md ~/.claude/CLAUDE.md
 ### Check SENA Binary
 ```bash
 sena --version
-# Expected: sena 9.0.4
+sena health
 ```
 
-### Check Health
+### Check Network
 ```bash
-sena health
+sena network status
+sena network info
 ```
 
 ### Test MCP Server
@@ -207,6 +317,12 @@ cargo clean
 cargo build --release
 ```
 
+### Network Discovery Not Working
+
+- Ensure both machines are on the same network
+- Check firewall allows port 9876
+- Try manual peer add instead of discovery
+
 ### Restore from Backup
 
 If something goes wrong:
@@ -235,70 +351,26 @@ Run the setup wizard and choose option 4 (Uninstall):
 Or manually:
 ```bash
 rm -f ~/.local/bin/sena
+rm -f ~/.local/bin/jarvis  # If custom command was created
 rm -rf ~/.sena
 # Then manually edit settings.json and claude_desktop_config.json
 ```
 
 ---
 
-## Configuration File
+## Credits
 
-SENA stores its configuration at `~/.sena/config.toml`:
-
-```toml
-[general]
-version = "9.0.4"
-log_level = "info"
-
-[knowledge]
-memory_level = "project"
-enable_security_patterns = true
-enable_performance_patterns = true
-enable_architecture_patterns = true
-
-[intelligence]
-default_thinking_depth = "standard"
-enable_agents = true
-
-[evolution]
-enable_learning = true
-enable_feedback = true
-```
-
----
-
-## What's Included
-
-### SENA Controller Features
-- **Knowledge System** - Multi-level memory, reasoning frameworks
-- **Intelligence System** - Extended thinking, specialized agents
-- **Evolution System** - Pattern learning, self-optimization
-- **7 Ancient Wisdom Layers** - Truth-embedded architecture
-- **MCP Server** - Claude Desktop integration
-- **Hooks** - Claude Code integration
-
-### Elite Coding Standards (CLAUDE.md)
-- 50 coding rules (15 Critical, 20 Important, 15 Best Practice)
-- Rust-specific guidelines
-- SOLID principles
-- Clean code practices
-- Security patterns
-
----
-
-## Support
-
-- **Issues**: https://github.com/Sena1996/Sena1996-AI/issues
-- **Documentation**: See README.md for full feature list
+**Sena1996™** - Creator and Lead Developer
+**Claude (Anthropic)** - AI Development Partner
 
 ---
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║         SENA 🦁 v9.0.4: Truth-Embedded Architecture          ║
+║                   Sena1996 AI Tool 🦁                        ║
 ║                                                              ║
-║         Robust • Clean Code • Battle-Tested • Ancient        ║
+║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```

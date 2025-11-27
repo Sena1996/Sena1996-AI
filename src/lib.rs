@@ -92,6 +92,7 @@ pub mod knowledge;
 pub mod intelligence;
 pub mod evolution;
 pub mod agents;
+pub mod network;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

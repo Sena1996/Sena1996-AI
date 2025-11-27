@@ -249,6 +249,24 @@ pub enum Commands {
         #[arg(short, long, help = "Skip confirmation prompts")]
         yes: bool,
     },
+
+    #[command(about = "Network collaboration")]
+    Network {
+        #[command(subcommand)]
+        action: NetworkAction,
+    },
+
+    #[command(about = "Peer management")]
+    Peer {
+        #[command(subcommand)]
+        action: PeerAction,
+    },
+
+    #[command(about = "Discover peers on network")]
+    Discover {
+        #[arg(short, long, default_value_t = 5, help = "Discovery timeout in seconds")]
+        timeout: u64,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -520,6 +538,96 @@ pub enum WebAnalysisType {
     Perf,
     Audit,
     Full,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum NetworkAction {
+    #[command(about = "Start network server")]
+    Start {
+        #[arg(short, long, default_value_t = 9876, help = "Port to listen on")]
+        port: u16,
+
+        #[arg(short, long, help = "Display name for this peer")]
+        name: Option<String>,
+    },
+
+    #[command(about = "Stop network server")]
+    Stop,
+
+    #[command(about = "Show network status")]
+    Status,
+
+    #[command(about = "Show network info")]
+    Info,
+
+    #[command(about = "Set peer display name")]
+    SetName {
+        #[arg(help = "New display name")]
+        name: String,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum PeerAction {
+    #[command(about = "List known peers")]
+    List {
+        #[arg(short, long, help = "Show only authorized peers")]
+        authorized: bool,
+    },
+
+    #[command(about = "Add peer manually")]
+    Add {
+        #[arg(help = "Peer IP address")]
+        address: String,
+
+        #[arg(short, long, default_value_t = 9876, help = "Peer port")]
+        port: u16,
+
+        #[arg(short, long, help = "Peer name")]
+        name: Option<String>,
+    },
+
+    #[command(about = "Remove peer")]
+    Remove {
+        #[arg(help = "Peer ID")]
+        peer_id: String,
+    },
+
+    #[command(about = "Authorize peer (generate token)")]
+    Authorize {
+        #[arg(help = "Peer ID")]
+        peer_id: String,
+
+        #[arg(short, long, default_value_t = 300, help = "Token expiry in seconds")]
+        expires: i64,
+    },
+
+    #[command(about = "Connect to peer with token")]
+    Connect {
+        #[arg(help = "Peer IP address")]
+        address: String,
+
+        #[arg(short, long, default_value_t = 9876, help = "Peer port")]
+        port: u16,
+
+        #[arg(short, long, help = "Authorization token")]
+        token: String,
+    },
+
+    #[command(about = "Revoke peer authorization")]
+    Revoke {
+        #[arg(help = "Peer ID")]
+        peer_id: String,
+    },
+
+    #[command(about = "Ping peer")]
+    Ping {
+        #[arg(help = "Peer ID or address")]
+        target: String,
+
+        #[arg(short, long, default_value_t = 9876, help = "Port")]
+        port: u16,
+    },
 }
 
 impl Cli {

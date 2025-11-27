@@ -1,16 +1,16 @@
 [package]
-name = "sena_v11"
+name = "sena1996-ai"
 version = "11.0.2"
 edition = "2021"
-authors = ["SENA Team"]
-description = "SENA Controller v11.0.2 - Session Messaging Edition"
+authors = ["Sena1996 <sena1996@github.com>"]
+description = "Sena1996 AI Tool - Make Your AI Collaborative and Smarter"
 license = "MIT"
-repository = "https://github.com/sena/sena-controller"
-keywords = ["ai", "ancient-wisdom", "truth-embedded", "knowledge", "intelligence", "evolution"]
-categories = ["science", "algorithms"]
+repository = "https://github.com/Sena1996/Sena1996-AI"
+keywords = ["ai", "collaboration", "network", "claude", "mcp", "intelligence"]
+categories = ["development-tools", "command-line-utilities"]
 
 [lib]
-name = "sena_v11"
+name = "sena1996_ai"
 path = "src/lib.rs"
 
 [[bin]]
@@ -71,6 +71,21 @@ atty = "0.2"
 
 # Colored output
 colored = "2.1"
+
+# Network - mDNS discovery
+mdns-sd = "0.11"
+
+# Network - TLS
+tokio-rustls = "0.25"
+rustls = "0.22"
+rustls-pemfile = "2.0"
+rcgen = "0.12"
+
+# Random for tokens
+rand = "0.8"
+
+# Base64 encoding
+base64 = "0.21"
 
 [dev-dependencies]
 tokio-test = "0.4"

@@ -1,23 +1,26 @@
-# SENA Controller v11.0.2 - Usage Guide
+# Sena1996 AI Tool 🦁 - Usage Guide
 
-Complete guide to using SENA Controller with Claude Code.
+## Make Your AI Collaborative and Smarter™
+
+Complete guide to using Sena1996 AI Tool with Claude Code.
 
 ---
 
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Session Management](#session-management)
-3. [Cross-Session Messaging](#cross-session-messaging)
-4. [Task Management](#task-management)
-5. [Domain Agents](#domain-agents)
-6. [Intelligence System](#intelligence-system)
-7. [Knowledge System](#knowledge-system)
-8. [Evolution System](#evolution-system)
-9. [Health & Metrics](#health--metrics)
-10. [Hooks & MCP](#hooks--mcp)
-11. [Configuration](#configuration)
-12. [Troubleshooting](#troubleshooting)
+2. [Network Collaboration](#network-collaboration)
+3. [Session Management](#session-management)
+4. [Cross-Session Messaging](#cross-session-messaging)
+5. [Task Management](#task-management)
+6. [Domain Agents](#domain-agents)
+7. [Intelligence System](#intelligence-system)
+8. [Knowledge System](#knowledge-system)
+9. [Evolution System](#evolution-system)
+10. [Health & Metrics](#health--metrics)
+11. [Hooks & MCP](#hooks--mcp)
+12. [Configuration](#configuration)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -41,6 +44,66 @@ cp target/release/sena ~/.local/bin/sena
 ```bash
 sena --version
 sena health
+```
+
+---
+
+## Network Collaboration
+
+Connect multiple SENA instances across your local network (WiFi or LAN).
+
+### Start Network Server
+```bash
+sena network start                      # Start on default port 9876
+sena network start --name "My Mac"      # Start with custom name
+sena network start --port 9877          # Start on custom port
+```
+
+### Network Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena network start` | Start network server |
+| `sena network stop` | Stop network server |
+| `sena network status` | Show server status |
+| `sena network info` | Show peer ID and name |
+| `sena network set-name "Name"` | Change display name |
+
+### Peer Discovery
+```bash
+sena discover                           # Find peers on network
+sena discover --timeout 10              # Extended discovery (10 seconds)
+```
+
+### Peer Management
+
+| Command | Description |
+|---------|-------------|
+| `sena peer list` | List known peers |
+| `sena peer add <ip> --name "Name"` | Add peer manually |
+| `sena peer authorize <id>` | Generate auth token |
+| `sena peer connect <ip> --token <token>` | Connect with token |
+| `sena peer revoke <id>` | Revoke authorization |
+| `sena peer ping <id>` | Ping peer |
+
+### Connection Flow
+```bash
+# On Machine A:
+sena network start --name "Workstation"
+sena peer list
+# Note your peer ID
+
+# On Machine B:
+sena discover
+# See Machine A in list
+sena peer add 192.168.1.50 --name "Workstation"
+
+# Back on Machine A:
+sena peer authorize <machine-b-peer-id>
+# Share the generated token with Machine B
+
+# On Machine B:
+sena peer connect 192.168.1.50 --token <auth-token>
 ```
 
 ---
@@ -329,7 +392,7 @@ progress_bars = true
 ```
 
 ### Custom Command Name
-Set a custom command name (e.g., `sagar` instead of `sena`):
+Set a custom command name (e.g., `jarvis` instead of `sena`):
 ```bash
 ./setup.sh
 # Enter custom command name when prompted
@@ -337,8 +400,9 @@ Set a custom command name (e.g., `sagar` instead of `sena`):
 
 Then use:
 ```bash
-sagar health
-sagar session start --name 'MySession'
+jarvis health
+jarvis session start --name 'MySession'
+jarvis network status
 ```
 
 ---
@@ -374,6 +438,11 @@ Check `~/.claude/settings.json` has the hook configured:
 }
 ```
 
+### Network peers not discovering?
+- Ensure both machines are on same network
+- Check firewall allows port 9876
+- Use manual `peer add` as fallback
+
 ---
 
 ## Quick Reference
@@ -388,7 +457,25 @@ Check `~/.claude/settings.json` has the hook configured:
 | Create task | `sena task new "title" --to SessionName` |
 | Deep think | `sena think --depth deep "question"` |
 | Security scan | `sena agent security "code"` |
+| Start network | `sena network start --name "My PC"` |
+| Discover peers | `sena discover` |
+| List peers | `sena peer list` |
 
 ---
 
-**SENA 🦁 v11.0.2 - Your AI Assistant Controller**
+## Credits
+
+**Sena1996™** - Creator and Lead Developer
+**Claude (Anthropic)** - AI Development Partner
+
+---
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                   Sena1996 AI Tool 🦁                        ║
+║                                                              ║
+║         Make Your AI Collaborative and Smarter™             ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```

@@ -55,6 +55,151 @@ print_info() {
     echo -e "${CYAN}ℹ️  $1${NC}"
 }
 
+generate_slash_commands() {
+    print_info "Generating customized slash commands..."
+
+    mkdir -p "$HOME/.claude/commands"
+
+    local CMD="$USER_COMMAND"
+    local PREFIX="$USER_PREFIX"
+    local EMOJI="$USER_EMOJI"
+
+    cat > "$HOME/.claude/commands/${CMD}-health.md" << EOF
+Run ${PREFIX} health check and display system status.
+
+Execute: \`${CMD} health --detailed\`
+
+Display the results in ${PREFIX} format with Unicode boxes.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-metrics.md" << EOF
+Get ${PREFIX} system metrics.
+
+Execute: \`${CMD} metrics all\`
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-status.md" << EOF
+Show ${PREFIX} session status.
+
+Execute: \`${CMD} session info\`
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-test.md" << EOF
+Run ${PREFIX} system test.
+
+Execute these commands in sequence:
+1. \`${CMD} health\`
+2. \`${CMD} metrics all\`
+3. \`${CMD} session info\`
+
+Report all results.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-analyze.md" << EOF
+Perform deep analysis using ${PREFIX} ${EMOJI} intelligence.
+
+Use the ${CMD} think command with extended analysis:
+\`${CMD} think "\$ARGUMENTS" --depth deep\`
+
+Provide comprehensive insights using ${PREFIX}'s multi-layered analysis.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-code.md" << EOF
+${PREFIX} ${EMOJI} Code Analysis Mode
+
+Analyze the provided code using ${PREFIX}'s specialized agents:
+
+1. For backend code: \`${CMD} backend full "<code>"\`
+2. For iOS code: \`${CMD} ios full "<code>"\`
+3. For Android code: \`${CMD} android full "<code>"\`
+4. For web code: \`${CMD} web full "<code>"\`
+
+Select the appropriate agent based on the code type and provide detailed analysis.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-verify.md" << EOF
+${PREFIX} ${EMOJI} Truth Verification Mode
+
+Use ${PREFIX}'s truth-embedded verification system:
+
+\`${CMD} validate "\$ARGUMENTS"\`
+
+Apply rigorous verification using:
+- Factual accuracy check
+- Logic consistency analysis
+- Source credibility assessment
+- Bias detection
+
+Report confidence level and any concerns.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-format-table.md" << EOF
+Format data as a ${PREFIX} ${EMOJI} styled table.
+
+Use: \`${CMD} format table --title "Title" '<json-data>'\`
+
+The table will use Unicode box-drawing characters in ${PREFIX} style.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-network.md" << EOF
+${PREFIX} ${EMOJI} Network Collaboration
+
+Manage network collaboration:
+- Status: \`${CMD} network status\`
+- Start: \`${CMD} network start --name "${PREFIX} Instance"\`
+- Info: \`${CMD} network info\`
+- Discover: \`${CMD} discover\`
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-peers.md" << EOF
+${PREFIX} ${EMOJI} Peer Management
+
+Manage network peers:
+- List: \`${CMD} peer list\`
+- Add: \`${CMD} peer add <ip> --name "Peer Name"\`
+- Authorize: \`${CMD} peer authorize <id>\`
+- Connect: \`${CMD} peer connect <ip> --token <token>\`
+EOF
+
+    cat > "$HOME/.claude/commands/session-start.md" << EOF
+Start a new ${PREFIX} ${EMOJI} collaboration session.
+
+Execute: \`${CMD} join --role "\$ARGUMENTS" --name "${PREFIX}-Claude"\`
+
+This joins the ${PREFIX} collaboration hub for multi-session teamwork.
+EOF
+
+    cat > "$HOME/.claude/commands/session-name.md" << EOF
+Set session name for ${PREFIX} ${EMOJI} collaboration.
+
+Execute: \`${CMD} session start --name "\$ARGUMENTS"\`
+
+This names your session in the ${PREFIX} hub.
+EOF
+
+    cat > "$HOME/.claude/commands/deep-think.md" << EOF
+${PREFIX} ${EMOJI} Extended Thinking Mode
+
+Engage deep analysis with maximum thinking depth:
+
+\`${CMD} think "\$ARGUMENTS" --depth maximum\`
+
+This activates ${PREFIX}'s most thorough reasoning process.
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-always-on.md" << EOF
+Enable ${PREFIX} hook for all prompts.
+Note: Configure in ~/.claude/settings.json
+EOF
+
+    cat > "$HOME/.claude/commands/${CMD}-always-off.md" << EOF
+Disable ${PREFIX} hook temporarily.
+Note: Configure in ~/.claude/settings.json
+EOF
+
+    print_success "Generated slash commands: /${CMD}-health, /${CMD}-network, /session-start, etc."
+}
+
 detect_existing_setup() {
     print_step "Detecting Existing Claude Setup"
 
@@ -290,12 +435,8 @@ EOF
         print_success "Installed memory patterns"
     fi
 
-    # Copy slash commands
-    if [ -d "$SCRIPT_DIR/commands" ]; then
-        mkdir -p "$HOME/.claude/commands"
-        cp "$SCRIPT_DIR/commands/"*.md "$HOME/.claude/commands/" 2>/dev/null || true
-        print_success "Installed slash commands"
-    fi
+    # Generate customized slash commands
+    generate_slash_commands
 
     # Copy hook scripts (for reference)
     if [ -d "$SCRIPT_DIR/hooks" ]; then

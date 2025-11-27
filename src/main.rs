@@ -11,7 +11,7 @@
 //! - Domain agent mode for specialized analysis
 
 use clap::Parser;
-use sena_v11::{
+use sena1996_ai::{
     Cli, execute_command,
     create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
     config::SenaConfig,
