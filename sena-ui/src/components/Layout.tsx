@@ -5,7 +5,6 @@ import {
   MessageSquare,
   Users,
   Settings,
-  Zap,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,7 +27,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="p-6 border-b border-dark-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sena-400 to-sena-600 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-dark-950" />
+              <span className="text-2xl">🦁</span>
             </div>
             <div>
               <h1 className="font-bold text-lg text-dark-100">SENA</h1>

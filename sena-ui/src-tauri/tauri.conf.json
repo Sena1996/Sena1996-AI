@@ -28,10 +28,32 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": [],
+    "targets": ["app", "dmg"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/icon.icns",
+      "icons/icon.png"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "AI Collaboration Hub - Manage your AI tools",
+    "longDescription": "SENA is an AI collaboration hub that helps you manage multiple AI providers, chat with AI models, and orchestrate collaborative AI sessions.",
+    "copyright": "© 2024 Sena1996-AI",
     "macOS": {
-      "minimumSystemVersion": "10.15"
+      "minimumSystemVersion": "10.15",
+      "dmg": {
+        "appPosition": { "x": 180, "y": 170 },
+        "applicationFolderPosition": { "x": 480, "y": 170 },
+        "windowSize": { "width": 660, "height": 400 }
+      },
+      "entitlements": null,
+      "exceptionDomain": null,
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
     },
     "windows": {
       "wix": null
@@ -40,6 +62,7 @@
       "appimage": {
         "bundleMediaFramework": false
       }
-    }
+    },
+    "resources": []
   }
 }
