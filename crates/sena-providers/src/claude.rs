@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     provider::{AIProvider, ChatStream},
-    ChatRequest, ChatResponse, Message, MessageContent, ModelInfo, ProviderCapabilities,
-    ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk, Usage,
-    FinishReason,
+    ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
+    ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
+    Usage,
 };
 
 const CLAUDE_API_URL: &str = "https://api.anthropic.com/v1/messages";
@@ -22,12 +22,15 @@ pub struct ClaudeProvider {
 
 impl ClaudeProvider {
     pub fn new(config: ProviderConfig) -> Result<Self> {
-        let api_key = config.get_api_key()
+        let api_key = config
+            .get_api_key()
             .ok_or_else(|| ProviderError::NotConfigured("ANTHROPIC_API_KEY not set".into()))?;
 
         let client = Client::builder()
             .default_headers(Self::build_headers(&api_key)?)
-            .timeout(std::time::Duration::from_secs(config.timeout_secs.unwrap_or(120)))
+            .timeout(std::time::Duration::from_secs(
+                config.timeout_secs.unwrap_or(120),
+            ))
             .build()
             .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
 
@@ -45,15 +48,21 @@ impl ClaudeProvider {
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(
             "x-api-key",
-            api_key.parse().map_err(|_| ProviderError::AuthenticationFailed("Invalid API key format".into()))?,
+            api_key.parse().map_err(|_| {
+                ProviderError::AuthenticationFailed("Invalid API key format".into())
+            })?,
         );
         headers.insert(
             "anthropic-version",
-            CLAUDE_API_VERSION.parse().map_err(|_| ProviderError::Unknown("Invalid version header".into()))?,
+            CLAUDE_API_VERSION
+                .parse()
+                .map_err(|_| ProviderError::Unknown("Invalid version header".into()))?,
         );
         headers.insert(
             reqwest::header::CONTENT_TYPE,
-            "application/json".parse().map_err(|_| ProviderError::Unknown("Invalid content type".into()))?,
+            "application/json"
+                .parse()
+                .map_err(|_| ProviderError::Unknown("Invalid content type".into()))?,
         );
         Ok(headers)
     }
@@ -135,16 +144,14 @@ impl ClaudeProvider {
                         crate::ContentPart::Text { text } => {
                             ClaudeContentPart::Text { text: text.clone() }
                         }
-                        crate::ContentPart::ImageUrl { image_url } => {
-                            ClaudeContentPart::Image {
-                                source: ImageSource {
-                                    source_type: "url".into(),
-                                    url: Some(image_url.url.clone()),
-                                    media_type: None,
-                                    data: None,
-                                },
-                            }
-                        }
+                        crate::ContentPart::ImageUrl { image_url } => ClaudeContentPart::Image {
+                            source: ImageSource {
+                                source_type: "url".into(),
+                                url: Some(image_url.url.clone()),
+                                media_type: None,
+                                data: None,
+                            },
+                        },
                     })
                     .collect();
                 ClaudeContent::Parts(claude_parts)
@@ -192,7 +199,10 @@ impl AIProvider for ClaudeProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let (system, messages) = self.convert_messages(&request.messages);
 
         let claude_request = ClaudeRequest {
@@ -219,8 +229,13 @@ impl AIProvider for ClaudeProvider {
 
             return match status.as_u16() {
                 401 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -249,7 +264,8 @@ impl AIProvider for ClaudeProvider {
             usage: Usage {
                 prompt_tokens: claude_response.usage.input_tokens,
                 completion_tokens: claude_response.usage.output_tokens,
-                total_tokens: claude_response.usage.input_tokens + claude_response.usage.output_tokens,
+                total_tokens: claude_response.usage.input_tokens
+                    + claude_response.usage.output_tokens,
             },
             created_at: chrono::Utc::now(),
             finish_reason: claude_response
@@ -259,7 +275,10 @@ impl AIProvider for ClaudeProvider {
     }
 
     async fn chat_stream(&self, request: ChatRequest) -> Result<ChatStream> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let (system, messages) = self.convert_messages(&request.messages);
 
         let claude_request = ClaudeRequest {
@@ -286,8 +305,13 @@ impl AIProvider for ClaudeProvider {
 
             return match status.as_u16() {
                 401 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -443,7 +467,11 @@ enum ClaudeContentBlock {
     #[serde(rename = "text")]
     Text { text: String },
     #[serde(rename = "tool_use")]
-    ToolUse { id: String, name: String, input: serde_json::Value },
+    ToolUse {
+        id: String,
+        name: String,
+        input: serde_json::Value,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -459,13 +487,19 @@ enum ClaudeStreamEvent {
     #[serde(rename = "message_start")]
     MessageStart { message: serde_json::Value },
     #[serde(rename = "content_block_start")]
-    ContentBlockStart { index: u32, content_block: serde_json::Value },
+    ContentBlockStart {
+        index: u32,
+        content_block: serde_json::Value,
+    },
     #[serde(rename = "content_block_delta")]
     ContentBlockDelta { index: u32, delta: ClaudeDelta },
     #[serde(rename = "content_block_stop")]
     ContentBlockStop { index: u32 },
     #[serde(rename = "message_delta")]
-    MessageDelta { delta: serde_json::Value, usage: Option<ClaudeUsage> },
+    MessageDelta {
+        delta: serde_json::Value,
+        usage: Option<ClaudeUsage>,
+    },
     #[serde(rename = "message_stop")]
     MessageStop,
     #[serde(rename = "ping")]
@@ -500,8 +534,17 @@ mod tests {
 
     #[test]
     fn test_parse_finish_reason() {
-        assert_eq!(ClaudeProvider::parse_finish_reason("end_turn"), FinishReason::Stop);
-        assert_eq!(ClaudeProvider::parse_finish_reason("max_tokens"), FinishReason::Length);
-        assert_eq!(ClaudeProvider::parse_finish_reason("tool_use"), FinishReason::ToolCalls);
+        assert_eq!(
+            ClaudeProvider::parse_finish_reason("end_turn"),
+            FinishReason::Stop
+        );
+        assert_eq!(
+            ClaudeProvider::parse_finish_reason("max_tokens"),
+            FinishReason::Length
+        );
+        assert_eq!(
+            ClaudeProvider::parse_finish_reason("tool_use"),
+            FinishReason::ToolCalls
+        );
     }
 }

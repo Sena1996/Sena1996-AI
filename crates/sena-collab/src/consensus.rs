@@ -204,12 +204,11 @@ impl Proposal {
         };
 
         let approved = match self.strategy {
-            ConsensusStrategy::Unanimous => {
-                self.votes
-                    .values()
-                    .filter(|v| v.choice != VoteChoice::Abstain)
-                    .all(|v| v.choice == VoteChoice::Approve)
-            }
+            ConsensusStrategy::Unanimous => self
+                .votes
+                .values()
+                .filter(|v| v.choice != VoteChoice::Abstain)
+                .all(|v| v.choice == VoteChoice::Approve),
             _ => approval_ratio > threshold,
         };
 

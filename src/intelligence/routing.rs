@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ModelType {
@@ -156,12 +156,25 @@ impl ModelRouter {
         complexity += (task.len() as f64 / 500.0).min(0.3);
 
         let complex_keywords = [
-            "analyze", "design", "architect", "optimize", "security",
-            "performance", "refactor", "explain", "why", "how",
-            "implement", "debug", "review", "evaluate", "complex"
+            "analyze",
+            "design",
+            "architect",
+            "optimize",
+            "security",
+            "performance",
+            "refactor",
+            "explain",
+            "why",
+            "how",
+            "implement",
+            "debug",
+            "review",
+            "evaluate",
+            "complex",
         ];
 
-        let keyword_matches = complex_keywords.iter()
+        let keyword_matches = complex_keywords
+            .iter()
             .filter(|k| task_lower.contains(*k))
             .count();
 
@@ -171,11 +184,17 @@ impl ModelRouter {
             complexity += 0.1;
         }
 
-        if task_lower.contains("code") || task_lower.contains("function") || task_lower.contains("class") {
+        if task_lower.contains("code")
+            || task_lower.contains("function")
+            || task_lower.contains("class")
+        {
             complexity += 0.1;
         }
 
-        if task_lower.contains("and then") || task_lower.contains("also") || task_lower.contains("additionally") {
+        if task_lower.contains("and then")
+            || task_lower.contains("also")
+            || task_lower.contains("additionally")
+        {
             complexity += 0.1;
         }
 
@@ -183,7 +202,8 @@ impl ModelRouter {
     }
 
     fn calculate_confidence(&self, complexity: f64) -> f64 {
-        let distance_to_thresholds = (complexity - self.thresholds.fast_max).abs()
+        let distance_to_thresholds = (complexity - self.thresholds.fast_max)
+            .abs()
             .min((complexity - self.thresholds.balanced_max).abs());
 
         0.7 + (distance_to_thresholds * 0.3)
@@ -239,7 +259,7 @@ mod tests {
         let decision = router.route(
             "Analyze the security vulnerabilities in this complex authentication system \
             and explain why the current design has performance issues. Also review \
-            the architecture for SOLID principle compliance."
+            the architecture for SOLID principle compliance.",
         );
         assert_eq!(decision.model, ModelType::Powerful);
     }

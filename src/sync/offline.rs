@@ -1,12 +1,12 @@
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::sync::RwLock;
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 
-use super::crdt::{CRDT, ValueEntry};
+use super::crdt::{ValueEntry, CRDT};
 use crate::base::component::{BaseComponent, ComponentMetrics, ComponentState, ComponentStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,7 +131,10 @@ impl OfflineSync {
             log.push(change.clone());
         }
         {
-            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
+            let mut pending = self
+                .pending_changes
+                .write()
+                .expect("pending_changes lock poisoned");
             pending.push(change.clone());
         }
 
@@ -165,7 +168,10 @@ impl OfflineSync {
             log.push(change.clone());
         }
         {
-            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
+            let mut pending = self
+                .pending_changes
+                .write()
+                .expect("pending_changes lock poisoned");
             pending.push(change.clone());
         }
 
@@ -184,7 +190,10 @@ impl OfflineSync {
     }
 
     pub fn get_pending_changes(&self) -> Vec<Change> {
-        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let pending = self
+            .pending_changes
+            .read()
+            .expect("pending_changes lock poisoned");
         pending.clone()
     }
 
@@ -223,7 +232,10 @@ impl OfflineSync {
         }
 
         {
-            let mut pending = self.pending_changes.write().expect("pending_changes lock poisoned");
+            let mut pending = self
+                .pending_changes
+                .write()
+                .expect("pending_changes lock poisoned");
             pending.clear();
         }
 
@@ -249,7 +261,10 @@ impl OfflineSync {
     }
 
     pub fn needs_sync(&self) -> bool {
-        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let pending = self
+            .pending_changes
+            .read()
+            .expect("pending_changes lock poisoned");
         if pending.is_empty() {
             return false;
         }
@@ -265,9 +280,15 @@ impl OfflineSync {
     }
 
     pub fn get_sync_status(&self) -> serde_json::Value {
-        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let pending = self
+            .pending_changes
+            .read()
+            .expect("pending_changes lock poisoned");
         let last_sync = self.last_sync.read().expect("last_sync lock poisoned");
-        let in_progress = self.sync_in_progress.read().expect("sync_in_progress lock poisoned");
+        let in_progress = self
+            .sync_in_progress
+            .read()
+            .expect("sync_in_progress lock poisoned");
 
         serde_json::json!({
             "author_id": self.author_id,
@@ -282,7 +303,10 @@ impl OfflineSync {
     pub fn get_stats(&self) -> serde_json::Value {
         let crdt = self.crdt.read().expect("CRDT lock poisoned");
         let log = self.change_log.read().expect("change_log lock poisoned");
-        let pending = self.pending_changes.read().expect("pending_changes lock poisoned");
+        let pending = self
+            .pending_changes
+            .read()
+            .expect("pending_changes lock poisoned");
         let last_sync = self.last_sync.read().expect("last_sync lock poisoned");
         let metrics = self.metrics.read().expect("metrics lock poisoned");
 

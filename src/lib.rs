@@ -70,23 +70,23 @@
 //! Version: 11.0.0
 //! Date: 2025-11-26
 
+pub mod agents;
 pub mod ancient;
 pub mod base;
-pub mod config;
-pub mod sync;
-pub mod metrics;
-pub mod integration;
 pub mod cli;
-pub mod mcp;
-pub mod hooks;
-pub mod output;
+pub mod config;
 pub mod daemon;
-pub mod hub;
-pub mod knowledge;
-pub mod intelligence;
 pub mod evolution;
-pub mod agents;
+pub mod hooks;
+pub mod hub;
+pub mod integration;
+pub mod intelligence;
+pub mod knowledge;
+pub mod mcp;
+pub mod metrics;
 pub mod network;
+pub mod output;
+pub mod sync;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -99,15 +99,15 @@ pub use ancient::*;
 
 // Re-export base components
 pub use base::{
-    BaseComponent, ComponentRegistry, ComponentMetrics, ComponentStatus, ComponentState,
-    IVerifier, IStorage, IExecutor, IPermissionManager, ICodebaseMemory, IResearchSystem,
+    BaseComponent, ComponentMetrics, ComponentRegistry, ComponentState, ComponentStatus,
+    ICodebaseMemory, IExecutor, IPermissionManager, IResearchSystem, IStorage, IVerifier,
 };
 
 // Re-export configuration
-pub use config::{SenaConfig, ConfigError};
+pub use config::{ConfigError, SenaConfig};
 
 // Re-export sync
-pub use sync::{OfflineSync, CRDT, Change};
+pub use sync::{Change, OfflineSync, CRDT};
 
 // Re-export metrics
 pub use metrics::{SenaHealth, SenaMetrics};
@@ -116,7 +116,7 @@ pub use metrics::{SenaHealth, SenaMetrics};
 pub use integration::{AutoIntegration, FormatType};
 
 // Re-export CLI
-pub use cli::{Cli, Commands, HookType, execute_command};
+pub use cli::{execute_command, Cli, Commands, HookType};
 
 // Re-export MCP
 pub use mcp::run_server;
@@ -126,52 +126,43 @@ pub use hooks::{handle_hook, HookResult};
 
 // Re-export output formatting
 pub use output::{
-    TableBuilder, ProgressBar, ProgressConfig, LiveProgress,
-    MultiProgress, Spinner, FormatBox, render_progress_box, ansi
+    ansi, render_progress_box, FormatBox, LiveProgress, MultiProgress, ProgressBar, ProgressConfig,
+    Spinner, TableBuilder,
 };
 
 // Re-export collaboration hub
 pub use hub::{
-    Hub, HubConfig, HubStatus,
-    Session, SessionRegistry, SessionRole, SessionStatus,
-    HubState, SharedState,
-    Task, TaskBoard, TaskPriority, TaskStatus,
-    Message, MessageQueue, Broadcast,
-    ConflictDetector, FileConflict,
-    HubServer, HubClient,
+    Broadcast, ConflictDetector, FileConflict, Hub, HubClient, HubConfig, HubServer, HubState,
+    HubStatus, Message, MessageQueue, Session, SessionRegistry, SessionRole, SessionStatus,
+    SharedState, Task, TaskBoard, TaskPriority, TaskStatus,
 };
 
 // Re-export knowledge system
 pub use knowledge::{
-    KnowledgeSystem, KnowledgeStats, SearchResult,
-    MemoryLevel, MemorySystem, KnowledgeEntry,
-    ReasoningFramework, ThinkingMode,
-    SecurityPattern, VulnerabilityType, SecurityAudit,
-    PerformancePattern, ComplexityClass, OptimizationSuggestion,
-    ArchitecturePattern, DesignPattern, SolidPrinciple,
+    ArchitecturePattern, ComplexityClass, DesignPattern, KnowledgeEntry, KnowledgeStats,
+    KnowledgeSystem, MemoryLevel, MemorySystem, OptimizationSuggestion, PerformancePattern,
+    ReasoningFramework, SearchResult, SecurityAudit, SecurityPattern, SolidPrinciple, ThinkingMode,
+    VulnerabilityType,
 };
 
 // Re-export intelligence system
 pub use intelligence::{
-    IntelligenceSystem, IntelligenceStatus,
-    ThinkingEngine, ThinkingDepth, ThinkingResult,
-    Agent, AgentType, AgentPool, AgentResult,
-    ModelRouter, ModelType, RoutingDecision,
-    Skill, SkillRegistry, SkillExecution,
+    Agent, AgentPool, AgentResult, AgentType, IntelligenceStatus, IntelligenceSystem, ModelRouter,
+    ModelType, RoutingDecision, Skill, SkillExecution, SkillRegistry, ThinkingDepth,
+    ThinkingEngine, ThinkingResult,
 };
 
 // Re-export evolution system
 pub use evolution::{
-    EvolutionSystem, EvolutionStatus, EvolutionResult,
-    PatternLearner, LearnedPattern, PatternType,
-    SelfOptimizer, OptimizationResult, OptimizationTarget,
-    FeedbackLoop, FeedbackEntry, FeedbackType,
+    EvolutionResult, EvolutionStatus, EvolutionSystem, FeedbackEntry, FeedbackLoop, FeedbackType,
+    LearnedPattern, OptimizationResult, OptimizationTarget, PatternLearner, PatternType,
+    SelfOptimizer,
 };
 
 // Re-export domain agents
 pub use agents::{
-    DomainAgentType, DomainAgentPool, DomainAnalysis, Finding, Severity,
-    BackendAgent, IoTAgent, IOSAgent, AndroidAgent, WebAgent,
+    AndroidAgent, BackendAgent, DomainAgentPool, DomainAgentType, DomainAnalysis, Finding,
+    IOSAgent, IoTAgent, Severity, WebAgent,
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -440,15 +431,21 @@ impl SenaUnifiedSystem {
 
         // Phase 1: Intake
         let intake_result = self.phase_intake(&request);
-        result.phase_results.insert("intake".to_string(), intake_result);
+        result
+            .phase_results
+            .insert("intake".to_string(), intake_result);
 
         // Phase 2: Analysis (First Principles)
         let analysis_result = self.phase_analysis(&request);
-        result.phase_results.insert("analysis".to_string(), analysis_result);
+        result
+            .phase_results
+            .insert("analysis".to_string(), analysis_result);
 
         // Phase 3: Constraint (Transform constraints to features)
         let constraint_result = self.phase_constraint(&request);
-        result.phase_results.insert("constraint".to_string(), constraint_result);
+        result
+            .phase_results
+            .insert("constraint".to_string(), constraint_result);
 
         // Phase 4: Safety (Negative Space check)
         let safety_result = self.phase_safety(&request);
@@ -459,11 +456,15 @@ impl SenaUnifiedSystem {
             self.failed_count += 1;
             return result;
         }
-        result.phase_results.insert("safety".to_string(), safety_result);
+        result
+            .phase_results
+            .insert("safety".to_string(), safety_result);
 
         // Phase 5: Context (Relationship building)
         let context_result = self.phase_context(&request);
-        result.phase_results.insert("context".to_string(), context_result);
+        result
+            .phase_results
+            .insert("context".to_string(), context_result);
 
         // Phase 6: Generation
         let generation_result = self.phase_generation(&request);
@@ -472,17 +473,23 @@ impl SenaUnifiedSystem {
             .get("response")
             .cloned()
             .unwrap_or_default();
-        result.phase_results.insert("generation".to_string(), generation_result);
+        result
+            .phase_results
+            .insert("generation".to_string(), generation_result);
 
         // Phase 7: Validation (Harmony check)
         let validation_result = self.phase_validation(&result.content);
         result.harmony_score = validation_result.score;
         result.validation_score = validation_result.score;
-        result.phase_results.insert("validation".to_string(), validation_result);
+        result
+            .phase_results
+            .insert("validation".to_string(), validation_result);
 
         // Phase 8: Delivery
         let delivery_result = self.phase_delivery(&mut result);
-        result.phase_results.insert("delivery".to_string(), delivery_result);
+        result
+            .phase_results
+            .insert("delivery".to_string(), delivery_result);
 
         result.processing_time_ms = start_time.elapsed().as_millis() as u64;
         result.success = true;
@@ -496,7 +503,10 @@ impl SenaUnifiedSystem {
         let mut output = HashMap::new();
 
         output.insert("request_type".to_string(), request.request_type.clone());
-        output.insert("content_length".to_string(), request.content.len().to_string());
+        output.insert(
+            "content_length".to_string(),
+            request.content.len().to_string(),
+        );
         output.insert("priority".to_string(), request.priority.to_string());
 
         PhaseResult {
@@ -513,7 +523,9 @@ impl SenaUnifiedSystem {
         let mut output = HashMap::new();
 
         // Use first principles engine
-        let context: HashMap<String, serde_json::Value> = request.context.iter()
+        let context: HashMap<String, serde_json::Value> = request
+            .context
+            .iter()
             .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
             .collect();
 
@@ -524,7 +536,10 @@ impl SenaUnifiedSystem {
         );
 
         output.insert("observation_id".to_string(), observation.id.clone());
-        output.insert("questions_raised".to_string(), observation.questions_raised.len().to_string());
+        output.insert(
+            "questions_raised".to_string(),
+            observation.questions_raised.len().to_string(),
+        );
 
         PhaseResult {
             phase: "analysis".to_string(),
@@ -544,9 +559,9 @@ impl SenaUnifiedSystem {
             format!("Request constraint: {}", &request.request_type),
             ConstraintType::Functional,
             format!("Processing {} request", request.request_type),
-            serde_json::json!(100),  // limit_value
-            "request".to_string(),   // unit
-            false,                   // is_hard
+            serde_json::json!(100), // limit_value
+            "request".to_string(),  // unit
+            false,                  // is_hard
         );
         output.insert("constraints_found".to_string(), "1".to_string());
 
@@ -568,13 +583,25 @@ impl SenaUnifiedSystem {
         let mut output = HashMap::new();
 
         // Check against negative space
-        let check_result = self.negative_space.check_action(&request.content, &request.context);
+        let check_result = self
+            .negative_space
+            .check_action(&request.content, &request.context);
 
-        output.insert("violations_found".to_string(), check_result.violations.len().to_string());
+        output.insert(
+            "violations_found".to_string(),
+            check_result.violations.len().to_string(),
+        );
         output.insert("allowed".to_string(), check_result.allowed.to_string());
-        output.insert("risk_score".to_string(), format!("{:.2}", check_result.risk_score));
+        output.insert(
+            "risk_score".to_string(),
+            format!("{:.2}", check_result.risk_score),
+        );
 
-        let score = if check_result.allowed { 1.0 - check_result.risk_score } else { 0.0 };
+        let score = if check_result.allowed {
+            1.0 - check_result.risk_score
+        } else {
+            0.0
+        };
 
         PhaseResult {
             phase: "safety".to_string(),
@@ -590,13 +617,15 @@ impl SenaUnifiedSystem {
         let mut output = HashMap::new();
 
         // Build context in relationship model
-        let node_id = self.relationship_model.create_node(
-            format!("request_{}", &request.id[..8]),
-            NodeType::Event,
-        );
+        let node_id = self
+            .relationship_model
+            .create_node(format!("request_{}", &request.id[..8]), NodeType::Event);
 
         output.insert("context_node".to_string(), node_id);
-        output.insert("total_nodes".to_string(), self.relationship_model.get_all_nodes().len().to_string());
+        output.insert(
+            "total_nodes".to_string(),
+            self.relationship_model.get_all_nodes().len().to_string(),
+        );
 
         PhaseResult {
             phase: "context".to_string(),
@@ -614,9 +643,7 @@ impl SenaUnifiedSystem {
         // Generate response (simplified - in real implementation, this would involve LLM)
         let response = format!(
             "Processed request '{}' of type '{}' through SENA v{} Truth-Embedded Architecture.",
-            &request.content,
-            request.request_type,
-            VERSION
+            &request.content, request.request_type, VERSION
         );
 
         output.insert("response".to_string(), response);
@@ -638,9 +665,18 @@ impl SenaUnifiedSystem {
         // Validate harmony
         let validation = self.harmony_validation.validate(content);
 
-        output.insert("harmony_status".to_string(), format!("{:?}", validation.overall_status));
-        output.insert("confidence".to_string(), format!("{:.2}", validation.overall_confidence));
-        output.insert("violations".to_string(), validation.rule_violations.len().to_string());
+        output.insert(
+            "harmony_status".to_string(),
+            format!("{:?}", validation.overall_status),
+        );
+        output.insert(
+            "confidence".to_string(),
+            format!("{:.2}", validation.overall_confidence),
+        );
+        output.insert(
+            "violations".to_string(),
+            validation.rule_violations.len().to_string(),
+        );
 
         PhaseResult {
             phase: "validation".to_string(),

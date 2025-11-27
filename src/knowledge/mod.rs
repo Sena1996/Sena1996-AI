@@ -1,16 +1,16 @@
+mod architecture;
 mod memory;
+mod performance;
 mod reasoning;
 mod security;
-mod performance;
-mod architecture;
 
-pub use memory::{MemoryLevel, MemorySystem, KnowledgeEntry};
-pub use reasoning::{ReasoningFramework, ThinkingMode};
-pub use security::{SecurityPattern, VulnerabilityType, SecurityAudit};
-pub use performance::{PerformancePattern, ComplexityClass, OptimizationSuggestion};
 pub use architecture::{ArchitecturePattern, DesignPattern, SolidPrinciple};
+pub use memory::{KnowledgeEntry, MemoryLevel, MemorySystem};
+pub use performance::{ComplexityClass, OptimizationSuggestion, PerformancePattern};
+pub use reasoning::{ReasoningFramework, ThinkingMode};
+pub use security::{SecurityAudit, SecurityPattern, VulnerabilityType};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnowledgeSystem {
@@ -73,7 +73,11 @@ impl KnowledgeSystem {
                     domain: "reasoning".to_string(),
                     title: framework.name.clone(),
                     description: framework.description.clone(),
-                    relevance: calculate_relevance(&query_lower, &framework.name, &framework.description),
+                    relevance: calculate_relevance(
+                        &query_lower,
+                        &framework.name,
+                        &framework.description,
+                    ),
                 });
             }
         }
@@ -86,7 +90,11 @@ impl KnowledgeSystem {
                     domain: "security".to_string(),
                     title: pattern.name.clone(),
                     description: pattern.description.clone(),
-                    relevance: calculate_relevance(&query_lower, &pattern.name, &pattern.description),
+                    relevance: calculate_relevance(
+                        &query_lower,
+                        &pattern.name,
+                        &pattern.description,
+                    ),
                 });
             }
         }
@@ -99,7 +107,11 @@ impl KnowledgeSystem {
                     domain: "performance".to_string(),
                     title: pattern.name.clone(),
                     description: pattern.description.clone(),
-                    relevance: calculate_relevance(&query_lower, &pattern.name, &pattern.description),
+                    relevance: calculate_relevance(
+                        &query_lower,
+                        &pattern.name,
+                        &pattern.description,
+                    ),
                 });
             }
         }
@@ -112,27 +124,43 @@ impl KnowledgeSystem {
                     domain: "architecture".to_string(),
                     title: pattern.name.clone(),
                     description: pattern.description.clone(),
-                    relevance: calculate_relevance(&query_lower, &pattern.name, &pattern.description),
+                    relevance: calculate_relevance(
+                        &query_lower,
+                        &pattern.name,
+                        &pattern.description,
+                    ),
                 });
             }
         }
 
-        results.sort_by(|a, b| b.relevance.partial_cmp(&a.relevance).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.relevance
+                .partial_cmp(&a.relevance)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         results
     }
 
     pub fn get_pattern(&self, domain: &str, name: &str) -> Option<String> {
         match domain {
-            "reasoning" => self.reasoning_frameworks.iter()
+            "reasoning" => self
+                .reasoning_frameworks
+                .iter()
                 .find(|f| f.name == name)
                 .map(|f| f.to_string()),
-            "security" => self.security_patterns.iter()
+            "security" => self
+                .security_patterns
+                .iter()
                 .find(|p| p.name == name)
                 .map(|p| p.to_string()),
-            "performance" => self.performance_patterns.iter()
+            "performance" => self
+                .performance_patterns
+                .iter()
                 .find(|p| p.name == name)
                 .map(|p| p.to_string()),
-            "architecture" => self.architecture_patterns.iter()
+            "architecture" => self
+                .architecture_patterns
+                .iter()
                 .find(|p| p.name == name)
                 .map(|p| p.to_string()),
             _ => None,
@@ -141,10 +169,26 @@ impl KnowledgeSystem {
 
     pub fn get_domain_patterns(&self, domain: &str) -> Vec<String> {
         match domain {
-            "reasoning" => self.reasoning_frameworks.iter().map(|f| f.name.clone()).collect(),
-            "security" => self.security_patterns.iter().map(|p| p.name.clone()).collect(),
-            "performance" => self.performance_patterns.iter().map(|p| p.name.clone()).collect(),
-            "architecture" => self.architecture_patterns.iter().map(|p| p.name.clone()).collect(),
+            "reasoning" => self
+                .reasoning_frameworks
+                .iter()
+                .map(|f| f.name.clone())
+                .collect(),
+            "security" => self
+                .security_patterns
+                .iter()
+                .map(|p| p.name.clone())
+                .collect(),
+            "performance" => self
+                .performance_patterns
+                .iter()
+                .map(|p| p.name.clone())
+                .collect(),
+            "architecture" => self
+                .architecture_patterns
+                .iter()
+                .map(|p| p.name.clone())
+                .collect(),
             _ => Vec::new(),
         }
     }

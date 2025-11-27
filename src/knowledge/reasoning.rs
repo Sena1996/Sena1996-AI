@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ThinkingMode {
@@ -65,13 +65,16 @@ impl ReasoningFramework {
         FrameworkAnalysis {
             framework: self.name.clone(),
             problem: problem.to_string(),
-            steps: self.process.iter().enumerate().map(|(i, step)| {
-                AnalysisStep {
+            steps: self
+                .process
+                .iter()
+                .enumerate()
+                .map(|(i, step)| AnalysisStep {
                     number: i + 1,
                     instruction: step.clone(),
                     result: None,
-                }
-            }).collect(),
+                })
+                .collect(),
             conclusion: None,
         }
     }
@@ -130,7 +133,7 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
     vec![
         ReasoningFramework::new(
             "First Principles Thinking",
-            "Break complex problems down to fundamental truths and rebuild from there."
+            "Break complex problems down to fundamental truths and rebuild from there.",
         )
         .with_steps(&[
             "Identify and define current assumptions - What do we currently believe?",
@@ -147,12 +150,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             - Fundamental: Response time = Processing + I/O + Network\n\
             - Question: Which component dominates?\n\
             - Measure: Profile to find bottleneck\n\
-            - Solution: Optimize the actual bottleneck"
+            - Solution: Optimize the actual bottleneck",
         ),
-
         ReasoningFramework::new(
             "Root Cause Analysis (5 Whys)",
-            "Identify underlying causes, not just symptoms, by asking 'Why?' repeatedly."
+            "Identify underlying causes, not just symptoms, by asking 'Why?' repeatedly.",
         )
         .with_steps(&[
             "State the problem clearly",
@@ -171,12 +173,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             Why? → Memory leak in code\n\
             Why? → Unclosed database connections\n\
             Why? → Missing connection pool cleanup\n\
-            Root Cause: No connection lifecycle management"
+            Root Cause: No connection lifecycle management",
         ),
-
         ReasoningFramework::new(
             "Systems Thinking",
-            "View problems as part of larger interconnected systems with feedback loops."
+            "View problems as part of larger interconnected systems with feedback loops.",
         )
         .with_steps(&[
             "Map system components and their relationships",
@@ -190,12 +191,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
         .with_use_case("Feature planning")
         .with_example(
             "Reinforcing loop: More customers → More revenue → More marketing → More customers\n\
-            Balancing loop: High prices → Reduced demand → Lower prices → Increased demand"
+            Balancing loop: High prices → Reduced demand → Lower prices → Increased demand",
         ),
-
         ReasoningFramework::new(
             "Decision Matrix",
-            "Systematically evaluate options against weighted criteria."
+            "Systematically evaluate options against weighted criteria.",
         )
         .with_steps(&[
             "List all options/alternatives",
@@ -213,12 +213,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             Criteria: Performance (3), Learning curve (2), Ecosystem (4)\n\
             React: 8×3 + 7×2 + 9×4 = 74\n\
             Vue: 8×3 + 9×2 + 7×4 = 70\n\
-            Angular: 7×3 + 5×2 + 8×4 = 63"
+            Angular: 7×3 + 5×2 + 8×4 = 63",
         ),
-
         ReasoningFramework::new(
             "Inversion Thinking",
-            "Instead of asking how to succeed, ask how to guarantee failure and avoid those."
+            "Instead of asking how to succeed, ask how to guarantee failure and avoid those.",
         )
         .with_steps(&[
             "State your goal",
@@ -236,12 +235,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             - Add unnecessary complexity\n\
             - Skip testing\n\
             - Poor documentation\n\
-            Prevention: Do the opposite!"
+            Prevention: Do the opposite!",
         ),
-
         ReasoningFramework::new(
             "Probabilistic Thinking",
-            "Think in terms of probabilities and expected values rather than certainties."
+            "Think in terms of probabilities and expected values rather than certainties.",
         )
         .with_steps(&[
             "Identify possible outcomes",
@@ -258,12 +256,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             60% chance of $100K gain = 0.6 × $100K = $60K\n\
             30% chance of $0 = 0.3 × $0 = $0\n\
             10% chance of $50K loss = 0.1 × -$50K = -$5K\n\
-            Expected Value = $55K"
+            Expected Value = $55K",
         ),
-
         ReasoningFramework::new(
             "Theory of Constraints",
-            "A system's throughput is limited by its constraint (bottleneck). Focus there."
+            "A system's throughput is limited by its constraint (bottleneck). Focus there.",
         )
         .with_steps(&[
             "IDENTIFY the system constraint (bottleneck)",
@@ -281,12 +278,11 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             2. Exploit: Prioritize reviews, clear blockers\n\
             3. Subordinate: Slow down coding to match review capacity\n\
             4. Elevate: Add reviewers, automate checks\n\
-            5. Repeat: Next bottleneck might be testing"
+            5. Repeat: Next bottleneck might be testing",
         ),
-
         ReasoningFramework::new(
             "Second-Order Thinking",
-            "Consider not just the immediate effects, but the effects of the effects."
+            "Consider not just the immediate effects, but the effects of the effects.",
         )
         .with_steps(&[
             "Identify the first-order effect (immediate consequence)",
@@ -302,7 +298,7 @@ pub fn default_frameworks() -> Vec<ReasoningFramework> {
             "Decision: Fire an employee to save money\n\
             First-order: Save $100K salary\n\
             Second-order: Lose institutional knowledge, remaining team demoralized\n\
-            Third-order: Others leave, productivity drops, hiring costs increase"
+            Third-order: Others leave, productivity drops, hiring costs increase",
         ),
     ]
 }

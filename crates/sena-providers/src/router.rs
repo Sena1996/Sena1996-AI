@@ -2,10 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{
-    provider::{AIProvider, ChatStream},
     config::ProvidersConfig,
-    ChatRequest, ChatResponse, ModelInfo, ProviderError,
-    ProviderStatus, Result,
+    provider::{AIProvider, ChatStream},
+    ChatRequest, ChatResponse, ModelInfo, ProviderError, ProviderStatus, Result,
 };
 
 #[cfg(feature = "claude")]
@@ -281,7 +280,9 @@ mod tests {
     fn test_should_fallback() {
         let router = ProviderRouter::new();
 
-        assert!(router.should_fallback(&ProviderError::RateLimited { retry_after_secs: 60 }));
+        assert!(router.should_fallback(&ProviderError::RateLimited {
+            retry_after_secs: 60
+        }));
         assert!(router.should_fallback(&ProviderError::Unavailable("test".into())));
         assert!(router.should_fallback(&ProviderError::Timeout(30)));
         assert!(router.should_fallback(&ProviderError::NetworkError("test".into())));

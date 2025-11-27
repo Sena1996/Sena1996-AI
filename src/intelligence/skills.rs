@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,7 +39,9 @@ impl Skill {
         }
 
         let context_lower = context.to_lowercase();
-        self.triggers.iter().any(|t| context_lower.contains(&t.to_lowercase()))
+        self.triggers
+            .iter()
+            .any(|t| context_lower.contains(&t.to_lowercase()))
     }
 
     pub fn execute(&mut self, context: &str) -> SkillExecution {
@@ -74,10 +76,18 @@ impl Skill {
             findings.push(("🔴 HIGH", "SQL Injection Risk", "Use parameterized queries"));
         }
         if context_lower.contains("eval") || context_lower.contains("exec") {
-            findings.push(("🔴 HIGH", "Code Injection Risk", "Avoid eval/exec with user input"));
+            findings.push((
+                "🔴 HIGH",
+                "Code Injection Risk",
+                "Avoid eval/exec with user input",
+            ));
         }
         if context_lower.contains("password") && !context_lower.contains("hash") {
-            findings.push(("🟡 MEDIUM", "Password Handling", "Ensure passwords are hashed"));
+            findings.push((
+                "🟡 MEDIUM",
+                "Password Handling",
+                "Ensure passwords are hashed",
+            ));
         }
         if context_lower.contains("token") || context_lower.contains("jwt") {
             findings.push(("🟡 MEDIUM", "Token Security", "Use short-lived tokens"));
@@ -196,27 +206,53 @@ impl SkillRegistry {
         };
 
         registry.register(
-            Skill::new("Security Auditor", "Analyzes code for security vulnerabilities", "Security")
-                .with_triggers(&["security", "vulnerability", "xss", "sql injection", "auth", "secure"])
-                .with_auto_activate()
+            Skill::new(
+                "Security Auditor",
+                "Analyzes code for security vulnerabilities",
+                "Security",
+            )
+            .with_triggers(&[
+                "security",
+                "vulnerability",
+                "xss",
+                "sql injection",
+                "auth",
+                "secure",
+            ])
+            .with_auto_activate(),
         );
 
         registry.register(
-            Skill::new("Performance Optimizer", "Analyzes code for performance improvements", "Performance")
-                .with_triggers(&["performance", "slow", "optimize", "speed", "latency", "efficient"])
-                .with_auto_activate()
+            Skill::new(
+                "Performance Optimizer",
+                "Analyzes code for performance improvements",
+                "Performance",
+            )
+            .with_triggers(&[
+                "performance",
+                "slow",
+                "optimize",
+                "speed",
+                "latency",
+                "efficient",
+            ])
+            .with_auto_activate(),
         );
 
         registry.register(
             Skill::new("Truth Verifier", "Verifies factual claims", "Analysis")
                 .with_triggers(&["is it true", "fact check", "verify", "is this correct"])
-                .with_auto_activate()
+                .with_auto_activate(),
         );
 
         registry.register(
-            Skill::new("Code Reviewer", "Reviews code for quality and best practices", "Development")
-                .with_triggers(&["review", "code review", "check this code"])
-                .with_auto_activate()
+            Skill::new(
+                "Code Reviewer",
+                "Reviews code for quality and best practices",
+                "Development",
+            )
+            .with_triggers(&["review", "code review", "check this code"])
+            .with_auto_activate(),
         );
 
         registry
@@ -238,7 +274,8 @@ impl SkillRegistry {
     }
 
     pub fn auto_execute(&self, context: &str) -> Vec<SkillExecution> {
-        self.skills.values()
+        self.skills
+            .values()
             .filter(|s| s.should_activate(context))
             .map(|s| {
                 let mut skill = s.clone();

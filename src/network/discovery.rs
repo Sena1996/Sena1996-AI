@@ -39,8 +39,8 @@ impl NetworkDiscovery {
     }
 
     pub fn start(&mut self) -> Result<(), String> {
-        let daemon = ServiceDaemon::new()
-            .map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
+        let daemon =
+            ServiceDaemon::new().map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
 
         self.register_service(&daemon)?;
         self.start_browsing(&daemon)?;
@@ -55,7 +55,10 @@ impl NetworkDiscovery {
     }
 
     fn register_service(&self, daemon: &ServiceDaemon) -> Result<(), String> {
-        let host_name = format!("{}.local.", self.local_peer_name.replace(' ', "-").to_lowercase());
+        let host_name = format!(
+            "{}.local.",
+            self.local_peer_name.replace(' ', "-").to_lowercase()
+        );
         let instance_name = format!("sena-{}", &self.local_peer_id[..8]);
 
         let mut properties = HashMap::new();
@@ -70,16 +73,19 @@ impl NetworkDiscovery {
             "",
             self.port,
             properties,
-        ).map_err(|e| format!("Failed to create service info: {}", e))?;
+        )
+        .map_err(|e| format!("Failed to create service info: {}", e))?;
 
-        daemon.register(service_info)
+        daemon
+            .register(service_info)
             .map_err(|e| format!("Failed to register service: {}", e))?;
 
         Ok(())
     }
 
     fn start_browsing(&self, daemon: &ServiceDaemon) -> Result<(), String> {
-        let receiver = daemon.browse(MDNS_SERVICE_TYPE)
+        let receiver = daemon
+            .browse(MDNS_SERVICE_TYPE)
             .map_err(|e| format!("Failed to start browsing: {}", e))?;
 
         let discovered_peers = self.discovered_peers.clone();
@@ -95,11 +101,13 @@ impl NetworkDiscovery {
                             if peer_id_str != local_peer_id {
                                 let peer = DiscoveredPeer {
                                     peer_id: peer_id_str.to_string(),
-                                    peer_name: info.get_properties()
+                                    peer_name: info
+                                        .get_properties()
                                         .get("peer_name")
                                         .map(|p| p.val_str().to_string())
                                         .unwrap_or_else(|| "Unknown".to_string()),
-                                    address: info.get_addresses()
+                                    address: info
+                                        .get_addresses()
                                         .iter()
                                         .next()
                                         .map(|a| a.to_string())
@@ -111,7 +119,10 @@ impl NetworkDiscovery {
                                 let peers = discovered_peers.clone();
                                 let peer_clone = peer.clone();
                                 tokio::spawn(async move {
-                                    peers.write().await.insert(peer_clone.peer_id.clone(), peer_clone);
+                                    peers
+                                        .write()
+                                        .await
+                                        .insert(peer_clone.peer_id.clone(), peer_clone);
                                 });
                             }
                         }
@@ -142,7 +153,12 @@ impl NetworkDiscovery {
     }
 
     pub async fn get_discovered_peers(&self) -> Vec<DiscoveredPeer> {
-        self.discovered_peers.read().await.values().cloned().collect()
+        self.discovered_peers
+            .read()
+            .await
+            .values()
+            .cloned()
+            .collect()
     }
 
     pub async fn get_peer(&self, peer_id: &str) -> Option<DiscoveredPeer> {
@@ -151,7 +167,9 @@ impl NetworkDiscovery {
 
     pub async fn clear_stale_peers(&self, max_age_seconds: i64) {
         let now = chrono::Utc::now().timestamp();
-        self.discovered_peers.write().await
+        self.discovered_peers
+            .write()
+            .await
             .retain(|_, p| now - p.discovered_at < max_age_seconds);
     }
 
@@ -165,25 +183,30 @@ impl NetworkDiscovery {
 }
 
 pub async fn discover_once(timeout_secs: u64) -> Result<Vec<DiscoveredPeer>, String> {
-    let daemon = ServiceDaemon::new()
-        .map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
+    let daemon =
+        ServiceDaemon::new().map_err(|e| format!("Failed to create mDNS daemon: {}", e))?;
 
-    let receiver = daemon.browse(MDNS_SERVICE_TYPE)
+    let receiver = daemon
+        .browse(MDNS_SERVICE_TYPE)
         .map_err(|e| format!("Failed to start browsing: {}", e))?;
 
     let mut peers = HashMap::new();
     let deadline = std::time::Instant::now() + Duration::from_secs(timeout_secs);
 
     while std::time::Instant::now() < deadline {
-        if let Ok(ServiceEvent::ServiceResolved(info)) = receiver.recv_timeout(Duration::from_millis(100)) {
+        if let Ok(ServiceEvent::ServiceResolved(info)) =
+            receiver.recv_timeout(Duration::from_millis(100))
+        {
             if let Some(peer_id) = info.get_properties().get("peer_id") {
                 let peer = DiscoveredPeer {
                     peer_id: peer_id.val_str().to_string(),
-                    peer_name: info.get_properties()
+                    peer_name: info
+                        .get_properties()
                         .get("peer_name")
                         .map(|p| p.val_str().to_string())
                         .unwrap_or_else(|| "Unknown".to_string()),
-                    address: info.get_addresses()
+                    address: info
+                        .get_addresses()
                         .iter()
                         .next()
                         .map(|a| a.to_string())
@@ -218,11 +241,8 @@ mod tests {
 
     #[test]
     fn test_network_discovery_creation() {
-        let discovery = NetworkDiscovery::new(
-            "peer-123".to_string(),
-            "Test Peer".to_string(),
-            9876,
-        );
+        let discovery =
+            NetworkDiscovery::new("peer-123".to_string(), "Test Peer".to_string(), 9876);
         assert_eq!(discovery.port, 9876);
     }
 }

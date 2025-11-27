@@ -89,8 +89,7 @@ impl PeerRegistry {
         if user_prefix != "SENA" {
             format!("{} Instance", user_prefix)
         } else {
-            whoami::fallible::hostname()
-                .unwrap_or_else(|_| "SENA Instance".to_string())
+            whoami::fallible::hostname().unwrap_or_else(|_| "SENA Instance".to_string())
         }
     }
 
@@ -113,8 +112,7 @@ impl PeerRegistry {
 
     pub fn save(&self) -> Result<(), String> {
         if let Some(parent) = self.file_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         let content = serde_json::to_string_pretty(self)
@@ -142,7 +140,8 @@ impl PeerRegistry {
     }
 
     pub fn remove_peer(&mut self, peer_id: &str) -> Result<(), String> {
-        self.peers.remove(peer_id)
+        self.peers
+            .remove(peer_id)
             .ok_or_else(|| format!("Peer {} not found", peer_id))?;
         self.save()
     }
@@ -156,18 +155,18 @@ impl PeerRegistry {
     }
 
     pub fn get_peer_by_address(&self, address: &str, port: u16) -> Option<&Peer> {
-        self.peers.values()
+        self.peers
+            .values()
             .find(|p| p.address == address && p.port == port)
     }
 
     pub fn get_authorized_peers(&self) -> Vec<&Peer> {
-        self.peers.values()
-            .filter(|p| p.authorized)
-            .collect()
+        self.peers.values().filter(|p| p.authorized).collect()
     }
 
     pub fn get_online_peers(&self) -> Vec<&Peer> {
-        self.peers.values()
+        self.peers
+            .values()
             .filter(|p| p.authorized && p.is_online())
             .collect()
     }
@@ -177,21 +176,27 @@ impl PeerRegistry {
     }
 
     pub fn authorize_peer(&mut self, peer_id: &str, token: &str) -> Result<(), String> {
-        let peer = self.peers.get_mut(peer_id)
+        let peer = self
+            .peers
+            .get_mut(peer_id)
             .ok_or_else(|| format!("Peer {} not found", peer_id))?;
         peer.authorize(token);
         self.save()
     }
 
     pub fn revoke_peer(&mut self, peer_id: &str) -> Result<(), String> {
-        let peer = self.peers.get_mut(peer_id)
+        let peer = self
+            .peers
+            .get_mut(peer_id)
             .ok_or_else(|| format!("Peer {} not found", peer_id))?;
         peer.revoke();
         self.save()
     }
 
     pub fn update_peer_last_seen(&mut self, peer_id: &str) -> Result<(), String> {
-        let peer = self.peers.get_mut(peer_id)
+        let peer = self
+            .peers
+            .get_mut(peer_id)
             .ok_or_else(|| format!("Peer {} not found", peer_id))?;
         peer.update_last_seen();
         self.save()

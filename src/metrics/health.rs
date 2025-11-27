@@ -1,11 +1,11 @@
 //! SENA Health Monitoring
 //! Comprehensive health and metrics for SENA Controller
 
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
 
 /// Component health status
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,11 +98,7 @@ impl SenaHealth {
         let mut components_healthy = 0;
 
         // Core files to check
-        let core_files = vec![
-            "config.toml",
-            "data",
-            "patterns",
-        ];
+        let core_files = vec!["config.toml", "data", "patterns"];
 
         for file in &core_files {
             let file_path = self.sena_root.join(file);
@@ -119,7 +115,11 @@ impl SenaHealth {
                 file.to_string(),
                 ComponentHealth {
                     exists,
-                    version: if exists { crate::VERSION.to_string() } else { "unknown".to_string() },
+                    version: if exists {
+                        crate::VERSION.to_string()
+                    } else {
+                        "unknown".to_string()
+                    },
                     status: status.to_string(),
                 },
             );
@@ -269,7 +269,12 @@ impl SenaHealth {
         phases.insert(
             "phase1_ancient_wisdom".to_string(),
             PhaseStatus {
-                status: if ancient_complete { "complete" } else { "in_progress" }.to_string(),
+                status: if ancient_complete {
+                    "complete"
+                } else {
+                    "in_progress"
+                }
+                .to_string(),
                 completion_percentage: if ancient_complete { 100.0 } else { 70.0 },
             },
         );
@@ -281,7 +286,12 @@ impl SenaHealth {
         phases.insert(
             "phase2_core_modules".to_string(),
             PhaseStatus {
-                status: if base_complete { "in_progress" } else { "pending" }.to_string(),
+                status: if base_complete {
+                    "in_progress"
+                } else {
+                    "pending"
+                }
+                .to_string(),
                 completion_percentage: if base_complete { 50.0 } else { 0.0 },
             },
         );

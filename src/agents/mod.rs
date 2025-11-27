@@ -1,15 +1,15 @@
-pub mod backend;
-pub mod iot;
-pub mod ios;
 pub mod android;
+pub mod backend;
+pub mod ios;
+pub mod iot;
 pub mod web;
 
 use serde::{Deserialize, Serialize};
 
-pub use backend::BackendAgent;
-pub use iot::IoTAgent;
-pub use ios::IOSAgent;
 pub use android::AndroidAgent;
+pub use backend::BackendAgent;
+pub use ios::IOSAgent;
+pub use iot::IoTAgent;
 pub use web::WebAgent;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -47,20 +47,32 @@ impl DomainAgentType {
 
     pub fn description(&self) -> &'static str {
         match self {
-            DomainAgentType::Backend => "API mapping, data flow analysis, auth audit, security scanning",
-            DomainAgentType::IoT => "Protocol analysis, device debugging, power optimization, connectivity",
+            DomainAgentType::Backend => {
+                "API mapping, data flow analysis, auth audit, security scanning"
+            }
+            DomainAgentType::IoT => {
+                "Protocol analysis, device debugging, power optimization, connectivity"
+            }
             DomainAgentType::IOS => "HIG compliance, UI/UX validation, performance, accessibility",
-            DomainAgentType::Android => "Material Design, ANR prevention, lifecycle, device compatibility",
+            DomainAgentType::Android => {
+                "Material Design, ANR prevention, lifecycle, device compatibility"
+            }
             DomainAgentType::Web => "Core Web Vitals, accessibility, SEO, performance optimization",
         }
     }
 
     pub fn commands(&self) -> Vec<&'static str> {
         match self {
-            DomainAgentType::Backend => vec!["map", "flow", "auth", "secrets", "security", "endpoints"],
-            DomainAgentType::IoT => vec!["protocol", "debug", "power", "connect", "sensor", "firmware"],
+            DomainAgentType::Backend => {
+                vec!["map", "flow", "auth", "secrets", "security", "endpoints"]
+            }
+            DomainAgentType::IoT => vec![
+                "protocol", "debug", "power", "connect", "sensor", "firmware",
+            ],
             DomainAgentType::IOS => vec!["ui", "hig", "perf", "a11y", "device", "memory"],
-            DomainAgentType::Android => vec!["ui", "material", "perf", "lifecycle", "compat", "a11y"],
+            DomainAgentType::Android => {
+                vec!["ui", "material", "perf", "lifecycle", "compat", "a11y"]
+            }
             DomainAgentType::Web => vec!["vitals", "a11y", "seo", "bundle", "perf", "audit"],
         }
     }
@@ -108,7 +120,10 @@ impl DomainAnalysis {
         let mut output = String::new();
 
         output.push_str("╔══════════════════════════════════════════════════════════════╗\n");
-        output.push_str(&format!("║  {} - {}                          \n", self.agent, self.category));
+        output.push_str(&format!(
+            "║  {} - {}                          \n",
+            self.agent, self.category
+        ));
         output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
         output.push_str("════════════════════════════════════════════════════════════════\n");
@@ -160,7 +175,12 @@ impl DomainAgentPool {
         }
     }
 
-    pub fn analyze(&self, agent_type: DomainAgentType, command: &str, input: &str) -> DomainAnalysis {
+    pub fn analyze(
+        &self,
+        agent_type: DomainAgentType,
+        command: &str,
+        input: &str,
+    ) -> DomainAnalysis {
         match agent_type {
             DomainAgentType::Backend => self.backend.analyze(command, input),
             DomainAgentType::IoT => self.iot.analyze(command, input),
@@ -193,9 +213,15 @@ mod tests {
 
     #[test]
     fn test_domain_agent_type_parse() {
-        assert_eq!(DomainAgentType::parse("backend"), Some(DomainAgentType::Backend));
+        assert_eq!(
+            DomainAgentType::parse("backend"),
+            Some(DomainAgentType::Backend)
+        );
         assert_eq!(DomainAgentType::parse("ios"), Some(DomainAgentType::IOS));
-        assert_eq!(DomainAgentType::parse("android"), Some(DomainAgentType::Android));
+        assert_eq!(
+            DomainAgentType::parse("android"),
+            Some(DomainAgentType::Android)
+        );
         assert_eq!(DomainAgentType::parse("iot"), Some(DomainAgentType::IoT));
         assert_eq!(DomainAgentType::parse("web"), Some(DomainAgentType::Web));
     }

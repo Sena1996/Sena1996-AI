@@ -100,10 +100,7 @@ impl ProvidersConfig {
     }
 
     pub fn enabled_providers(&self) -> Vec<&ProviderConfig> {
-        self.providers
-            .values()
-            .filter(|p| p.enabled)
-            .collect()
+        self.providers.values().filter(|p| p.enabled).collect()
     }
 
     pub fn load_from_file(path: &PathBuf) -> std::io::Result<Self> {

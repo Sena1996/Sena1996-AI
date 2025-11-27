@@ -3,8 +3,7 @@ use futures::Stream;
 use std::pin::Pin;
 
 use crate::{
-    ChatRequest, ChatResponse, ModelInfo, ProviderCapabilities,
-    ProviderStatus, Result, StreamChunk,
+    ChatRequest, ChatResponse, ModelInfo, ProviderCapabilities, ProviderStatus, Result, StreamChunk,
 };
 
 pub type ChatStream = Pin<Box<dyn Stream<Item = Result<StreamChunk>> + Send>>;

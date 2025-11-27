@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     provider::{AIProvider, ChatStream},
-    ChatRequest, ChatResponse, Message, MessageContent, ModelInfo, ProviderCapabilities,
-    ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk, Usage,
-    FinishReason,
+    ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
+    ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
+    Usage,
 };
 
 const GEMINI_API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -22,11 +22,14 @@ pub struct GeminiProvider {
 
 impl GeminiProvider {
     pub fn new(config: ProviderConfig) -> Result<Self> {
-        let api_key = config.get_api_key()
+        let api_key = config
+            .get_api_key()
             .ok_or_else(|| ProviderError::NotConfigured("GOOGLE_API_KEY not set".into()))?;
 
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.timeout_secs.unwrap_or(120)))
+            .timeout(std::time::Duration::from_secs(
+                config.timeout_secs.unwrap_or(120),
+            ))
             .build()
             .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
 
@@ -90,14 +93,21 @@ impl GeminiProvider {
     }
 
     fn build_url(&self, model: &str, stream: bool) -> String {
-        let action = if stream { "streamGenerateContent" } else { "generateContent" };
+        let action = if stream {
+            "streamGenerateContent"
+        } else {
+            "generateContent"
+        };
         format!(
             "{}/{}:{}?key={}",
             GEMINI_API_BASE, model, action, self.api_key
         )
     }
 
-    fn convert_messages(&self, messages: &[Message]) -> (Option<GeminiSystemInstruction>, Vec<GeminiContent>) {
+    fn convert_messages(
+        &self,
+        messages: &[Message],
+    ) -> (Option<GeminiSystemInstruction>, Vec<GeminiContent>) {
         let mut system_instruction = None;
         let mut contents = Vec::with_capacity(messages.len());
 
@@ -106,7 +116,9 @@ impl GeminiProvider {
                 Role::System => {
                     if let Some(text) = message.content.as_text() {
                         system_instruction = Some(GeminiSystemInstruction {
-                            parts: vec![GeminiPart::Text { text: text.to_string() }],
+                            parts: vec![GeminiPart::Text {
+                                text: text.to_string(),
+                            }],
                         });
                     }
                 }
@@ -130,24 +142,18 @@ impl GeminiProvider {
     fn convert_content(&self, content: &MessageContent) -> Vec<GeminiPart> {
         match content {
             MessageContent::Text(text) => vec![GeminiPart::Text { text: text.clone() }],
-            MessageContent::Parts(parts) => {
-                parts
-                    .iter()
-                    .map(|part| match part {
-                        crate::ContentPart::Text { text } => {
-                            GeminiPart::Text { text: text.clone() }
-                        }
-                        crate::ContentPart::ImageUrl { image_url } => {
-                            GeminiPart::InlineData {
-                                inline_data: GeminiInlineData {
-                                    mime_type: "image/jpeg".into(),
-                                    data: image_url.url.clone(),
-                                },
-                            }
-                        }
-                    })
-                    .collect()
-            }
+            MessageContent::Parts(parts) => parts
+                .iter()
+                .map(|part| match part {
+                    crate::ContentPart::Text { text } => GeminiPart::Text { text: text.clone() },
+                    crate::ContentPart::ImageUrl { image_url } => GeminiPart::InlineData {
+                        inline_data: GeminiInlineData {
+                            mime_type: "image/jpeg".into(),
+                            data: image_url.url.clone(),
+                        },
+                    },
+                })
+                .collect(),
         }
     }
 
@@ -191,7 +197,10 @@ impl AIProvider for GeminiProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let (system_instruction, contents) = self.convert_messages(&request.messages);
 
         let gemini_request = GeminiRequest {
@@ -206,12 +215,7 @@ impl AIProvider for GeminiProvider {
         };
 
         let url = self.build_url(model, false);
-        let response = self
-            .client
-            .post(&url)
-            .json(&gemini_request)
-            .send()
-            .await?;
+        let response = self.client.post(&url).json(&gemini_request).send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -219,8 +223,13 @@ impl AIProvider for GeminiProvider {
 
             return match status.as_u16() {
                 401 | 403 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -244,11 +253,14 @@ impl AIProvider for GeminiProvider {
             .collect::<Vec<_>>()
             .join("");
 
-        let usage = gemini_response.usage_metadata.map(|u| Usage {
-            prompt_tokens: u.prompt_token_count,
-            completion_tokens: u.candidates_token_count,
-            total_tokens: u.total_token_count,
-        }).unwrap_or_default();
+        let usage = gemini_response
+            .usage_metadata
+            .map(|u| Usage {
+                prompt_tokens: u.prompt_token_count,
+                completion_tokens: u.candidates_token_count,
+                total_tokens: u.total_token_count,
+            })
+            .unwrap_or_default();
 
         Ok(ChatResponse {
             id: uuid::Uuid::new_v4().to_string(),
@@ -267,7 +279,10 @@ impl AIProvider for GeminiProvider {
     }
 
     async fn chat_stream(&self, request: ChatRequest) -> Result<ChatStream> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let (system_instruction, contents) = self.convert_messages(&request.messages);
 
         let gemini_request = GeminiRequest {
@@ -282,12 +297,7 @@ impl AIProvider for GeminiProvider {
         };
 
         let url = self.build_url(model, true);
-        let response = self
-            .client
-            .post(&url)
-            .json(&gemini_request)
-            .send()
-            .await?;
+        let response = self.client.post(&url).json(&gemini_request).send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -295,8 +305,13 @@ impl AIProvider for GeminiProvider {
 
             return match status.as_u16() {
                 401 | 403 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -468,8 +483,17 @@ mod tests {
 
     #[test]
     fn test_parse_finish_reason() {
-        assert_eq!(GeminiProvider::parse_finish_reason("STOP"), FinishReason::Stop);
-        assert_eq!(GeminiProvider::parse_finish_reason("MAX_TOKENS"), FinishReason::Length);
-        assert_eq!(GeminiProvider::parse_finish_reason("SAFETY"), FinishReason::ContentFilter);
+        assert_eq!(
+            GeminiProvider::parse_finish_reason("STOP"),
+            FinishReason::Stop
+        );
+        assert_eq!(
+            GeminiProvider::parse_finish_reason("MAX_TOKENS"),
+            FinishReason::Length
+        );
+        assert_eq!(
+            GeminiProvider::parse_finish_reason("SAFETY"),
+            FinishReason::ContentFilter
+        );
     }
 }

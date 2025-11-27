@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PatternType {
@@ -55,13 +55,25 @@ impl LearnedPattern {
     fn detect_type(context: &str) -> PatternType {
         let context_lower = context.to_lowercase();
 
-        if context_lower.contains("error") || context_lower.contains("fix") || context_lower.contains("bug") {
+        if context_lower.contains("error")
+            || context_lower.contains("fix")
+            || context_lower.contains("bug")
+        {
             PatternType::ErrorFix
-        } else if context_lower.contains("optimize") || context_lower.contains("performance") || context_lower.contains("improve") {
+        } else if context_lower.contains("optimize")
+            || context_lower.contains("performance")
+            || context_lower.contains("improve")
+        {
             PatternType::Optimization
-        } else if context_lower.contains("how") || context_lower.contains("why") || context_lower.contains("what") {
+        } else if context_lower.contains("how")
+            || context_lower.contains("why")
+            || context_lower.contains("what")
+        {
             PatternType::QueryResponse
-        } else if context_lower.contains("problem") || context_lower.contains("issue") || context_lower.contains("solve") {
+        } else if context_lower.contains("problem")
+            || context_lower.contains("issue")
+            || context_lower.contains("solve")
+        {
             PatternType::ProblemSolution
         } else {
             PatternType::ContextAction
@@ -69,17 +81,18 @@ impl LearnedPattern {
     }
 
     fn extract_keywords(context: &str) -> Vec<String> {
-        let stop_words = ["the", "a", "an", "is", "are", "was", "were", "be", "been",
-            "being", "have", "has", "had", "do", "does", "did", "will", "would",
-            "could", "should", "may", "might", "must", "shall", "can", "need",
-            "to", "of", "in", "for", "on", "with", "at", "by", "from", "as",
-            "into", "through", "during", "before", "after", "above", "below",
-            "between", "under", "again", "further", "then", "once", "here",
-            "there", "when", "where", "why", "how", "all", "each", "few",
-            "more", "most", "other", "some", "such", "no", "nor", "not",
-            "only", "own", "same", "so", "than", "too", "very", "just"];
+        let stop_words = [
+            "the", "a", "an", "is", "are", "was", "were", "be", "been", "being", "have", "has",
+            "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "must",
+            "shall", "can", "need", "to", "of", "in", "for", "on", "with", "at", "by", "from",
+            "as", "into", "through", "during", "before", "after", "above", "below", "between",
+            "under", "again", "further", "then", "once", "here", "there", "when", "where", "why",
+            "how", "all", "each", "few", "more", "most", "other", "some", "such", "no", "nor",
+            "not", "only", "own", "same", "so", "than", "too", "very", "just",
+        ];
 
-        context.split_whitespace()
+        context
+            .split_whitespace()
             .map(|w| w.to_lowercase())
             .filter(|w| w.len() > 2)
             .filter(|w| !stop_words.contains(&w.as_str()))
@@ -159,12 +172,15 @@ impl PatternLearner {
     }
 
     pub fn find_relevant(&self, context: &str) -> Vec<&LearnedPattern> {
-        let mut relevant: Vec<_> = self.patterns.values()
+        let mut relevant: Vec<_> = self
+            .patterns
+            .values()
             .filter(|p| p.relevance(context) >= self.relevance_threshold)
             .collect();
 
         relevant.sort_by(|a, b| {
-            b.relevance(context).partial_cmp(&a.relevance(context))
+            b.relevance(context)
+                .partial_cmp(&a.relevance(context))
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
@@ -186,7 +202,9 @@ impl PatternLearner {
             return;
         }
 
-        let mut scores: Vec<(String, f64)> = self.patterns.iter()
+        let mut scores: Vec<(String, f64)> = self
+            .patterns
+            .iter()
             .map(|(id, p)| {
                 let value = p.success_rate * (p.usage_count as f64 + 1.0).ln();
                 (id.clone(), value)
@@ -208,7 +226,8 @@ impl PatternLearner {
     pub fn get_patterns(&self, limit: usize) -> Vec<&LearnedPattern> {
         let mut patterns: Vec<_> = self.patterns.values().collect();
         patterns.sort_by(|a, b| {
-            b.success_rate.partial_cmp(&a.success_rate)
+            b.success_rate
+                .partial_cmp(&a.success_rate)
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         patterns.into_iter().take(limit).collect()
@@ -219,8 +238,7 @@ impl PatternLearner {
         let json = serde_json::to_string_pretty(&patterns)
             .map_err(|e| format!("Failed to serialize patterns: {}", e))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| format!("Failed to write patterns: {}", e))?;
+        std::fs::write(path, json).map_err(|e| format!("Failed to write patterns: {}", e))?;
 
         Ok(())
     }
@@ -230,8 +248,8 @@ impl PatternLearner {
             return Ok(());
         }
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read patterns: {}", e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| format!("Failed to read patterns: {}", e))?;
 
         let patterns: Vec<LearnedPattern> = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse patterns: {}", e))?;
@@ -256,7 +274,8 @@ mod tests {
 
     #[test]
     fn test_pattern_creation() {
-        let pattern = LearnedPattern::new("How to prevent SQL injection?", "Use parameterized queries");
+        let pattern =
+            LearnedPattern::new("How to prevent SQL injection?", "Use parameterized queries");
         assert_eq!(pattern.pattern_type, PatternType::QueryResponse);
         assert!(pattern.keywords.len() > 0);
     }
@@ -277,7 +296,10 @@ mod tests {
     #[test]
     fn test_relevance() {
         let mut learner = PatternLearner::new();
-        learner.learn("How to make database queries faster", "Use indexes and batch queries");
+        learner.learn(
+            "How to make database queries faster",
+            "Use indexes and batch queries",
+        );
 
         let relevant = learner.find_relevant("How to make my database faster");
         assert!(relevant.len() > 0);

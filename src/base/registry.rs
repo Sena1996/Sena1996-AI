@@ -129,7 +129,10 @@ impl ComponentRegistry {
 
         // Check for circular dependency
         {
-            let initializing = self.initializing.read().expect("initializing lock poisoned");
+            let initializing = self
+                .initializing
+                .read()
+                .expect("initializing lock poisoned");
             if initializing.contains(name) {
                 return Err(ComponentRegistryError::CircularDependency(
                     CircularDependencyError {
@@ -142,7 +145,10 @@ impl ComponentRegistry {
 
         // Mark as initializing
         {
-            let mut initializing = self.initializing.write().expect("initializing lock poisoned");
+            let mut initializing = self
+                .initializing
+                .write()
+                .expect("initializing lock poisoned");
             initializing.insert(name.to_string());
         }
 
@@ -159,7 +165,10 @@ impl ComponentRegistry {
 
         // Remove from initializing
         {
-            let mut initializing = self.initializing.write().expect("initializing lock poisoned");
+            let mut initializing = self
+                .initializing
+                .write()
+                .expect("initializing lock poisoned");
             initializing.remove(name);
         }
 
@@ -221,7 +230,10 @@ impl ComponentRegistry {
         let mut instances = self.instances.write().expect("instances lock poisoned");
         instances.clear();
 
-        let mut initializing = self.initializing.write().expect("initializing lock poisoned");
+        let mut initializing = self
+            .initializing
+            .write()
+            .expect("initializing lock poisoned");
         initializing.clear();
 
         let mut metrics = self.metrics.write().expect("metrics lock poisoned");

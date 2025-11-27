@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::fs;
-use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MemoryLevel {
@@ -108,79 +108,103 @@ impl MemorySystem {
     }
 
     fn initialize_permanent_knowledge(&mut self) {
-        self.store(KnowledgeEntry::new(
-            "First Principles Thinking",
-            "Break complex problems down to fundamental truths and rebuild from there.\n\
+        self.store(
+            KnowledgeEntry::new(
+                "First Principles Thinking",
+                "Break complex problems down to fundamental truths and rebuild from there.\n\
             Process:\n\
             1. Identify and define current assumptions\n\
             2. Break down the problem into fundamental principles\n\
             3. Rebuild from the ground up",
-            MemoryLevel::Permanent,
-        ).with_tags(&["reasoning", "analysis", "problem-solving"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["reasoning", "analysis", "problem-solving"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "Root Cause Analysis",
-            "Identify underlying causes, not just symptoms.\n\
+        self.store(
+            KnowledgeEntry::new(
+                "Root Cause Analysis",
+                "Identify underlying causes, not just symptoms.\n\
             5 Whys Technique: Ask 'Why?' repeatedly until you reach the root cause.\n\
             Fishbone Diagram: Categorize causes into People, Process, Technology, Environment.",
-            MemoryLevel::Permanent,
-        ).with_tags(&["reasoning", "debugging", "analysis"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["reasoning", "debugging", "analysis"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "SQL Injection Prevention",
-            "SECURE: Use parameterized queries\n\
+        self.store(
+            KnowledgeEntry::new(
+                "SQL Injection Prevention",
+                "SECURE: Use parameterized queries\n\
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);\n\n\
             INSECURE: String concatenation\n\
             const user = await db.query(`SELECT * FROM users WHERE email = '${email}'`);",
-            MemoryLevel::Permanent,
-        ).with_tags(&["security", "database", "owasp"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["security", "database", "owasp"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "XSS Prevention",
-            "SECURE: Output encoding with DOMPurify or html-escaper\n\
+        self.store(
+            KnowledgeEntry::new(
+                "XSS Prevention",
+                "SECURE: Output encoding with DOMPurify or html-escaper\n\
             const safeHTML = DOMPurify.sanitize(userInput);\n\n\
             React automatically escapes: <div>{userInput}</div>\n\n\
             INSECURE: element.innerHTML = userInput;",
-            MemoryLevel::Permanent,
-        ).with_tags(&["security", "frontend", "owasp"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["security", "frontend", "owasp"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "Big O Performance Guide",
-            "O(1) - Constant - Hash table lookup\n\
+        self.store(
+            KnowledgeEntry::new(
+                "Big O Performance Guide",
+                "O(1) - Constant - Hash table lookup\n\
             O(log n) - Logarithmic - Binary search\n\
             O(n) - Linear - Single loop\n\
             O(n log n) - Linearithmic - Merge sort\n\
             O(n²) - Quadratic - Nested loops\n\
             O(2ⁿ) - Exponential - Recursive Fibonacci",
-            MemoryLevel::Permanent,
-        ).with_tags(&["performance", "algorithms", "complexity"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["performance", "algorithms", "complexity"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "N+1 Query Problem",
-            "BAD: 1 query for users + N queries for posts\n\
+        self.store(
+            KnowledgeEntry::new(
+                "N+1 Query Problem",
+                "BAD: 1 query for users + N queries for posts\n\
             for (const user of users) { user.posts = await Post.findAll({userId: user.id}); }\n\n\
             GOOD: Single query with JOIN or eager loading\n\
             const users = await User.findAll({ include: [{ model: Post }] });",
-            MemoryLevel::Permanent,
-        ).with_tags(&["performance", "database", "optimization"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["performance", "database", "optimization"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "SOLID Principles",
-            "S - Single Responsibility: One class, one responsibility\n\
+        self.store(
+            KnowledgeEntry::new(
+                "SOLID Principles",
+                "S - Single Responsibility: One class, one responsibility\n\
             O - Open/Closed: Open for extension, closed for modification\n\
             L - Liskov Substitution: Subtypes must be substitutable\n\
             I - Interface Segregation: Small, specific interfaces\n\
             D - Dependency Inversion: Depend on abstractions",
-            MemoryLevel::Permanent,
-        ).with_tags(&["architecture", "design", "principles"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["architecture", "design", "principles"]),
+        );
 
-        self.store(KnowledgeEntry::new(
-            "Design Patterns",
-            "Creational: Factory, Singleton, Builder\n\
+        self.store(
+            KnowledgeEntry::new(
+                "Design Patterns",
+                "Creational: Factory, Singleton, Builder\n\
             Structural: Adapter, Decorator, Facade\n\
             Behavioral: Strategy, Observer, Command",
-            MemoryLevel::Permanent,
-        ).with_tags(&["architecture", "design", "patterns"]));
+                MemoryLevel::Permanent,
+            )
+            .with_tags(&["architecture", "design", "patterns"]),
+        );
     }
 
     pub fn store(&mut self, entry: KnowledgeEntry) {
@@ -221,7 +245,10 @@ impl MemorySystem {
             for entry in memory.values() {
                 if entry.title.to_lowercase().contains(&query_lower)
                     || entry.content.to_lowercase().contains(&query_lower)
-                    || entry.tags.iter().any(|t| t.to_lowercase().contains(&query_lower))
+                    || entry
+                        .tags
+                        .iter()
+                        .any(|t| t.to_lowercase().contains(&query_lower))
                 {
                     results.push(entry);
                 }

@@ -5,8 +5,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, RwLock};
 
-use super::protocol::{NetworkCommand, NetworkMessage, RemoteSession, PROTOCOL_VERSION};
 use super::peer::PeerRegistry;
+use super::protocol::{NetworkCommand, NetworkMessage, RemoteSession, PROTOCOL_VERSION};
 
 pub type ConnectionId = String;
 type MessageHandler = Arc<RwLock<Option<mpsc::Sender<(ConnectionId, NetworkMessage)>>>>;
@@ -46,7 +46,8 @@ impl NetworkServer {
 
     pub async fn start(&self) -> Result<(), String> {
         let addr = format!("0.0.0.0:{}", self.port);
-        let listener = TcpListener::bind(&addr).await
+        let listener = TcpListener::bind(&addr)
+            .await
             .map_err(|e| format!("Failed to bind to {}: {}", addr, e))?;
 
         *self.running.write().await = true;
@@ -79,7 +80,9 @@ impl NetworkServer {
                                 sessions,
                                 local_sessions,
                                 message_handler,
-                            ).await {
+                            )
+                            .await
+                            {
                                 eprintln!("Connection error: {}", e);
                             }
                         });
@@ -126,7 +129,10 @@ impl NetworkServer {
             sender: tx,
         };
 
-        connections.write().await.insert(conn_id.clone(), connection);
+        connections
+            .write()
+            .await
+            .insert(conn_id.clone(), connection);
 
         let stream = Arc::new(tokio::sync::Mutex::new(stream));
         let stream_writer = stream.clone();
@@ -175,7 +181,8 @@ impl NetworkServer {
                         peer_registry.clone(),
                         sessions.clone(),
                         local_sessions.clone(),
-                    ).await;
+                    )
+                    .await;
 
                     if let Some(response) = response {
                         if let Some(conn) = connections.read().await.get(&conn_id) {
@@ -211,7 +218,11 @@ impl NetworkServer {
         match msg.command {
             NetworkCommand::Ping => Some(NetworkMessage::pong()),
 
-            NetworkCommand::Handshake { peer_id, peer_name, version: _ } => {
+            NetworkCommand::Handshake {
+                peer_id,
+                peer_name,
+                version: _,
+            } => {
                 let registry = peer_registry.read().await;
                 let local_id = registry.local_peer_id.clone();
                 let local_name = registry.local_peer_name.clone();
@@ -222,7 +233,11 @@ impl NetworkServer {
                     conn.peer_name = Some(peer_name.clone());
                 }
 
-                Some(NetworkMessage::handshake_ack(&local_id, &local_name, PROTOCOL_VERSION))
+                Some(NetworkMessage::handshake_ack(
+                    &local_id,
+                    &local_name,
+                    PROTOCOL_VERSION,
+                ))
             }
 
             NetworkCommand::AuthRequest { token } => {
@@ -259,7 +274,12 @@ impl NetworkServer {
                 Some(NetworkMessage::who_response(all_sessions))
             }
 
-            NetworkCommand::SessionAnnounce { session_id, session_name, role, working_dir } => {
+            NetworkCommand::SessionAnnounce {
+                session_id,
+                session_name,
+                role,
+                working_dir,
+            } => {
                 if let Some(conn) = connections.read().await.get(conn_id) {
                     if conn.authenticated {
                         let session = RemoteSession {
@@ -282,7 +302,10 @@ impl NetworkServer {
             }
 
             NetworkCommand::SessionEnd { session_id } => {
-                sessions.write().await.retain(|s| s.session_id != session_id);
+                sessions
+                    .write()
+                    .await
+                    .retain(|s| s.session_id != session_id);
                 None
             }
 
@@ -303,7 +326,10 @@ impl NetworkServer {
     }
 
     pub async fn remove_local_session(&self, session_id: &str) {
-        self.local_sessions.write().await.retain(|s| s.session_id != session_id);
+        self.local_sessions
+            .write()
+            .await
+            .retain(|s| s.session_id != session_id);
     }
 
     pub async fn get_all_sessions(&self) -> Vec<RemoteSession> {
@@ -313,17 +339,26 @@ impl NetworkServer {
     }
 
     pub async fn get_connections(&self) -> Vec<(ConnectionId, SocketAddr, bool)> {
-        self.connections.read().await
+        self.connections
+            .read()
+            .await
             .iter()
             .map(|(id, conn)| (id.clone(), conn.address, conn.authenticated))
             .collect()
     }
 
-    pub async fn send_to_connection(&self, conn_id: &str, msg: NetworkMessage) -> Result<(), String> {
+    pub async fn send_to_connection(
+        &self,
+        conn_id: &str,
+        msg: NetworkMessage,
+    ) -> Result<(), String> {
         let connections = self.connections.read().await;
-        let conn = connections.get(conn_id)
+        let conn = connections
+            .get(conn_id)
             .ok_or_else(|| format!("Connection {} not found", conn_id))?;
-        conn.sender.send(msg).await
+        conn.sender
+            .send(msg)
+            .await
             .map_err(|e| format!("Failed to send: {}", e))
     }
 
@@ -355,7 +390,8 @@ impl NetworkClient {
 
     pub async fn connect(&self, address: &str, port: u16) -> Result<ClientConnection, String> {
         let addr = format!("{}:{}", address, port);
-        let stream = TcpStream::connect(&addr).await
+        let stream = TcpStream::connect(&addr)
+            .await
             .map_err(|e| format!("Failed to connect to {}: {}", addr, e))?;
 
         let registry = self.peer_registry.read().await;
@@ -369,7 +405,12 @@ impl NetworkClient {
         Ok(client)
     }
 
-    pub async fn connect_and_auth(&self, address: &str, port: u16, token: &str) -> Result<ClientConnection, String> {
+    pub async fn connect_and_auth(
+        &self,
+        address: &str,
+        port: u16,
+        token: &str,
+    ) -> Result<ClientConnection, String> {
         let mut client = self.connect(address, port).await?;
         client.authenticate(token).await?;
         Ok(client)
@@ -399,18 +440,24 @@ impl ClientConnection {
 
     async fn send(&mut self, msg: NetworkMessage) -> Result<(), String> {
         let bytes = msg.to_bytes()?;
-        self.stream.write_all(&bytes).await
+        self.stream
+            .write_all(&bytes)
+            .await
             .map_err(|e| format!("Failed to send: {}", e))
     }
 
     async fn receive(&mut self) -> Result<NetworkMessage, String> {
         let mut len_buf = [0u8; 4];
-        self.stream.read_exact(&mut len_buf).await
+        self.stream
+            .read_exact(&mut len_buf)
+            .await
             .map_err(|e| format!("Failed to read length: {}", e))?;
 
         let len = u32::from_be_bytes(len_buf) as usize;
         let mut msg_buf = vec![0u8; len];
-        self.stream.read_exact(&mut msg_buf).await
+        self.stream
+            .read_exact(&mut msg_buf)
+            .await
             .map_err(|e| format!("Failed to read message: {}", e))?;
 
         let mut full_buf = len_buf.to_vec();
@@ -420,11 +467,17 @@ impl ClientConnection {
     }
 
     pub async fn handshake(&mut self) -> Result<(), String> {
-        let msg = NetworkMessage::handshake(&self.local_peer_id, &self.local_peer_name, PROTOCOL_VERSION);
+        let msg =
+            NetworkMessage::handshake(&self.local_peer_id, &self.local_peer_name, PROTOCOL_VERSION);
         self.send(msg).await?;
 
         let response = self.receive().await?;
-        if let NetworkCommand::HandshakeAck { peer_id, peer_name, version: _ } = response.command {
+        if let NetworkCommand::HandshakeAck {
+            peer_id,
+            peer_name,
+            version: _,
+        } = response.command
+        {
             self.remote_peer_id = Some(peer_id);
             self.remote_peer_name = Some(peer_name);
             Ok(())
@@ -500,9 +553,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_network_server_creation() {
-        let registry = Arc::new(RwLock::new(PeerRegistry::new(
-            std::path::PathBuf::from("/tmp/test_peers.json")
-        )));
+        let registry = Arc::new(RwLock::new(PeerRegistry::new(std::path::PathBuf::from(
+            "/tmp/test_peers.json",
+        ))));
         let server = NetworkServer::new(0, registry);
         assert!(!server.is_running().await);
     }

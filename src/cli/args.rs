@@ -264,7 +264,12 @@ pub enum Commands {
 
     #[command(about = "Discover peers on network")]
     Discover {
-        #[arg(short, long, default_value_t = 5, help = "Discovery timeout in seconds")]
+        #[arg(
+            short,
+            long,
+            default_value_t = 5,
+            help = "Discovery timeout in seconds"
+        )]
         timeout: u64,
     },
 

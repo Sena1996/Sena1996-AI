@@ -17,25 +17,25 @@ use std::collections::HashMap;
 /// Types of constraints that can become features
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ConstraintType {
-    Resource,    // Memory, CPU, storage
-    Time,        // Latency, timeout, deadline
-    Capacity,    // Token limits, batch size
-    Structural,  // Architecture, dependency
-    External,    // API limits, rate limits
-    Physical,    // Network, hardware
-    Functional,  // Functionality constraints
+    Resource,   // Memory, CPU, storage
+    Time,       // Latency, timeout, deadline
+    Capacity,   // Token limits, batch size
+    Structural, // Architecture, dependency
+    External,   // API limits, rate limits
+    Physical,   // Network, hardware
+    Functional, // Functionality constraints
 }
 
 /// Types of features that can emerge from constraints
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FeatureType {
-    Compression,     // Data compression
-    Prioritization,  // Smart ordering
-    Caching,         // Strategic storage
-    Batching,        // Efficient grouping
-    Streaming,       // Incremental processing
-    Fallback,        // Graceful alternatives
-    Optimization,    // Performance enhancement
+    Compression,    // Data compression
+    Prioritization, // Smart ordering
+    Caching,        // Strategic storage
+    Batching,       // Efficient grouping
+    Streaming,      // Incremental processing
+    Fallback,       // Graceful alternatives
+    Optimization,   // Performance enhancement
 }
 
 /// A constraint that limits the system.
@@ -230,8 +230,16 @@ impl ConstraintFeatureEngine {
         unit: String,
         is_hard: bool,
     ) -> Constraint {
-        let constraint = Constraint::new(name, constraint_type, description, limit_value, unit, is_hard);
-        self.constraints.insert(constraint.id.clone(), constraint.clone());
+        let constraint = Constraint::new(
+            name,
+            constraint_type,
+            description,
+            limit_value,
+            unit,
+            is_hard,
+        );
+        self.constraints
+            .insert(constraint.id.clone(), constraint.clone());
         constraint
     }
 
@@ -251,24 +259,53 @@ impl ConstraintFeatureEngine {
     fn analyze_why(&self, ctype: &ConstraintType) -> String {
         match ctype {
             ConstraintType::Resource => "Physical/computational limits of the system".to_string(),
-            ConstraintType::Time => "User experience and system responsiveness requirements".to_string(),
-            ConstraintType::Capacity => "Architectural design decisions and memory management".to_string(),
-            ConstraintType::Structural => "System architecture and dependency relationships".to_string(),
+            ConstraintType::Time => {
+                "User experience and system responsiveness requirements".to_string()
+            }
+            ConstraintType::Capacity => {
+                "Architectural design decisions and memory management".to_string()
+            }
+            ConstraintType::Structural => {
+                "System architecture and dependency relationships".to_string()
+            }
             ConstraintType::External => "Third-party limitations and API contracts".to_string(),
             ConstraintType::Physical => "Laws of physics and hardware limitations".to_string(),
-            ConstraintType::Functional => "Functional requirements and feature specifications".to_string(),
+            ConstraintType::Functional => {
+                "Functional requirements and feature specifications".to_string()
+            }
         }
     }
 
     fn analyze_prevents(&self, ctype: &ConstraintType) -> Vec<String> {
         match ctype {
-            ConstraintType::Resource => vec!["Unlimited computation".to_string(), "Unbounded memory usage".to_string()],
-            ConstraintType::Time => vec!["Slow responses".to_string(), "Long processing times".to_string()],
-            ConstraintType::Capacity => vec!["Large data storage".to_string(), "Unlimited context".to_string()],
-            ConstraintType::Structural => vec!["Arbitrary connections".to_string(), "Circular dependencies".to_string()],
-            ConstraintType::External => vec!["Unlimited API calls".to_string(), "Free resource usage".to_string()],
-            ConstraintType::Physical => vec!["Instant communication".to_string(), "Infinite storage".to_string()],
-            ConstraintType::Functional => vec!["Unlimited features".to_string(), "Unconstrained functionality".to_string()],
+            ConstraintType::Resource => vec![
+                "Unlimited computation".to_string(),
+                "Unbounded memory usage".to_string(),
+            ],
+            ConstraintType::Time => vec![
+                "Slow responses".to_string(),
+                "Long processing times".to_string(),
+            ],
+            ConstraintType::Capacity => vec![
+                "Large data storage".to_string(),
+                "Unlimited context".to_string(),
+            ],
+            ConstraintType::Structural => vec![
+                "Arbitrary connections".to_string(),
+                "Circular dependencies".to_string(),
+            ],
+            ConstraintType::External => vec![
+                "Unlimited API calls".to_string(),
+                "Free resource usage".to_string(),
+            ],
+            ConstraintType::Physical => vec![
+                "Instant communication".to_string(),
+                "Infinite storage".to_string(),
+            ],
+            ConstraintType::Functional => vec![
+                "Unlimited features".to_string(),
+                "Unconstrained functionality".to_string(),
+            ],
         }
     }
 
@@ -339,9 +376,7 @@ impl ConstraintFeatureEngine {
             constraint: constraint.clone(),
             original_view: format!(
                 "This {:?} constraint limits us to {} {}",
-                constraint.constraint_type,
-                constraint.limit_value,
-                constraint.unit
+                constraint.constraint_type, constraint.limit_value, constraint.unit
             ),
             inverted_view: self.generate_inverted_view(constraint),
             potential_features: self.generate_potential_features(&constraint.constraint_type),
@@ -397,13 +432,11 @@ impl ConstraintFeatureEngine {
                     benefit: "Pre-computed common responses".to_string(),
                 },
             ],
-            ConstraintType::Resource => vec![
-                PotentialFeature {
-                    feature_type: FeatureType::Optimization,
-                    name: "Efficient Algorithms".to_string(),
-                    benefit: "Better performance with less".to_string(),
-                },
-            ],
+            ConstraintType::Resource => vec![PotentialFeature {
+                feature_type: FeatureType::Optimization,
+                name: "Efficient Algorithms".to_string(),
+                benefit: "Better performance with less".to_string(),
+            }],
             ConstraintType::External => vec![
                 PotentialFeature {
                     feature_type: FeatureType::Batching,
@@ -436,7 +469,9 @@ impl ConstraintFeatureEngine {
 
         let feature_id = generate_id(&format!("{}{}", feature_name, constraint_id));
 
-        let constraint_name = self.constraints.get(constraint_id)
+        let constraint_name = self
+            .constraints
+            .get(constraint_id)
             .map(|c| c.name.clone())
             .unwrap_or_else(|| "unknown".to_string());
 
@@ -444,10 +479,7 @@ impl ConstraintFeatureEngine {
             id: feature_id.clone(),
             name: feature_name,
             feature_type,
-            description: format!(
-                "Feature derived from constraint: {}",
-                constraint_name
-            ),
+            description: format!("Feature derived from constraint: {}", constraint_name),
             source_constraint_id: constraint_id.to_string(),
             implementation: implementation.clone(),
             benefit,
@@ -467,7 +499,8 @@ impl ConstraintFeatureEngine {
         };
 
         let trans_id = format!("{}_{}", constraint_id, transformation.feature_id);
-        self.transformations.insert(trans_id.clone(), transformation.clone());
+        self.transformations
+            .insert(trans_id.clone(), transformation.clone());
 
         Ok(transformation)
     }
@@ -492,9 +525,9 @@ impl ConstraintFeatureEngine {
                         relevance,
                         inversion,
                     });
-                    result.suggested_features.extend(
-                        self.generate_potential_features(&constraint.constraint_type),
-                    );
+                    result
+                        .suggested_features
+                        .extend(self.generate_potential_features(&constraint.constraint_type));
                 }
             }
         }
@@ -503,7 +536,12 @@ impl ConstraintFeatureEngine {
             result.transformation_strategy = result
                 .relevant_constraints
                 .iter()
-                .map(|rc| format!("Transform '{}': {}", rc.constraint.name, rc.inversion.inverted_view))
+                .map(|rc| {
+                    format!(
+                        "Transform '{}': {}",
+                        rc.constraint.name, rc.inversion.inverted_view
+                    )
+                })
                 .collect::<Vec<_>>()
                 .join(" | ");
         }

@@ -17,9 +17,8 @@ static HARDCODED_SECRET_REGEX: Lazy<Regex> = Lazy::new(|| {
         .expect("invalid secret regex")
 });
 
-static JWT_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"(jwt|jsonwebtoken|jose)"#).expect("invalid jwt regex")
-});
+static JWT_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"(jwt|jsonwebtoken|jose)"#).expect("invalid jwt regex"));
 
 static DB_CONNECTION_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(mongodb|postgres|mysql|redis|sqlite)://[^\s'"`]+"#)
@@ -93,7 +92,9 @@ impl BackendAgent {
                 title: "GraphQL API detected".to_string(),
                 description: "GraphQL implementation found".to_string(),
                 location: None,
-                suggestion: Some("Implement query complexity limits and depth limiting".to_string()),
+                suggestion: Some(
+                    "Implement query complexity limits and depth limiting".to_string(),
+                ),
             });
         }
 
@@ -123,7 +124,9 @@ impl BackendAgent {
                 title: "Direct request body access".to_string(),
                 description: "Request body is accessed directly without validation".to_string(),
                 location: None,
-                suggestion: Some("Use validation middleware (Joi, Zod, class-validator)".to_string()),
+                suggestion: Some(
+                    "Use validation middleware (Joi, Zod, class-validator)".to_string(),
+                ),
             });
         }
 
@@ -147,7 +150,10 @@ impl BackendAgent {
             });
         }
 
-        if input_lower.contains(".find(") || input_lower.contains(".query(") || input_lower.contains("select ") {
+        if input_lower.contains(".find(")
+            || input_lower.contains(".query(")
+            || input_lower.contains("select ")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "Database read operation".to_string(),
@@ -195,7 +201,9 @@ impl BackendAgent {
                 title: "JWT authentication detected".to_string(),
                 description: "JSON Web Tokens are used for authentication".to_string(),
                 location: None,
-                suggestion: Some("Ensure tokens have short expiry and use refresh tokens".to_string()),
+                suggestion: Some(
+                    "Ensure tokens have short expiry and use refresh tokens".to_string(),
+                ),
             });
 
             if input_lower.contains("expiresIn") || input_lower.contains("exp") {
@@ -225,7 +233,9 @@ impl BackendAgent {
                 location: None,
                 suggestion: None,
             });
-        } else if input_lower.contains("password") && (input_lower.contains("md5") || input_lower.contains("sha1")) {
+        } else if input_lower.contains("password")
+            && (input_lower.contains("md5") || input_lower.contains("sha1"))
+        {
             findings.push(Finding {
                 severity: Severity::Critical,
                 title: "Weak password hashing".to_string(),
@@ -245,7 +255,10 @@ impl BackendAgent {
             });
         }
 
-        if input_lower.contains("role") || input_lower.contains("permission") || input_lower.contains("authorize") {
+        if input_lower.contains("role")
+            || input_lower.contains("permission")
+            || input_lower.contains("authorize")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "Authorization logic detected".to_string(),
@@ -268,14 +281,20 @@ impl BackendAgent {
                 findings.push(Finding {
                     severity: Severity::Warning,
                     title: "Session security check needed".to_string(),
-                    description: "Verify session cookies have httpOnly and secure flags".to_string(),
+                    description: "Verify session cookies have httpOnly and secure flags"
+                        .to_string(),
                     location: None,
-                    suggestion: Some("Set httpOnly: true, secure: true, sameSite: 'strict'".to_string()),
+                    suggestion: Some(
+                        "Set httpOnly: true, secure: true, sameSite: 'strict'".to_string(),
+                    ),
                 });
             }
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 40 } else { 75 };
 
         DomainAnalysis {
@@ -347,7 +366,10 @@ impl BackendAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 30 } else { 90 };
 
         DomainAnalysis {
@@ -389,7 +411,9 @@ impl BackendAgent {
             });
         }
 
-        if input_lower.contains("eval(") || input_lower.contains("function(") && input_lower.contains("return") {
+        if input_lower.contains("eval(")
+            || input_lower.contains("function(") && input_lower.contains("return")
+        {
             findings.push(Finding {
                 severity: Severity::Critical,
                 title: "Code injection risk".to_string(),
@@ -447,8 +471,17 @@ impl BackendAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
-        let score = if critical_count > 0 { 35 } else if critical_count == 0 { 85 } else { 60 };
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
+        let score = if critical_count > 0 {
+            35
+        } else if critical_count == 0 {
+            85
+        } else {
+            60
+        };
 
         DomainAnalysis {
             agent: DomainAgentType::Backend,
@@ -543,7 +576,10 @@ mod tests {
             db.query(query);
         "#;
         let result = agent.analyze("security", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Critical));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical));
     }
 
     #[test]
@@ -565,6 +601,9 @@ mod tests {
             const apiKey = "sk-1234567890abcdef";
         "#;
         let result = agent.analyze("secrets", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Critical));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical));
     }
 }

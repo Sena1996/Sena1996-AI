@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     provider::{AIProvider, ChatStream},
-    ChatRequest, ChatResponse, Message, MessageContent, ModelInfo, ProviderCapabilities,
-    ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk, Usage,
-    FinishReason, ToolCall, ToolCallFunction,
+    ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
+    ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
+    ToolCall, ToolCallFunction, Usage,
 };
 
 const MISTRAL_API_URL: &str = "https://api.mistral.ai/v1/chat/completions";
@@ -21,12 +21,15 @@ pub struct MistralProvider {
 
 impl MistralProvider {
     pub fn new(config: ProviderConfig) -> Result<Self> {
-        let api_key = config.get_api_key()
+        let api_key = config
+            .get_api_key()
             .ok_or_else(|| ProviderError::NotConfigured("MISTRAL_API_KEY not set".into()))?;
 
         let client = Client::builder()
             .default_headers(Self::build_headers(&api_key)?)
-            .timeout(std::time::Duration::from_secs(config.timeout_secs.unwrap_or(120)))
+            .timeout(std::time::Duration::from_secs(
+                config.timeout_secs.unwrap_or(120),
+            ))
             .build()
             .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
 
@@ -45,11 +48,15 @@ impl MistralProvider {
         let auth_value = format!("Bearer {}", api_key);
         headers.insert(
             reqwest::header::AUTHORIZATION,
-            auth_value.parse().map_err(|_| ProviderError::AuthenticationFailed("Invalid API key format".into()))?,
+            auth_value.parse().map_err(|_| {
+                ProviderError::AuthenticationFailed("Invalid API key format".into())
+            })?,
         );
         headers.insert(
             reqwest::header::CONTENT_TYPE,
-            "application/json".parse().map_err(|_| ProviderError::Unknown("Invalid content type".into()))?,
+            "application/json"
+                .parse()
+                .map_err(|_| ProviderError::Unknown("Invalid content type".into()))?,
         );
         Ok(headers)
     }
@@ -195,7 +202,10 @@ impl AIProvider for MistralProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let messages = self.convert_messages(&request.messages);
 
         let mistral_request = MistralRequest {
@@ -220,8 +230,13 @@ impl AIProvider for MistralProvider {
 
             return match status.as_u16() {
                 401 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -266,7 +281,10 @@ impl AIProvider for MistralProvider {
     }
 
     async fn chat_stream(&self, request: ChatRequest) -> Result<ChatStream> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let messages = self.convert_messages(&request.messages);
 
         let mistral_request = MistralRequest {
@@ -291,8 +309,13 @@ impl AIProvider for MistralProvider {
 
             return match status.as_u16() {
                 401 => Err(ProviderError::AuthenticationFailed(error_text)),
-                429 => Err(ProviderError::RateLimited { retry_after_secs: 60 }),
-                _ => Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text))),
+                429 => Err(ProviderError::RateLimited {
+                    retry_after_secs: 60,
+                }),
+                _ => Err(ProviderError::RequestFailed(format!(
+                    "{}: {}",
+                    status, error_text
+                ))),
             };
         }
 
@@ -478,10 +501,22 @@ mod tests {
 
     #[test]
     fn test_parse_finish_reason() {
-        assert_eq!(MistralProvider::parse_finish_reason("stop"), FinishReason::Stop);
-        assert_eq!(MistralProvider::parse_finish_reason("length"), FinishReason::Length);
-        assert_eq!(MistralProvider::parse_finish_reason("tool_calls"), FinishReason::ToolCalls);
-        assert_eq!(MistralProvider::parse_finish_reason("model_length"), FinishReason::Length);
+        assert_eq!(
+            MistralProvider::parse_finish_reason("stop"),
+            FinishReason::Stop
+        );
+        assert_eq!(
+            MistralProvider::parse_finish_reason("length"),
+            FinishReason::Length
+        );
+        assert_eq!(
+            MistralProvider::parse_finish_reason("tool_calls"),
+            FinishReason::ToolCalls
+        );
+        assert_eq!(
+            MistralProvider::parse_finish_reason("model_length"),
+            FinishReason::Length
+        );
     }
 
     #[test]

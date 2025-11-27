@@ -1,6 +1,4 @@
-use sena1996_ai::{
-    ProcessingRequest, SenaUnifiedSystem, SystemHealth, ThinkingDepth, VERSION,
-};
+use sena1996_ai::{ProcessingRequest, SenaUnifiedSystem, SystemHealth, ThinkingDepth, VERSION};
 
 #[test]
 fn test_version_exists() {

@@ -2,21 +2,21 @@
 //!
 //! Real-time messaging between collaborative sessions
 
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 
 use super::HubConfig;
 
 /// Message types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MessageType {
-    Direct,      // One-to-one
-    Broadcast,   // One-to-all
-    System,      // System notification
-    Alert,       // Important alert
-    TaskUpdate,  // Task-related update
+    Direct,     // One-to-one
+    Broadcast,  // One-to-all
+    System,     // System notification
+    Alert,      // Important alert
+    TaskUpdate, // Task-related update
 }
 
 impl MessageType {
@@ -36,7 +36,7 @@ impl MessageType {
 pub struct Message {
     pub id: String,
     pub from: String,
-    pub to: String,  // Session ID or "all" for broadcast
+    pub to: String, // Session ID or "all" for broadcast
     pub content: String,
     pub message_type: MessageType,
     pub timestamp: u64,
@@ -239,8 +239,7 @@ impl MessageQueue {
         self.messages
             .iter()
             .filter(|m| {
-                (m.from == session1 && m.to == session2) ||
-                (m.from == session2 && m.to == session1)
+                (m.from == session1 && m.to == session2) || (m.from == session2 && m.to == session1)
             })
             .cloned()
             .collect()
@@ -261,8 +260,8 @@ impl MessageQueue {
         let inbox_file = self.messages_dir.join(format!("{}.json", session_id));
 
         let mut inbox: Vec<Message> = if inbox_file.exists() {
-            let content = fs::read_to_string(&inbox_file)
-                .map_err(|e| format!("Cannot read inbox: {}", e))?;
+            let content =
+                fs::read_to_string(&inbox_file).map_err(|e| format!("Cannot read inbox: {}", e))?;
             serde_json::from_str(&content).unwrap_or_default()
         } else {
             Vec::new()
@@ -273,8 +272,7 @@ impl MessageQueue {
         let json = serde_json::to_string_pretty(&inbox)
             .map_err(|e| format!("Cannot serialize inbox: {}", e))?;
 
-        fs::write(&inbox_file, json)
-            .map_err(|e| format!("Cannot write inbox: {}", e))?;
+        fs::write(&inbox_file, json).map_err(|e| format!("Cannot write inbox: {}", e))?;
 
         Ok(())
     }
@@ -301,8 +299,7 @@ impl MessageQueue {
         let json = serde_json::to_string_pretty(&broadcasts)
             .map_err(|e| format!("Cannot serialize broadcasts: {}", e))?;
 
-        fs::write(&broadcast_file, json)
-            .map_err(|e| format!("Cannot write broadcasts: {}", e))?;
+        fs::write(&broadcast_file, json).map_err(|e| format!("Cannot write broadcasts: {}", e))?;
 
         Ok(())
     }

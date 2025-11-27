@@ -2,10 +2,10 @@
 //!
 //! JSON-RPC server over stdio for Claude Code integration
 
-use std::io::{self, BufRead, Write};
-use super::protocol::*;
 use super::handlers::handle_request;
+use super::protocol::*;
 use crate::config::SenaConfig;
+use std::io::{self, BufRead, Write};
 
 pub async fn run_server() -> Result<String, String> {
     use std::io::BufReader;
@@ -95,7 +95,11 @@ pub async fn run_server_async() -> Result<String, String> {
     let mut stdout = stdout;
 
     let brand = SenaConfig::brand();
-    eprintln!("{} MCP Server v{} starting (async)...", brand, crate::VERSION);
+    eprintln!(
+        "{} MCP Server v{} starting (async)...",
+        brand,
+        crate::VERSION
+    );
 
     let mut line = String::new();
 
@@ -125,7 +129,9 @@ pub async fn run_server_async() -> Result<String, String> {
                     &format!("Parse error: {}", e),
                 );
                 let response_str = serde_json::to_string(&error_response).unwrap_or_default();
-                let _ = stdout.write_all(format!("{}\n", response_str).as_bytes()).await;
+                let _ = stdout
+                    .write_all(format!("{}\n", response_str).as_bytes())
+                    .await;
                 let _ = stdout.flush().await;
                 continue;
             }
@@ -141,7 +147,10 @@ pub async fn run_server_async() -> Result<String, String> {
 
         // Send response
         let response_str = serde_json::to_string(&response).unwrap_or_default();
-        if let Err(e) = stdout.write_all(format!("{}\n", response_str).as_bytes()).await {
+        if let Err(e) = stdout
+            .write_all(format!("{}\n", response_str).as_bytes())
+            .await
+        {
             eprintln!("Error writing response: {}", e);
         }
         if let Err(e) = stdout.flush().await {

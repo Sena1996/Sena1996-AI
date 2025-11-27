@@ -2,11 +2,11 @@
 //!
 //! Background daemon for services
 
+use crate::config::SenaConfig;
 use std::fs;
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::io::Write;
-use crate::config::SenaConfig;
 
 /// PID file location
 fn pid_file() -> PathBuf {
@@ -27,7 +27,6 @@ pub fn is_running() -> bool {
             // Check if process exists (Unix)
             #[cfg(unix)]
             {
-                
                 let result = Command::new("kill")
                     .args(["-0", &pid.to_string()])
                     .stdout(Stdio::null())
@@ -62,8 +61,7 @@ pub async fn start_daemon() -> Result<String, String> {
     // For simplicity, we just record the intent and run in foreground
     let pid = std::process::id();
 
-    fs::write(pid_file(), pid.to_string())
-        .map_err(|e| format!("Cannot write PID file: {}", e))?;
+    fs::write(pid_file(), pid.to_string()).map_err(|e| format!("Cannot write PID file: {}", e))?;
 
     // Log startup
     let mut log = fs::OpenOptions::new()
@@ -72,11 +70,14 @@ pub async fn start_daemon() -> Result<String, String> {
         .open(log_file())
         .map_err(|e| format!("Cannot open log: {}", e))?;
 
-    writeln!(log, "[{}] {} daemon started (PID: {})",
+    writeln!(
+        log,
+        "[{}] {} daemon started (PID: {})",
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
         brand,
         pid
-    ).ok();
+    )
+    .ok();
 
     Ok(format!("{} daemon started (PID: {})", brand, pid))
 }
@@ -88,10 +89,12 @@ pub async fn stop_daemon() -> Result<String, String> {
         return Err(format!("{} daemon is not running", brand));
     }
 
-    let pid_str = fs::read_to_string(pid_file())
-        .map_err(|e| format!("Cannot read PID file: {}", e))?;
+    let pid_str =
+        fs::read_to_string(pid_file()).map_err(|e| format!("Cannot read PID file: {}", e))?;
 
-    let pid: i32 = pid_str.trim().parse()
+    let pid: i32 = pid_str
+        .trim()
+        .parse()
         .map_err(|e| format!("Invalid PID: {}", e))?;
 
     // Send SIGTERM
@@ -109,18 +112,20 @@ pub async fn stop_daemon() -> Result<String, String> {
     }
 
     // Remove PID file
-    fs::remove_file(pid_file())
-        .map_err(|e| format!("Cannot remove PID file: {}", e))?;
+    fs::remove_file(pid_file()).map_err(|e| format!("Cannot remove PID file: {}", e))?;
 
     if let Ok(mut log) = fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(log_file())
     {
-        writeln!(log, "[{}] {} daemon stopped",
+        writeln!(
+            log,
+            "[{}] {} daemon stopped",
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
             brand
-        ).ok();
+        )
+        .ok();
     }
 
     Ok(format!("{} daemon stopped (was PID: {})", brand, pid))
@@ -129,8 +134,7 @@ pub async fn stop_daemon() -> Result<String, String> {
 pub async fn daemon_status() -> Result<String, String> {
     let brand = SenaConfig::brand();
     if is_running() {
-        let pid = fs::read_to_string(pid_file())
-            .unwrap_or_else(|_| "unknown".to_string());
+        let pid = fs::read_to_string(pid_file()).unwrap_or_else(|_| "unknown".to_string());
 
         Ok(format!("{} daemon is running (PID: {})", brand, pid.trim()))
     } else {
@@ -172,11 +176,14 @@ async fn perform_periodic_tasks() {
         .append(true)
         .open(log_file())
     {
-        writeln!(log, "[{}] Health check: {} ({}%)",
+        writeln!(
+            log,
+            "[{}] Health check: {} ({}%)",
             chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
             report.overall_status,
             report.metrics.overall_health_percentage
-        ).ok();
+        )
+        .ok();
     }
 }
 

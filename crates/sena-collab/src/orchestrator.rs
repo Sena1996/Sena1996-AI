@@ -6,9 +6,7 @@ use sena_providers::{AIProvider, ChatRequest, Message};
 use crate::{
     agent::AgentInfo,
     error::{CollabError, Result},
-    message::{
-        AgentStatus, CollabMessage, MessageContent, RequestPayload, ResponsePayload,
-    },
+    message::{AgentStatus, CollabMessage, MessageContent, RequestPayload, ResponsePayload},
     permission::{Permission, PermissionSet},
     session::{CollabSession, SessionManager, SessionState},
 };
@@ -46,11 +44,7 @@ impl CollabOrchestrator {
         Ok(session_id)
     }
 
-    pub async fn join_session(
-        &self,
-        session_id: &str,
-        provider_id: &str,
-    ) -> Result<String> {
+    pub async fn join_session(&self, session_id: &str, provider_id: &str) -> Result<String> {
         let provider = self
             .providers
             .get(provider_id)
@@ -132,9 +126,9 @@ impl CollabOrchestrator {
                 .iter()
                 .filter(|p| p.agent.id != sender_id && p.agent.is_available())
                 .filter_map(|p| {
-                    self.providers
-                        .get(&p.agent.provider)
-                        .map(|provider| (p.agent.id.clone(), p.agent.model.clone(), provider.clone()))
+                    self.providers.get(&p.agent.provider).map(|provider| {
+                        (p.agent.id.clone(), p.agent.model.clone(), provider.clone())
+                    })
                 })
                 .collect();
         }
@@ -292,7 +286,10 @@ impl CollabOrchestrator {
 
         context.push_str("=== Collaboration Session Context ===\n\n");
         context.push_str(&format!("Session: {}\n", session.name));
-        context.push_str(&format!("Participants: {}\n\n", session.participant_count()));
+        context.push_str(&format!(
+            "Participants: {}\n\n",
+            session.participant_count()
+        ));
 
         context.push_str("Recent conversation:\n");
         for msg in session.recent_messages(10).iter().rev() {
@@ -302,7 +299,8 @@ impl CollabOrchestrator {
         }
 
         context.push_str(&format!("\nNew message: {}\n", new_message));
-        context.push_str("\nPlease respond to this conversation as a collaborative AI participant.");
+        context
+            .push_str("\nPlease respond to this conversation as a collaborative AI participant.");
 
         context
     }
@@ -313,8 +311,7 @@ impl CollabOrchestrator {
         model: &str,
         context: &str,
     ) -> Result<String> {
-        let request = ChatRequest::new(vec![Message::user(context)])
-            .with_model(model);
+        let request = ChatRequest::new(vec![Message::user(context)]).with_model(model);
 
         let response = provider.chat(request).await?;
         Ok(response.content)

@@ -17,9 +17,8 @@ static ANGULAR_REGEX: Lazy<Regex> = Lazy::new(|| {
         .expect("invalid angular regex")
 });
 
-static ARIA_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"(aria-|role=)"#).expect("invalid aria regex")
-});
+static ARIA_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"(aria-|role=)"#).expect("invalid aria regex"));
 
 pub struct WebAgent {
     #[allow(dead_code)]
@@ -49,7 +48,10 @@ impl WebAgent {
         let mut findings = Vec::new();
         let input_lower = input.to_lowercase();
 
-        if input_lower.contains("lazy") || input.contains("loading=\"lazy\"") || input.contains("React.lazy") {
+        if input_lower.contains("lazy")
+            || input.contains("loading=\"lazy\"")
+            || input.contains("React.lazy")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Lazy loading implemented".to_string(),
@@ -261,7 +263,10 @@ impl WebAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 45 } else { 80 };
 
         DomainAnalysis {
@@ -360,7 +365,10 @@ impl WebAgent {
             });
         }
 
-        if input_lower.contains("schema.org") || input.contains("\"@type\"") || input_lower.contains("jsonld") {
+        if input_lower.contains("schema.org")
+            || input.contains("\"@type\"")
+            || input_lower.contains("jsonld")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Structured data detected".to_string(),
@@ -380,7 +388,10 @@ impl WebAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 50 } else { 80 };
 
         DomainAnalysis {
@@ -497,7 +508,10 @@ impl WebAgent {
             });
         }
 
-        if input_lower.contains("terser") || input_lower.contains("uglify") || input_lower.contains("minify") {
+        if input_lower.contains("terser")
+            || input_lower.contains("uglify")
+            || input_lower.contains("minify")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Code minification".to_string(),
@@ -599,7 +613,9 @@ impl WebAgent {
             });
         }
 
-        if input.contains("virtual") && (input_lower.contains("scroll") || input_lower.contains("list")) {
+        if input.contains("virtual")
+            && (input_lower.contains("scroll") || input_lower.contains("list"))
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Virtual scrolling implemented".to_string(),
@@ -661,7 +677,9 @@ impl WebAgent {
             });
         }
 
-        if input_lower.contains("httponly") || input_lower.contains("secure") && input_lower.contains("cookie") {
+        if input_lower.contains("httponly")
+            || input_lower.contains("secure") && input_lower.contains("cookie")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Secure cookie configuration".to_string(),
@@ -681,7 +699,10 @@ impl WebAgent {
             });
         }
 
-        if input_lower.contains("https") || input_lower.contains("ssl") || input_lower.contains("tls") {
+        if input_lower.contains("https")
+            || input_lower.contains("ssl")
+            || input_lower.contains("tls")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "HTTPS/TLS usage".to_string(),
@@ -691,7 +712,10 @@ impl WebAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 40 } else { 85 };
 
         DomainAnalysis {
@@ -784,7 +808,10 @@ mod tests {
             <button aria-label="Close dialog">X</button>
         "#;
         let result = agent.analyze("a11y", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Success));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Success));
     }
 
     #[test]
@@ -795,6 +822,9 @@ mod tests {
             eval(userCode);
         "#;
         let result = agent.analyze("audit", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Critical));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical));
     }
 }

@@ -3,44 +3,35 @@
 //! Handles execution of CLI commands
 
 use crate::cli::args::*;
-use std::path::PathBuf;
 use crate::config::SenaConfig;
 use crate::integration::AutoIntegration;
 use crate::metrics::SenaHealth;
-use crate::output::{TableBuilder, ProgressBar, FormatBox};
-use crate::SenaUnifiedSystem;
+use crate::output::{FormatBox, ProgressBar, TableBuilder};
 use crate::ProcessingRequest;
+use crate::SenaUnifiedSystem;
+use std::path::PathBuf;
 
 /// Execute a CLI command
 pub async fn execute_command(cli: &Cli) -> Result<String, String> {
     match &cli.command {
-        Some(Commands::Mcp { debug }) => {
-            execute_mcp(*debug).await
-        }
+        Some(Commands::Mcp { debug }) => execute_mcp(*debug).await,
 
         Some(Commands::Hook { hook_type, input }) => {
             execute_hook(*hook_type, input.clone(), cli.format).await
         }
 
-        Some(Commands::Process { content, request_type }) => {
-            execute_process(content, request_type, cli.format).await
-        }
+        Some(Commands::Process {
+            content,
+            request_type,
+        }) => execute_process(content, request_type, cli.format).await,
 
-        Some(Commands::Health { detailed }) => {
-            execute_health(*detailed, cli.format)
-        }
+        Some(Commands::Health { detailed }) => execute_health(*detailed, cli.format),
 
-        Some(Commands::Metrics { category }) => {
-            execute_metrics(*category, cli.format)
-        }
+        Some(Commands::Metrics { category }) => execute_metrics(*category, cli.format),
 
-        Some(Commands::Detect { text }) => {
-            execute_detect(text, cli.format)
-        }
+        Some(Commands::Detect { text }) => execute_detect(text, cli.format),
 
-        Some(Commands::Daemon { action }) => {
-            execute_daemon(*action).await
-        }
+        Some(Commands::Daemon { action }) => execute_daemon(*action).await,
 
         Some(Commands::Session { action, id, name }) => {
             execute_session(*action, id.clone(), name.clone(), cli.format)
@@ -50,106 +41,75 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
             execute_validate(content, *strict, cli.format)
         }
 
-        Some(Commands::Format { format_type, title, data }) => {
-            execute_format(*format_type, title.clone(), data, cli.format)
-        }
+        Some(Commands::Format {
+            format_type,
+            title,
+            data,
+        }) => execute_format(*format_type, title.clone(), data, cli.format),
 
         // Hub commands
-        Some(Commands::Hub { action }) => {
-            execute_hub(action.clone()).await
-        }
+        Some(Commands::Hub { action }) => execute_hub(action.clone()).await,
 
-        Some(Commands::Join { role, name }) => {
-            execute_join(role, name.clone(), cli.format).await
-        }
+        Some(Commands::Join { role, name }) => execute_join(role, name.clone(), cli.format).await,
 
-        Some(Commands::Who) => {
-            execute_who(cli.format).await
-        }
+        Some(Commands::Who) => execute_who(cli.format).await,
 
-        Some(Commands::Tell { target, message }) => {
-            execute_tell(target, message, cli.format).await
-        }
+        Some(Commands::Tell { target, message }) => execute_tell(target, message, cli.format).await,
 
-        Some(Commands::Inbox) => {
-            execute_inbox(cli.format).await
-        }
+        Some(Commands::Inbox) => execute_inbox(cli.format).await,
 
-        Some(Commands::Task { action }) => {
-            execute_task(action.clone(), cli.format).await
-        }
+        Some(Commands::Task { action }) => execute_task(action.clone(), cli.format).await,
 
-        Some(Commands::Watch) => {
-            execute_watch().await
-        }
+        Some(Commands::Watch) => execute_watch().await,
 
-        Some(Commands::Sync) => {
-            execute_sync(cli.format).await
-        }
+        Some(Commands::Sync) => execute_sync(cli.format).await,
 
-        Some(Commands::Knowledge { action }) => {
-            execute_knowledge(action.clone(), cli.format).await
-        }
+        Some(Commands::Knowledge { action }) => execute_knowledge(action.clone(), cli.format).await,
 
-        Some(Commands::Think { query, depth }) => {
-            execute_think(query, *depth, cli.format).await
-        }
+        Some(Commands::Think { query, depth }) => execute_think(query, *depth, cli.format).await,
 
-        Some(Commands::Agent { agent_type, content }) => {
-            execute_agent(*agent_type, content, cli.format).await
-        }
+        Some(Commands::Agent {
+            agent_type,
+            content,
+        }) => execute_agent(*agent_type, content, cli.format).await,
 
-        Some(Commands::Evolve { action }) => {
-            execute_evolve(action.clone(), cli.format).await
-        }
+        Some(Commands::Evolve { action }) => execute_evolve(action.clone(), cli.format).await,
 
-        Some(Commands::Feedback { feedback_type, message, context }) => {
-            execute_feedback(*feedback_type, message, context.clone(), cli.format).await
-        }
+        Some(Commands::Feedback {
+            feedback_type,
+            message,
+            context,
+        }) => execute_feedback(*feedback_type, message, context.clone(), cli.format).await,
 
         Some(Commands::Backend { analysis, input }) => {
             execute_backend(*analysis, input, cli.format).await
         }
 
-        Some(Commands::Iot { analysis, input }) => {
-            execute_iot(*analysis, input, cli.format).await
-        }
+        Some(Commands::Iot { analysis, input }) => execute_iot(*analysis, input, cli.format).await,
 
-        Some(Commands::Ios { analysis, input }) => {
-            execute_ios(*analysis, input, cli.format).await
-        }
+        Some(Commands::Ios { analysis, input }) => execute_ios(*analysis, input, cli.format).await,
 
         Some(Commands::Android { analysis, input }) => {
             execute_android(*analysis, input, cli.format).await
         }
 
-        Some(Commands::Web { analysis, input }) => {
-            execute_web(*analysis, input, cli.format).await
-        }
+        Some(Commands::Web { analysis, input }) => execute_web(*analysis, input, cli.format).await,
 
-        Some(Commands::Setup { install_type, name, yes }) => {
-            execute_setup(*install_type, name.clone(), *yes, cli.format).await
-        }
+        Some(Commands::Setup {
+            install_type,
+            name,
+            yes,
+        }) => execute_setup(*install_type, name.clone(), *yes, cli.format).await,
 
-        Some(Commands::Network { action }) => {
-            execute_network(action.clone(), cli.format).await
-        }
+        Some(Commands::Network { action }) => execute_network(action.clone(), cli.format).await,
 
-        Some(Commands::Peer { action }) => {
-            execute_peer(action.clone(), cli.format).await
-        }
+        Some(Commands::Peer { action }) => execute_peer(action.clone(), cli.format).await,
 
-        Some(Commands::Discover { timeout }) => {
-            execute_discover(*timeout, cli.format).await
-        }
+        Some(Commands::Discover { timeout }) => execute_discover(*timeout, cli.format).await,
 
-        Some(Commands::Provider { action }) => {
-            execute_provider(action.clone(), cli.format).await
-        }
+        Some(Commands::Provider { action }) => execute_provider(action.clone(), cli.format).await,
 
-        Some(Commands::Collab { action }) => {
-            execute_collab(action.clone(), cli.format).await
-        }
+        Some(Commands::Collab { action }) => execute_collab(action.clone(), cli.format).await,
 
         None => {
             // No command - show status
@@ -160,14 +120,21 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
 async fn execute_mcp(debug: bool) -> Result<String, String> {
     if debug {
-        eprintln!("{} MCP Server starting in debug mode...", SenaConfig::brand());
+        eprintln!(
+            "{} MCP Server starting in debug mode...",
+            SenaConfig::brand()
+        );
     }
 
     // Start MCP server
     crate::mcp::run_server().await
 }
 
-async fn execute_hook(hook_type: HookType, input: Option<String>, format: OutputFormat) -> Result<String, String> {
+async fn execute_hook(
+    hook_type: HookType,
+    input: Option<String>,
+    format: OutputFormat,
+) -> Result<String, String> {
     let input_data = match input {
         Some(data) => data,
         None => {
@@ -193,19 +160,22 @@ async fn execute_hook(hook_type: HookType, input: Option<String>, format: Output
     }
 }
 
-async fn execute_process(content: &str, request_type: &str, format: OutputFormat) -> Result<String, String> {
+async fn execute_process(
+    content: &str,
+    request_type: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
     let mut system = SenaUnifiedSystem::new();
     let request = ProcessingRequest::new(content, request_type);
 
     let result = system.process(request).await;
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&result).map_err(|e| e.to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROCESSING RESULT")).render());
+            output
+                .push_str(&FormatBox::new(&SenaConfig::brand_title("PROCESSING RESULT")).render());
             output.push('\n');
             output.push_str(&format!("Request ID: {}\n", result.request_id));
             output.push_str(&format!("Success: {}\n", result.success));
@@ -216,9 +186,17 @@ async fn execute_process(content: &str, request_type: &str, format: OutputFormat
         }
         OutputFormat::Text => {
             if result.success {
-                Ok(if result.content.is_empty() { "OK".to_string() } else { result.content.clone() })
+                Ok(if result.content.is_empty() {
+                    "OK".to_string()
+                } else {
+                    result.content.clone()
+                })
             } else {
-                Err(if result.content.is_empty() { "Error".to_string() } else { result.content.clone() })
+                Err(if result.content.is_empty() {
+                    "Error".to_string()
+                } else {
+                    result.content.clone()
+                })
             }
         }
     }
@@ -229,20 +207,22 @@ fn execute_health(detailed: bool, format: OutputFormat) -> Result<String, String
     let report = health.get_health();
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&report).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&report).map_err(|e| e.to_string()),
         OutputFormat::Pretty | OutputFormat::Text => {
             let mut output = String::new();
 
             if detailed || format == OutputFormat::Pretty {
-                output.push_str(&FormatBox::new(&SenaConfig::brand_title("HEALTH STATUS")).render());
+                output
+                    .push_str(&FormatBox::new(&SenaConfig::brand_title("HEALTH STATUS")).render());
                 output.push('\n');
             }
 
             output.push_str(&format!("Version: {}\n", report.version));
             output.push_str(&format!("Status: {}\n", report.overall_status));
-            output.push_str(&format!("Health: {}%\n", report.metrics.overall_health_percentage));
+            output.push_str(&format!(
+                "Health: {}%\n",
+                report.metrics.overall_health_percentage
+            ));
 
             if detailed {
                 output.push_str("\nComponents:\n");
@@ -256,7 +236,10 @@ fn execute_health(detailed: bool, format: OutputFormat) -> Result<String, String
     }
 }
 
-fn execute_metrics(category: Option<MetricCategory>, format: OutputFormat) -> Result<String, String> {
+fn execute_metrics(
+    category: Option<MetricCategory>,
+    format: OutputFormat,
+) -> Result<String, String> {
     let health = SenaHealth::new();
     let cat = category.unwrap_or(MetricCategory::All);
 
@@ -269,12 +252,8 @@ fn execute_metrics(category: Option<MetricCategory>, format: OutputFormat) -> Re
     };
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&metrics).map_err(|e| e.to_string())
-        }
-        _ => {
-            serde_json::to_string_pretty(&metrics).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&metrics).map_err(|e| e.to_string()),
+        _ => serde_json::to_string_pretty(&metrics).map_err(|e| e.to_string()),
     }
 }
 
@@ -289,69 +268,62 @@ fn execute_detect(text: &str, format: OutputFormat) -> Result<String, String> {
     });
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
-        }
-        _ => {
-            match detected {
-                Some(fmt) => Ok(format!("Detected format: {}", fmt.name())),
-                None => Ok("No special format detected".to_string()),
-            }
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&result).map_err(|e| e.to_string()),
+        _ => match detected {
+            Some(fmt) => Ok(format!("Detected format: {}", fmt.name())),
+            None => Ok("No special format detected".to_string()),
+        },
     }
 }
 
 async fn execute_daemon(action: DaemonAction) -> Result<String, String> {
     match action {
-        DaemonAction::Start => {
-            crate::daemon::start_daemon().await
-        }
-        DaemonAction::Stop => {
-            crate::daemon::stop_daemon().await
-        }
+        DaemonAction::Start => crate::daemon::start_daemon().await,
+        DaemonAction::Stop => crate::daemon::stop_daemon().await,
         DaemonAction::Restart => {
             crate::daemon::stop_daemon().await?;
             crate::daemon::start_daemon().await
         }
-        DaemonAction::Status => {
-            crate::daemon::daemon_status().await
-        }
+        DaemonAction::Status => crate::daemon::daemon_status().await,
     }
 }
 
-fn execute_session(action: SessionAction, id: Option<String>, name: Option<String>, format: OutputFormat) -> Result<String, String> {
-    use crate::hub::{SessionRegistry, SessionRole, HubConfig};
+fn execute_session(
+    action: SessionAction,
+    id: Option<String>,
+    name: Option<String>,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::hub::{HubConfig, SessionRegistry, SessionRole};
 
     let config = HubConfig::default();
     let mut registry = SessionRegistry::new(&config);
     registry.load()?;
 
     let result = match action {
-        SessionAction::Start => {
-            match registry.register(SessionRole::General, name.clone()) {
-                Ok(session) => {
-                    let session_id = session.id.clone();
-                    let final_name = if let Some(ref n) = name {
-                        if let Some(s) = registry.get_mut(&session_id) {
-                            s.name = n.clone();
-                        }
-                        if let Err(e) = registry.save() {
-                            return Err(format!("Failed to save session: {}", e));
-                        }
-                        n.clone()
-                    } else {
-                        session.name.clone()
-                    };
-                    serde_json::json!({
-                        "action": "start",
-                        "session_id": session_id,
-                        "session_name": final_name,
-                        "started_at": session.joined_at,
-                    })
-                },
-                Err(e) => serde_json::json!({"error": e}),
+        SessionAction::Start => match registry.register(SessionRole::General, name.clone()) {
+            Ok(session) => {
+                let session_id = session.id.clone();
+                let final_name = if let Some(ref n) = name {
+                    if let Some(s) = registry.get_mut(&session_id) {
+                        s.name = n.clone();
+                    }
+                    if let Err(e) = registry.save() {
+                        return Err(format!("Failed to save session: {}", e));
+                    }
+                    n.clone()
+                } else {
+                    session.name.clone()
+                };
+                serde_json::json!({
+                    "action": "start",
+                    "session_id": session_id,
+                    "session_name": final_name,
+                    "started_at": session.joined_at,
+                })
             }
-        }
+            Err(e) => serde_json::json!({"error": e}),
+        },
         SessionAction::End => {
             if let Some(session_id) = id.clone() {
                 if let Err(e) = registry.unregister(&session_id) {
@@ -363,35 +335,31 @@ fn execute_session(action: SessionAction, id: Option<String>, name: Option<Strin
                 "status": "session ended",
             })
         }
-        SessionAction::Info => {
-            match id.as_ref().and_then(|sid| registry.get(sid)) {
-                Some(session) => session.stats(),
-                None => {
-                    let active = registry.get_active();
-                    if active.is_empty() {
-                        serde_json::json!({"error": "no active session"})
-                    } else {
-                        serde_json::to_value(&active).unwrap_or_default()
-                    }
+        SessionAction::Info => match id.as_ref().and_then(|sid| registry.get(sid)) {
+            Some(session) => session.stats(),
+            None => {
+                let active = registry.get_active();
+                if active.is_empty() {
+                    serde_json::json!({"error": "no active session"})
+                } else {
+                    serde_json::to_value(&active).unwrap_or_default()
                 }
             }
-        }
+        },
         SessionAction::List => {
             let sessions = registry.get_active();
             serde_json::to_value(&sessions).unwrap_or_default()
         }
-        SessionAction::Restore => {
-            match id {
-                Some(session_id) => {
-                    serde_json::json!({
-                        "action": "restore",
-                        "session_id": session_id,
-                        "status": "restored",
-                    })
-                }
-                None => serde_json::json!({"error": "session ID required for restore"}),
+        SessionAction::Restore => match id {
+            Some(session_id) => {
+                serde_json::json!({
+                    "action": "restore",
+                    "session_id": session_id,
+                    "status": "restored",
+                })
             }
-        }
+            None => serde_json::json!({"error": "session ID required for restore"}),
+        },
     };
 
     match format {
@@ -408,7 +376,11 @@ fn execute_validate(content: &str, strict: bool, format: OutputFormat) -> Result
     let result = engine.validate(content);
 
     let violations_count = result.rule_violations.len();
-    let checks_passed = result.checks.iter().filter(|c| c.status == crate::ancient::HarmonyStatus::Harmonious).count();
+    let checks_passed = result
+        .checks
+        .iter()
+        .filter(|c| c.status == crate::ancient::HarmonyStatus::Harmonious)
+        .count();
 
     let output = serde_json::json!({
         "content": content,
@@ -427,22 +399,36 @@ fn execute_validate(content: &str, strict: bool, format: OutputFormat) -> Result
             out.push_str(&FormatBox::new(&SenaConfig::brand_title("VALIDATION RESULT")).render());
             out.push('\n');
             out.push_str(&format!("Valid: {}\n", result.is_valid()));
-            out.push_str(&format!("Confidence: {:.1}%\n", result.overall_confidence * 100.0));
+            out.push_str(&format!(
+                "Confidence: {:.1}%\n",
+                result.overall_confidence * 100.0
+            ));
             out.push_str(&format!("Checks Passed: {}\n", checks_passed));
             out.push_str(&format!("Violations: {}\n", violations_count));
             Ok(out)
         }
         OutputFormat::Text => {
             if result.is_valid() {
-                Ok(format!("VALID (confidence: {:.1}%)", result.overall_confidence * 100.0))
+                Ok(format!(
+                    "VALID (confidence: {:.1}%)",
+                    result.overall_confidence * 100.0
+                ))
             } else {
-                Ok(format!("INVALID (confidence: {:.1}%)", result.overall_confidence * 100.0))
+                Ok(format!(
+                    "INVALID (confidence: {:.1}%)",
+                    result.overall_confidence * 100.0
+                ))
             }
         }
     }
 }
 
-fn execute_format(format_type: FormatOutputType, title: Option<String>, data: &str, _format: OutputFormat) -> Result<String, String> {
+fn execute_format(
+    format_type: FormatOutputType,
+    title: Option<String>,
+    data: &str,
+    _format: OutputFormat,
+) -> Result<String, String> {
     match format_type {
         FormatOutputType::Table => {
             // Parse data as JSON array
@@ -466,21 +452,27 @@ fn execute_format(format_type: FormatOutputType, title: Option<String>, data: &s
             match parsed {
                 Ok(v) => {
                     let percent = v.get("percent").and_then(|p| p.as_f64()).unwrap_or(0.0);
-                    let label = v.get("label").and_then(|l| l.as_str()).unwrap_or("Progress");
+                    let label = v
+                        .get("label")
+                        .and_then(|l| l.as_str())
+                        .unwrap_or("Progress");
                     Ok(ProgressBar::new(label, percent as f32).render())
                 }
                 Err(e) => Err(format!("Invalid progress data: {}", e)),
             }
         }
-        FormatOutputType::BrilliantThinking => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("BRILLIANT THINKING"))).render())
-        }
-        FormatOutputType::TruthVerification => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("TRUTH VERIFICATION"))).render())
-        }
-        FormatOutputType::CodeAnalysis => {
-            Ok(FormatBox::new(&title.unwrap_or_else(|| SenaConfig::brand_title("CODE ANALYSIS"))).render())
-        }
+        FormatOutputType::BrilliantThinking => Ok(FormatBox::new(
+            &title.unwrap_or_else(|| SenaConfig::brand_title("BRILLIANT THINKING")),
+        )
+        .render()),
+        FormatOutputType::TruthVerification => Ok(FormatBox::new(
+            &title.unwrap_or_else(|| SenaConfig::brand_title("TRUTH VERIFICATION")),
+        )
+        .render()),
+        FormatOutputType::CodeAnalysis => Ok(FormatBox::new(
+            &title.unwrap_or_else(|| SenaConfig::brand_title("CODE ANALYSIS")),
+        )
+        .render()),
     }
 }
 
@@ -497,9 +489,7 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             config.ensure_dirs()?;
             Ok("Hub started. Use 'sena join --role=<role>' to join.".to_string())
         }
-        HubAction::Stop => {
-            Ok("Hub stopped.".to_string())
-        }
+        HubAction::Stop => Ok("Hub stopped.".to_string()),
         HubAction::Status => {
             let hub = Hub::new()?;
             let status = hub.status();
@@ -538,7 +528,11 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
     }
 }
 
-async fn execute_join(role: &str, name: Option<String>, format: OutputFormat) -> Result<String, String> {
+async fn execute_join(
+    role: &str,
+    name: Option<String>,
+    format: OutputFormat,
+) -> Result<String, String> {
     use crate::hub::{Hub, SessionRole};
 
     let mut hub = Hub::new()?;
@@ -581,16 +575,19 @@ async fn execute_who(format: OutputFormat) -> Result<String, String> {
 
     match format {
         OutputFormat::Json => {
-            let json: Vec<serde_json::Value> = sessions.iter().map(|s| {
-                serde_json::json!({
-                    "id": s.id,
-                    "role": s.role.name(),
-                    "name": s.name,
-                    "status": format!("{:?}", s.status),
-                    "working_on": s.working_on,
-                    "idle": s.idle_display(),
+            let json: Vec<serde_json::Value> = sessions
+                .iter()
+                .map(|s| {
+                    serde_json::json!({
+                        "id": s.id,
+                        "role": s.role.name(),
+                        "name": s.name,
+                        "status": format!("{:?}", s.status),
+                        "working_on": s.working_on,
+                        "idle": s.idle_display(),
+                    })
                 })
-            }).collect();
+                .collect();
             serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
         }
         _ => {
@@ -616,8 +613,12 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    let resolved_target = hub.sessions.resolve_session(target)
-        .ok_or_else(|| format!("Session '{}' not found. Use 'sena who' to see active sessions.", target))?;
+    let resolved_target = hub.sessions.resolve_session(target).ok_or_else(|| {
+        format!(
+            "Session '{}' not found. Use 'sena who' to see active sessions.",
+            target
+        )
+    })?;
 
     hub.tell("local", &resolved_target, message)?;
     hub.save()?;
@@ -628,7 +629,8 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
             "to": resolved_target,
             "target_input": target,
             "message": message
-        }).to_string()),
+        })
+        .to_string()),
         _ => Ok(format!("Message sent to {}", target)),
     }
 }
@@ -648,14 +650,17 @@ async fn execute_inbox(format: OutputFormat) -> Result<String, String> {
 
     match format {
         OutputFormat::Json => {
-            let json: Vec<serde_json::Value> = messages.iter().map(|m| {
-                serde_json::json!({
-                    "from": m.from,
-                    "content": m.content,
-                    "time": m.time_display(),
-                    "read": m.read,
+            let json: Vec<serde_json::Value> = messages
+                .iter()
+                .map(|m| {
+                    serde_json::json!({
+                        "from": m.from,
+                        "content": m.content,
+                        "time": m.time_display(),
+                        "read": m.read,
+                    })
                 })
-            }).collect();
+                .collect();
             serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
         }
         _ => {
@@ -681,9 +686,16 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
     hub.load()?;
 
     match action {
-        TaskAction::New { title, to, priority } => {
+        TaskAction::New {
+            title,
+            to,
+            priority,
+        } => {
             let prio = TaskPriority::parse(&priority);
-            let resolved_to = hub.sessions.resolve_session(&to).unwrap_or_else(|| to.clone());
+            let resolved_to = hub
+                .sessions
+                .resolve_session(&to)
+                .unwrap_or_else(|| to.clone());
             let task = hub.create_task(&title, &resolved_to, prio)?;
             hub.save()?;
 
@@ -693,8 +705,12 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
                     "id": task.id,
                     "title": task.title,
                     "assignee": task.assignee,
-                })).map_err(|e| e.to_string()),
-                _ => Ok(format!("Task #{} created: {} (assigned to {})", task.id, task.title, task.assignee)),
+                }))
+                .map_err(|e| e.to_string()),
+                _ => Ok(format!(
+                    "Task #{} created: {} (assigned to {})",
+                    task.id, task.title, task.assignee
+                )),
             }
         }
         TaskAction::List { status } => {
@@ -711,15 +727,18 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
 
             match format {
                 OutputFormat::Json => {
-                    let json: Vec<serde_json::Value> = tasks.iter().map(|t| {
-                        serde_json::json!({
-                            "id": t.id,
-                            "title": t.title,
-                            "assignee": t.assignee,
-                            "priority": t.priority.name(),
-                            "status": t.status.name(),
+                    let json: Vec<serde_json::Value> = tasks
+                        .iter()
+                        .map(|t| {
+                            serde_json::json!({
+                                "id": t.id,
+                                "title": t.title,
+                                "assignee": t.assignee,
+                                "priority": t.priority.name(),
+                                "status": t.status.name(),
+                            })
                         })
-                    }).collect();
+                        .collect();
                     serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
                 }
                 _ => {
@@ -867,12 +886,11 @@ async fn execute_sync(format: OutputFormat) -> Result<String, String> {
             "sessions": status.online_sessions,
             "tasks": status.total_tasks,
             "conflicts": status.active_conflicts,
-        })).map_err(|e| e.to_string()),
+        }))
+        .map_err(|e| e.to_string()),
         _ => Ok(format!(
             "Sync complete. {} sessions, {} tasks, {} conflicts.",
-            status.online_sessions,
-            status.total_tasks,
-            status.active_conflicts
+            status.online_sessions, status.total_tasks, status.active_conflicts
         )),
     }
 }
@@ -881,7 +899,10 @@ async fn execute_sync(format: OutputFormat) -> Result<String, String> {
 // Knowledge System Commands
 // ================================
 
-async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Result<String, String> {
+async fn execute_knowledge(
+    action: KnowledgeAction,
+    format: OutputFormat,
+) -> Result<String, String> {
     use crate::knowledge::KnowledgeSystem;
 
     let knowledge = KnowledgeSystem::new();
@@ -893,19 +914,24 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
 
             match format {
                 OutputFormat::Json => {
-                    let json: Vec<serde_json::Value> = results.iter().map(|r| {
-                        serde_json::json!({
-                            "domain": r.domain,
-                            "title": r.title,
-                            "description": r.description,
-                            "relevance": r.relevance,
+                    let json: Vec<serde_json::Value> = results
+                        .iter()
+                        .map(|r| {
+                            serde_json::json!({
+                                "domain": r.domain,
+                                "title": r.title,
+                                "description": r.description,
+                                "relevance": r.relevance,
+                            })
                         })
-                    }).collect();
+                        .collect();
                     serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
                 }
                 OutputFormat::Pretty => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE SEARCH")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE SEARCH")).render(),
+                    );
                     output.push_str(&format!("\nQuery: \"{}\"\n", query));
                     output.push_str(&format!("Found: {} results\n\n", results.len()));
 
@@ -916,7 +942,8 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                         ));
                         output.push_str(&format!("│ {}\n", result.title));
                         output.push_str(&format!("│ {}\n", result.description));
-                        output.push_str(&format!("│ Relevance: {:.0}%\n", result.relevance * 100.0));
+                        output
+                            .push_str(&format!("│ Relevance: {:.0}%\n", result.relevance * 100.0));
                         output.push_str("└──────────────────────────────────────────\n\n");
                     }
                     Ok(output)
@@ -925,7 +952,8 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                     if results.is_empty() {
                         Ok("No results found.".to_string())
                     } else {
-                        let mut output = format!("Found {} results for \"{}\":\n", results.len(), query);
+                        let mut output =
+                            format!("Found {} results for \"{}\":\n", results.len(), query);
                         for result in &results {
                             output.push_str(&format!(
                                 "  • [{}] {} - {}\n",
@@ -963,7 +991,13 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                 }
                 OutputFormat::Pretty => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} PATTERNS", format!("{:?}", category).to_uppercase()))).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title(&format!(
+                            "{} PATTERNS",
+                            format!("{:?}", category).to_uppercase()
+                        )))
+                        .render(),
+                    );
                     output.push_str(&format!("\nTotal: {} patterns\n\n", patterns.len()));
 
                     for pattern in &patterns {
@@ -993,13 +1027,24 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE STATISTICS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("KNOWLEDGE STATISTICS")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Total Entries: {}\n", stats.total_entries));
-                    output.push_str(&format!("Reasoning Frameworks: {}\n", stats.reasoning_count));
+                    output.push_str(&format!(
+                        "Reasoning Frameworks: {}\n",
+                        stats.reasoning_count
+                    ));
                     output.push_str(&format!("Security Patterns: {}\n", stats.security_count));
-                    output.push_str(&format!("Performance Patterns: {}\n", stats.performance_count));
-                    output.push_str(&format!("Architecture Patterns: {}\n", stats.architecture_count));
+                    output.push_str(&format!(
+                        "Performance Patterns: {}\n",
+                        stats.performance_count
+                    ));
+                    output.push_str(&format!(
+                        "Architecture Patterns: {}\n",
+                        stats.architecture_count
+                    ));
                     Ok(output)
                 }
             }
@@ -1011,7 +1056,11 @@ async fn execute_knowledge(action: KnowledgeAction, format: OutputFormat) -> Res
 // Intelligence System Commands
 // ================================
 
-async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputFormat) -> Result<String, String> {
+async fn execute_think(
+    query: &str,
+    depth: ThinkingDepthArg,
+    format: OutputFormat,
+) -> Result<String, String> {
     use crate::intelligence::{IntelligenceSystem, ThinkingDepth};
 
     let intelligence = IntelligenceSystem::new();
@@ -1026,29 +1075,32 @@ async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputForma
     let result = intelligence.analyze(query, thinking_depth);
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&serde_json::json!({
-                "query": query,
-                "depth": format!("{:?}", depth),
-                "problem": result.problem,
-                "conclusion": result.conclusion,
-                "confidence": result.confidence,
-                "frameworks_used": result.frameworks_used,
-                "steps": result.steps.iter().map(|s| {
-                    serde_json::json!({
-                        "name": s.name,
-                        "description": s.description,
-                        "output": s.output,
-                    })
-                }).collect::<Vec<_>>(),
-                "thinking_time_ms": result.thinking_time_ms,
-            })).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
+            "query": query,
+            "depth": format!("{:?}", depth),
+            "problem": result.problem,
+            "conclusion": result.conclusion,
+            "confidence": result.confidence,
+            "frameworks_used": result.frameworks_used,
+            "steps": result.steps.iter().map(|s| {
+                serde_json::json!({
+                    "name": s.name,
+                    "description": s.description,
+                    "output": s.output,
+                })
+            }).collect::<Vec<_>>(),
+            "thinking_time_ms": result.thinking_time_ms,
+        }))
+        .map_err(|e| e.to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new(&SenaConfig::brand_title("EXTENDED THINKING")).render());
+            output
+                .push_str(&FormatBox::new(&SenaConfig::brand_title("EXTENDED THINKING")).render());
             output.push_str(&format!("\nDepth: {:?}\n", depth));
-            output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
+            output.push_str(&format!(
+                "Confidence: {:.1}%\n\n",
+                result.confidence * 100.0
+            ));
 
             output.push_str("═══════════════════════════════════════════\n");
             output.push_str("  PROBLEM\n");
@@ -1060,7 +1112,12 @@ async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputForma
             output.push_str("  THINKING STEPS\n");
             output.push_str("═══════════════════════════════════════════\n\n");
             for (i, step) in result.steps.iter().enumerate() {
-                output.push_str(&format!("{}. **{}**\n   {}\n\n", i + 1, step.name, step.description));
+                output.push_str(&format!(
+                    "{}. **{}**\n   {}\n\n",
+                    i + 1,
+                    step.name,
+                    step.description
+                ));
             }
 
             output.push_str("═══════════════════════════════════════════\n");
@@ -1080,7 +1137,11 @@ async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputForma
             Ok(output)
         }
         OutputFormat::Text => {
-            let mut output = format!("Analysis ({:?}, {:.0}% confidence):\n\n", depth, result.confidence * 100.0);
+            let mut output = format!(
+                "Analysis ({:?}, {:.0}% confidence):\n\n",
+                depth,
+                result.confidence * 100.0
+            );
             output.push_str(&format!("Problem: {}\n\n", result.problem));
             output.push_str("Steps:\n");
             for (i, step) in result.steps.iter().enumerate() {
@@ -1092,8 +1153,12 @@ async fn execute_think(query: &str, depth: ThinkingDepthArg, format: OutputForma
     }
 }
 
-async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFormat) -> Result<String, String> {
-    use crate::intelligence::{IntelligenceSystem, AgentType};
+async fn execute_agent(
+    agent_type: AgentTypeArg,
+    content: &str,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::intelligence::{AgentType, IntelligenceSystem};
 
     let intelligence = IntelligenceSystem::new();
 
@@ -1107,21 +1172,24 @@ async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFo
     let result = intelligence.dispatch(content, agent);
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&serde_json::json!({
-                "agent": format!("{:?}", agent_type),
-                "task": result.task,
-                "analysis": result.analysis,
-                "recommendations": result.recommendations,
-                "confidence": result.confidence,
-            })).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
+            "agent": format!("{:?}", agent_type),
+            "task": result.task,
+            "analysis": result.analysis,
+            "recommendations": result.recommendations,
+            "confidence": result.confidence,
+        }))
+        .map_err(|e| e.to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            let title = SenaConfig::brand_title(&format!("{:?} AGENT ANALYSIS", agent_type).to_uppercase());
+            let title =
+                SenaConfig::brand_title(&format!("{:?} AGENT ANALYSIS", agent_type).to_uppercase());
             output.push_str(&FormatBox::new(&title).render());
             output.push_str(&format!("\nAgent: {:?}\n", agent_type));
-            output.push_str(&format!("Confidence: {:.1}%\n\n", result.confidence * 100.0));
+            output.push_str(&format!(
+                "Confidence: {:.1}%\n\n",
+                result.confidence * 100.0
+            ));
 
             output.push_str("═══════════════════════════════════════════\n");
             output.push_str("  ANALYSIS\n");
@@ -1139,7 +1207,11 @@ async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFo
             Ok(output)
         }
         OutputFormat::Text => {
-            let mut output = format!("{:?} Agent Analysis (Confidence: {:.0}%):\n\n", agent_type, result.confidence * 100.0);
+            let mut output = format!(
+                "{:?} Agent Analysis (Confidence: {:.0}%):\n\n",
+                agent_type,
+                result.confidence * 100.0
+            );
             output.push_str(&result.analysis);
             output.push_str("\n\nRecommendations:\n");
             for rec in &result.recommendations {
@@ -1154,7 +1226,10 @@ async fn execute_agent(agent_type: AgentTypeArg, content: &str, format: OutputFo
 // Evolution System Commands
 // ================================
 
-async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> Result<String, String> {
+async fn execute_evolve(
+    action: Option<EvolveAction>,
+    format: OutputFormat,
+) -> Result<String, String> {
     use crate::evolution::{EvolutionSystem, OptimizationTarget as EvOptTarget};
 
     let mut evolution = EvolutionSystem::new();
@@ -1163,7 +1238,9 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
     match action {
         None => {
             let result = evolution.evolve();
-            evolution.save().map_err(|e| format!("Failed to save evolution state: {}", e))?;
+            evolution
+                .save()
+                .map_err(|e| format!("Failed to save evolution state: {}", e))?;
 
             match format {
                 OutputFormat::Json => {
@@ -1171,19 +1248,32 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("EVOLUTION CYCLE")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("EVOLUTION CYCLE")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Patterns Applied: {}\n", result.patterns_applied));
-                    output.push_str(&format!("Optimizations Made: {}\n", result.optimizations_made));
-                    output.push_str(&format!("Feedback Processed: {}\n", result.feedback_processed));
-                    output.push_str(&format!("Improvement Score: {:.1}%\n", result.new_improvement_score * 100.0));
+                    output.push_str(&format!(
+                        "Optimizations Made: {}\n",
+                        result.optimizations_made
+                    ));
+                    output.push_str(&format!(
+                        "Feedback Processed: {}\n",
+                        result.feedback_processed
+                    ));
+                    output.push_str(&format!(
+                        "Improvement Score: {:.1}%\n",
+                        result.new_improvement_score * 100.0
+                    ));
                     Ok(output)
                 }
             }
         }
         Some(EvolveAction::Learn { context, outcome }) => {
             evolution.learn(&context, &outcome, true);
-            evolution.save().map_err(|e| format!("Failed to save learned pattern: {}", e))?;
+            evolution
+                .save()
+                .map_err(|e| format!("Failed to save learned pattern: {}", e))?;
 
             match format {
                 OutputFormat::Json => Ok(serde_json::json!({
@@ -1191,8 +1281,12 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                     "context": context,
                     "outcome": outcome,
                     "status": "learned"
-                }).to_string()),
-                _ => Ok(format!("Pattern learned:\n  Context: {}\n  Outcome: {}", context, outcome)),
+                })
+                .to_string()),
+                _ => Ok(format!(
+                    "Pattern learned:\n  Context: {}\n  Outcome: {}",
+                    context, outcome
+                )),
             }
         }
         Some(EvolveAction::Optimize { target }) => {
@@ -1205,7 +1299,9 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
             };
 
             let result = evolution.optimize(opt_target);
-            evolution.save().map_err(|e| format!("Failed to save optimization: {}", e))?;
+            evolution
+                .save()
+                .map_err(|e| format!("Failed to save optimization: {}", e))?;
 
             match format {
                 OutputFormat::Json => {
@@ -1213,11 +1309,19 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("SELF-OPTIMIZATION")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("SELF-OPTIMIZATION")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Target: {:?}\n", opt_target));
-                    output.push_str(&format!("Success: {}\n", if result.success { "✅" } else { "❌" }));
-                    output.push_str(&format!("Improvement: +{:.1}%\n", result.improvement * 100.0));
+                    output.push_str(&format!(
+                        "Success: {}\n",
+                        if result.success { "✅" } else { "❌" }
+                    ));
+                    output.push_str(&format!(
+                        "Improvement: +{:.1}%\n",
+                        result.improvement * 100.0
+                    ));
                     output.push_str(&format!("New Score: {:.1}%\n", result.new_score * 100.0));
                     if !result.suggestions.is_empty() {
                         output.push_str("\nSuggestions:\n");
@@ -1238,12 +1342,20 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("EVOLUTION STATISTICS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("EVOLUTION STATISTICS")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Patterns Learned: {}\n", stats.patterns_learned));
-                    output.push_str(&format!("Optimizations Applied: {}\n", stats.optimizations_applied));
+                    output.push_str(&format!(
+                        "Optimizations Applied: {}\n",
+                        stats.optimizations_applied
+                    ));
                     output.push_str(&format!("Feedback Count: {}\n", stats.feedback_count));
-                    output.push_str(&format!("Improvement Score: {:.1}%\n", stats.improvement_score * 100.0));
+                    output.push_str(&format!(
+                        "Improvement Score: {:.1}%\n",
+                        stats.improvement_score * 100.0
+                    ));
                     output.push_str(&format!("Learning Rate: {:.2}\n", stats.learning_rate));
                     Ok(output)
                 }
@@ -1254,21 +1366,26 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
 
             match format {
                 OutputFormat::Json => {
-                    let json: Vec<serde_json::Value> = patterns.iter().map(|p| {
-                        serde_json::json!({
-                            "id": p.id,
-                            "context": p.context,
-                            "outcome": p.outcome,
-                            "pattern_type": format!("{:?}", p.pattern_type),
-                            "success_rate": p.success_rate,
-                            "usage_count": p.usage_count,
+                    let json: Vec<serde_json::Value> = patterns
+                        .iter()
+                        .map(|p| {
+                            serde_json::json!({
+                                "id": p.id,
+                                "context": p.context,
+                                "outcome": p.outcome,
+                                "pattern_type": format!("{:?}", p.pattern_type),
+                                "success_rate": p.success_rate,
+                                "usage_count": p.usage_count,
+                            })
                         })
-                    }).collect();
+                        .collect();
                     serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("LEARNED PATTERNS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("LEARNED PATTERNS")).render(),
+                    );
                     output.push_str(&format!("\nShowing {} patterns:\n\n", patterns.len()));
 
                     if patterns.is_empty() {
@@ -1279,7 +1396,10 @@ async fn execute_evolve(action: Option<EvolveAction>, format: OutputFormat) -> R
                             output.push_str(&format!("│ Context: {}\n", pattern.context));
                             output.push_str(&format!("│ Outcome: {}\n", pattern.outcome));
                             output.push_str(&format!("│ Type: {}\n", pattern.pattern_type));
-                            output.push_str(&format!("│ Success Rate: {:.1}%\n", pattern.success_rate * 100.0));
+                            output.push_str(&format!(
+                                "│ Success Rate: {:.1}%\n",
+                                pattern.success_rate * 100.0
+                            ));
                             output.push_str(&format!("│ Usage Count: {}\n", pattern.usage_count));
                             output.push_str("└──────────────────────────────────────────\n\n");
                         }
@@ -1339,10 +1459,12 @@ async fn execute_feedback(
             "message": message,
             "context": context,
             "status": "recorded"
-        }).to_string()),
+        })
+        .to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new(&SenaConfig::brand_title("FEEDBACK RECORDED")).render());
+            output
+                .push_str(&FormatBox::new(&SenaConfig::brand_title("FEEDBACK RECORDED")).render());
             output.push('\n');
             output.push_str(&format!("{} Type: {:?}\n", emoji, feedback_type));
             output.push_str(&format!("Message: {}\n", message));
@@ -1352,9 +1474,10 @@ async fn execute_feedback(
             output.push_str("\nThank you for your feedback! SENA learns from every interaction.\n");
             Ok(output)
         }
-        OutputFormat::Text => {
-            Ok(format!("{} Feedback recorded: {:?} - {}", emoji, feedback_type, message))
-        }
+        OutputFormat::Text => Ok(format!(
+            "{} Feedback recorded: {:?} - {}",
+            emoji, feedback_type, message
+        )),
     }
 }
 
@@ -1448,7 +1571,12 @@ async fn execute_android(
     };
 
     let result = agent.analyze(command, input);
-    format_domain_analysis("ANDROID", &android_analysis_type_name(&analysis), result, format)
+    format_domain_analysis(
+        "ANDROID",
+        &android_analysis_type_name(&analysis),
+        result,
+        format,
+    )
 }
 
 async fn execute_web(
@@ -1481,27 +1609,33 @@ fn format_domain_analysis(
     format: OutputFormat,
 ) -> Result<String, String> {
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&serde_json::json!({
-                "agent": agent_name,
-                "analysis_type": analysis_name,
-                "category": result.category,
-                "score": result.score,
-                "findings": result.findings.iter().map(|f| {
-                    serde_json::json!({
-                        "severity": format!("{:?}", f.severity),
-                        "title": f.title,
-                        "description": f.description,
-                        "location": f.location,
-                        "suggestion": f.suggestion,
-                    })
-                }).collect::<Vec<_>>(),
-                "recommendations": result.recommendations,
-            })).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
+            "agent": agent_name,
+            "analysis_type": analysis_name,
+            "category": result.category,
+            "score": result.score,
+            "findings": result.findings.iter().map(|f| {
+                serde_json::json!({
+                    "severity": format!("{:?}", f.severity),
+                    "title": f.title,
+                    "description": f.description,
+                    "location": f.location,
+                    "suggestion": f.suggestion,
+                })
+            }).collect::<Vec<_>>(),
+            "recommendations": result.recommendations,
+        }))
+        .map_err(|e| e.to_string()),
         OutputFormat::Pretty => {
             let mut output = String::new();
-            output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} AGENT - {}", agent_name, analysis_name.to_uppercase()))).render());
+            output.push_str(
+                &FormatBox::new(&SenaConfig::brand_title(&format!(
+                    "{} AGENT - {}",
+                    agent_name,
+                    analysis_name.to_uppercase()
+                )))
+                .render(),
+            );
             output.push('\n');
             output.push_str(&format!("Score: {}/100\n", result.score));
             output.push_str(&format!("Category: {}\n\n", result.category));
@@ -1543,7 +1677,10 @@ fn format_domain_analysis(
             Ok(output)
         }
         OutputFormat::Text => {
-            let mut output = format!("{} {} Analysis (Score: {}/100):\n", agent_name, analysis_name, result.score);
+            let mut output = format!(
+                "{} {} Analysis (Score: {}/100):\n",
+                agent_name, analysis_name, result.score
+            );
             output.push_str(&format!("Category: {}\n\n", result.category));
 
             if result.findings.is_empty() {
@@ -1556,7 +1693,10 @@ fn format_domain_analysis(
                         crate::agents::Severity::Info => "INFO",
                         crate::agents::Severity::Success => "OK",
                     };
-                    output.push_str(&format!("[{}] {}: {}\n", prefix, finding.title, finding.description));
+                    output.push_str(&format!(
+                        "[{}] {}: {}\n",
+                        prefix, finding.title, finding.description
+                    ));
                 }
             }
             Ok(output)
@@ -1632,30 +1772,20 @@ async fn execute_setup(
     let sena_binary = format!("{}/.local/bin/sena", home);
 
     match install_type {
-        Some(InstallationType::Mcp) => {
-            setup_mcp_server(&home, &sena_binary, format)
-        }
-        Some(InstallationType::Hook) => {
-            setup_claude_hooks(&home, &sena_binary, format)
-        }
+        Some(InstallationType::Mcp) => setup_mcp_server(&home, &sena_binary, format),
+        Some(InstallationType::Hook) => setup_claude_hooks(&home, &sena_binary, format),
         Some(InstallationType::Full) => {
             setup_full_installation(&home, &sena_binary, &project_name, format)
         }
         Some(InstallationType::Backend) => {
             setup_agent_project(&home, "backend", &project_name, format)
         }
-        Some(InstallationType::Iot) => {
-            setup_agent_project(&home, "iot", &project_name, format)
-        }
-        Some(InstallationType::Ios) => {
-            setup_agent_project(&home, "ios", &project_name, format)
-        }
+        Some(InstallationType::Iot) => setup_agent_project(&home, "iot", &project_name, format),
+        Some(InstallationType::Ios) => setup_agent_project(&home, "ios", &project_name, format),
         Some(InstallationType::Android) => {
             setup_agent_project(&home, "android", &project_name, format)
         }
-        Some(InstallationType::Web) => {
-            setup_agent_project(&home, "web", &project_name, format)
-        }
+        Some(InstallationType::Web) => setup_agent_project(&home, "web", &project_name, format),
         None => {
             if auto_yes {
                 setup_full_installation(&home, &sena_binary, &project_name, format)
@@ -1668,7 +1798,13 @@ async fn execute_setup(
 
 fn show_setup_menu(_format: OutputFormat) -> Result<String, String> {
     let mut output = String::new();
-    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("SETUP WIZARD v{}", crate::VERSION))).render());
+    output.push_str(
+        &FormatBox::new(&SenaConfig::brand_title(&format!(
+            "SETUP WIZARD v{}",
+            crate::VERSION
+        )))
+        .render(),
+    );
     output.push('\n');
     output.push_str("Run setup.sh for interactive installation:\n\n");
     output.push_str("  bash setup.sh\n\n");
@@ -1716,7 +1852,11 @@ fn setup_mcp_server(home: &str, sena_path: &str, _format: OutputFormat) -> Resul
     Ok(output)
 }
 
-fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Result<String, String> {
+fn setup_claude_hooks(
+    home: &str,
+    sena_path: &str,
+    _format: OutputFormat,
+) -> Result<String, String> {
     let claude_dir = PathBuf::from(home).join(".claude");
     let settings_file = claude_dir.join("settings.json");
 
@@ -1732,13 +1872,16 @@ fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Res
     let mut settings = existing_settings.clone();
     let settings_obj = settings.as_object_mut().ok_or("Invalid settings format")?;
 
-    settings_obj.insert("hooks".to_string(), serde_json::json!({
-        "UserPromptSubmit": [
-            {
-                "command": format!("{} hook user-prompt-submit", sena_path)
-            }
-        ]
-    }));
+    settings_obj.insert(
+        "hooks".to_string(),
+        serde_json::json!({
+            "UserPromptSubmit": [
+                {
+                    "command": format!("{} hook user-prompt-submit", sena_path)
+                }
+            ]
+        }),
+    );
 
     let existing_tools = existing_settings
         .get("permissions")
@@ -1761,9 +1904,12 @@ fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Res
         }
     }
 
-    settings_obj.insert("permissions".to_string(), serde_json::json!({
-        "allow": combined_tools
-    }));
+    settings_obj.insert(
+        "permissions".to_string(),
+        serde_json::json!({
+            "allow": combined_tools
+        }),
+    );
 
     let settings_str = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
     std::fs::write(&settings_file, settings_str).map_err(|e| e.to_string())?;
@@ -1782,7 +1928,12 @@ fn setup_claude_hooks(home: &str, sena_path: &str, _format: OutputFormat) -> Res
     Ok(output)
 }
 
-fn setup_full_installation(home: &str, sena_path: &str, _name: &str, _format: OutputFormat) -> Result<String, String> {
+fn setup_full_installation(
+    home: &str,
+    sena_path: &str,
+    _name: &str,
+    _format: OutputFormat,
+) -> Result<String, String> {
     setup_mcp_server(home, sena_path, OutputFormat::Text)?;
     setup_claude_hooks(home, sena_path, OutputFormat::Text)?;
 
@@ -1796,7 +1947,8 @@ fn setup_full_installation(home: &str, sena_path: &str, _name: &str, _format: Ou
     }
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new(&SenaConfig::brand_title("FULL INSTALLATION COMPLETE")).render());
+    output
+        .push_str(&FormatBox::new(&SenaConfig::brand_title("FULL INSTALLATION COMPLETE")).render());
     output.push('\n');
     output.push_str("✅ All components installed!\n\n");
     output.push_str("Installed:\n");
@@ -1810,7 +1962,12 @@ fn setup_full_installation(home: &str, sena_path: &str, _name: &str, _format: Ou
     Ok(output)
 }
 
-fn setup_agent_project(home: &str, agent: &str, name: &str, _format: OutputFormat) -> Result<String, String> {
+fn setup_agent_project(
+    home: &str,
+    agent: &str,
+    name: &str,
+    _format: OutputFormat,
+) -> Result<String, String> {
     let project_dir = PathBuf::from(home).join("Projects").join(name);
     std::fs::create_dir_all(&project_dir).map_err(|e| e.to_string())?;
 
@@ -1826,7 +1983,10 @@ version = "{}"
 enabled = true
 auto_analyze = true
 "#,
-        name, agent, crate::VERSION, agent
+        name,
+        agent,
+        crate::VERSION,
+        agent
     );
     std::fs::write(&sena_config, config_content).map_err(|e| e.to_string())?;
 
@@ -1850,7 +2010,13 @@ sena health
     std::fs::write(&claude_md, claude_content).map_err(|e| e.to_string())?;
 
     let mut output = String::new();
-    output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("{} PROJECT SETUP", agent.to_uppercase()))).render());
+    output.push_str(
+        &FormatBox::new(&SenaConfig::brand_title(&format!(
+            "{} PROJECT SETUP",
+            agent.to_uppercase()
+        )))
+        .render(),
+    );
     output.push('\n');
     output.push_str(&format!("✅ {} project created!\n\n", agent.to_uppercase()));
     output.push_str(&format!("Location: {}\n\n", project_dir.display()));
@@ -1864,7 +2030,7 @@ sena health
 }
 
 async fn execute_network(action: NetworkAction, format: OutputFormat) -> Result<String, String> {
-    use crate::network::{NetworkManager, NetworkConfig};
+    use crate::network::{NetworkConfig, NetworkManager};
 
     let home = dirs::home_dir().ok_or("Cannot find home directory")?;
     let data_dir = home.join(".sena").join("network");
@@ -1909,23 +2075,29 @@ async fn execute_network(action: NetworkAction, format: OutputFormat) -> Result<
 
             let peer_id = manager.get_local_peer_id().await;
             let peer_name = manager.get_local_peer_name().await;
-            let fingerprint = manager.get_certificate_fingerprint().unwrap_or_else(|_| "N/A".to_string());
+            let fingerprint = manager
+                .get_certificate_fingerprint()
+                .unwrap_or_else(|_| "N/A".to_string());
 
             match format {
-                OutputFormat::Json => {
-                    Ok(serde_json::json!({
-                        "peer_id": peer_id,
-                        "peer_name": peer_name,
-                        "certificate_fingerprint": fingerprint
-                    }).to_string())
-                }
+                OutputFormat::Json => Ok(serde_json::json!({
+                    "peer_id": peer_id,
+                    "peer_name": peer_name,
+                    "certificate_fingerprint": fingerprint
+                })
+                .to_string()),
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("NETWORK INFO")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("NETWORK INFO")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Peer ID: {}\n", peer_id));
                     output.push_str(&format!("Peer Name: {}\n", peer_name));
-                    output.push_str(&format!("Certificate: {}\n", &fingerprint[..16.min(fingerprint.len())]));
+                    output.push_str(&format!(
+                        "Certificate: {}\n",
+                        &fingerprint[..16.min(fingerprint.len())]
+                    ));
                     Ok(output)
                 }
             }
@@ -1940,25 +2112,55 @@ async fn execute_network(action: NetworkAction, format: OutputFormat) -> Result<
     }
 }
 
-fn format_network_status(status: &crate::network::NetworkStatus, format: OutputFormat, title: &str) -> Result<String, String> {
+fn format_network_status(
+    status: &crate::network::NetworkStatus,
+    format: OutputFormat,
+    title: &str,
+) -> Result<String, String> {
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(status).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(status).map_err(|e| e.to_string()),
         _ => {
             let mut output = String::new();
             output.push_str(&FormatBox::new(&SenaConfig::brand_title(title)).render());
             output.push('\n');
 
             let table = TableBuilder::new()
-                .row(vec!["Status".to_string(), if status.running { "Running" } else { "Stopped" }.to_string()])
+                .row(vec![
+                    "Status".to_string(),
+                    if status.running { "Running" } else { "Stopped" }.to_string(),
+                ])
                 .row(vec!["Port".to_string(), status.port.to_string()])
                 .row(vec!["Peers".to_string(), status.peer_count.to_string()])
-                .row(vec!["Authorized".to_string(), status.authorized_count.to_string()])
-                .row(vec!["Discovered".to_string(), status.discovered_count.to_string()])
-                .row(vec!["Connections".to_string(), status.connection_count.to_string()])
-                .row(vec!["TLS".to_string(), if status.tls_enabled { "Enabled" } else { "Disabled" }.to_string()])
-                .row(vec!["Discovery".to_string(), if status.discovery_enabled { "Enabled" } else { "Disabled" }.to_string()])
+                .row(vec![
+                    "Authorized".to_string(),
+                    status.authorized_count.to_string(),
+                ])
+                .row(vec![
+                    "Discovered".to_string(),
+                    status.discovered_count.to_string(),
+                ])
+                .row(vec![
+                    "Connections".to_string(),
+                    status.connection_count.to_string(),
+                ])
+                .row(vec![
+                    "TLS".to_string(),
+                    if status.tls_enabled {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    }
+                    .to_string(),
+                ])
+                .row(vec![
+                    "Discovery".to_string(),
+                    if status.discovery_enabled {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    }
+                    .to_string(),
+                ])
                 .build();
 
             output.push_str(&table);
@@ -1968,7 +2170,7 @@ fn format_network_status(status: &crate::network::NetworkStatus, format: OutputF
 }
 
 async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String, String> {
-    use crate::network::{NetworkManager, NetworkConfig};
+    use crate::network::{NetworkConfig, NetworkManager};
 
     let home = dirs::home_dir().ok_or("Cannot find home directory")?;
     let data_dir = home.join(".sena").join("network");
@@ -2002,7 +2204,12 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                             let online = if peer.is_online() { "🟢" } else { "⚫" };
                             output.push_str(&format!(
                                 "{} {} {} ({}:{}) - {}\n",
-                                status, online, peer.name, peer.address, peer.port, &peer.id[..8]
+                                status,
+                                online,
+                                peer.name,
+                                peer.address,
+                                peer.port,
+                                &peer.id[..8]
                             ));
                         }
                     }
@@ -2011,7 +2218,11 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
             }
         }
 
-        PeerAction::Add { address, port, name } => {
+        PeerAction::Add {
+            address,
+            port,
+            name,
+        } => {
             let peer = manager.add_peer(&address, port, name.as_deref()).await?;
 
             match format {
@@ -2020,7 +2231,11 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&format!("✅ Peer added: {} ({})\n", peer.name, &peer.id[..8]));
+                    output.push_str(&format!(
+                        "✅ Peer added: {} ({})\n",
+                        peer.name,
+                        &peer.id[..8]
+                    ));
                     output.push_str(&format!("   Address: {}:{}\n", peer.address, peer.port));
                     output.push_str("\nTo authorize this peer:\n");
                     output.push_str(&format!("  sena peer authorize {}\n", &peer.id[..8]));
@@ -2038,7 +2253,7 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                     manager.remove_peer(&peer.id).await?;
                     Ok(format!("✅ Peer removed: {}", peer.name))
                 }
-                None => Err(format!("Peer not found: {}", peer_id))
+                None => Err(format!("Peer not found: {}", peer_id)),
             }
         }
 
@@ -2051,13 +2266,12 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                     let token = manager.authorize_peer(&peer.id).await?;
 
                     match format {
-                        OutputFormat::Json => {
-                            Ok(serde_json::json!({
-                                "peer_id": peer.id,
-                                "token": token.token,
-                                "expires_in": expires
-                            }).to_string())
-                        }
+                        OutputFormat::Json => Ok(serde_json::json!({
+                            "peer_id": peer.id,
+                            "token": token.token,
+                            "expires_in": expires
+                        })
+                        .to_string()),
                         _ => {
                             let mut output = String::new();
                             output.push_str(&format!("✅ Peer authorized: {}\n\n", peer.name));
@@ -2073,11 +2287,15 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                         }
                     }
                 }
-                None => Err(format!("Peer not found: {}", peer_id))
+                None => Err(format!("Peer not found: {}", peer_id)),
             }
         }
 
-        PeerAction::Connect { address, port, token } => {
+        PeerAction::Connect {
+            address,
+            port,
+            token,
+        } => {
             let mut client = manager.connect_and_auth(&address, port, &token).await?;
 
             let peer_name = client.remote_peer_name().unwrap_or("Unknown").to_string();
@@ -2086,16 +2304,17 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
             client.disconnect().await?;
 
             match format {
-                OutputFormat::Json => {
-                    Ok(serde_json::json!({
-                        "success": true,
-                        "peer_id": peer_id,
-                        "peer_name": peer_name
-                    }).to_string())
-                }
-                _ => {
-                    Ok(format!("✅ Connected to {} ({})", peer_name, &peer_id[..8.min(peer_id.len())]))
-                }
+                OutputFormat::Json => Ok(serde_json::json!({
+                    "success": true,
+                    "peer_id": peer_id,
+                    "peer_name": peer_name
+                })
+                .to_string()),
+                _ => Ok(format!(
+                    "✅ Connected to {} ({})",
+                    peer_name,
+                    &peer_id[..8.min(peer_id.len())]
+                )),
             }
         }
 
@@ -2107,11 +2326,12 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
                 Some(peer) => {
                     let home = dirs::home_dir().ok_or("Cannot find home directory")?;
                     let data_dir = home.join(".sena").join("network");
-                    let mut registry = crate::network::PeerRegistry::load(data_dir.join("peers.json"))?;
+                    let mut registry =
+                        crate::network::PeerRegistry::load(data_dir.join("peers.json"))?;
                     registry.revoke_peer(&peer.id)?;
                     Ok(format!("✅ Authorization revoked for: {}", peer.name))
                 }
-                None => Err(format!("Peer not found: {}", peer_id))
+                None => Err(format!("Peer not found: {}", peer_id)),
             }
         }
 
@@ -2123,7 +2343,11 @@ async fn execute_peer(action: PeerAction, format: OutputFormat) -> Result<String
             client.disconnect().await?;
 
             if success {
-                Ok(format!("✅ Pong from {} ({}ms)", target, elapsed.as_millis()))
+                Ok(format!(
+                    "✅ Pong from {} ({}ms)",
+                    target,
+                    elapsed.as_millis()
+                ))
             } else {
                 Err("Ping failed".to_string())
             }
@@ -2137,9 +2361,7 @@ async fn execute_discover(timeout: u64, format: OutputFormat) -> Result<String, 
     let peers = discover_once(timeout).await?;
 
     match format {
-        OutputFormat::Json => {
-            serde_json::to_string_pretty(&peers).map_err(|e| e.to_string())
-        }
+        OutputFormat::Json => serde_json::to_string_pretty(&peers).map_err(|e| e.to_string()),
         _ => {
             let mut output = String::new();
             output.push_str(&FormatBox::new(&SenaConfig::brand_title("DISCOVERED PEERS")).render());
@@ -2174,13 +2396,17 @@ async fn execute_discover(timeout: u64, format: OutputFormat) -> Result<String, 
 }
 
 async fn execute_provider(action: ProviderAction, format: OutputFormat) -> Result<String, String> {
-    use sena_providers::{config::ProvidersConfig, ProviderRouter, AIProvider, Message, ChatRequest};
+    use sena_providers::{
+        config::ProvidersConfig, AIProvider, ChatRequest, Message, ProviderRouter,
+    };
 
     let config = ProvidersConfig::load_or_default();
 
     match action {
         ProviderAction::List => {
-            let providers_info: Vec<serde_json::Value> = config.providers.iter()
+            let providers_info: Vec<serde_json::Value> = config
+                .providers
+                .iter()
                 .map(|(id, cfg)| {
                     serde_json::json!({
                         "id": id,
@@ -2197,12 +2423,22 @@ async fn execute_provider(action: ProviderAction, format: OutputFormat) -> Resul
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI PROVIDERS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("AI PROVIDERS")).render(),
+                    );
                     output.push('\n');
 
                     for (id, cfg) in &config.providers {
-                        let status = if cfg.get_api_key().is_some() || id == "ollama" { "✅" } else { "❌" };
-                        let default = if config.default_provider.as_ref() == Some(id) { " (default)" } else { "" };
+                        let status = if cfg.get_api_key().is_some() || id == "ollama" {
+                            "✅"
+                        } else {
+                            "❌"
+                        };
+                        let default = if config.default_provider.as_ref() == Some(id) {
+                            " (default)"
+                        } else {
+                            ""
+                        };
                         output.push_str(&format!(
                             "{} {} - {}{}\n",
                             status,
@@ -2223,44 +2459,46 @@ async fn execute_provider(action: ProviderAction, format: OutputFormat) -> Resul
             }
         }
 
-        ProviderAction::Status => {
-            match ProviderRouter::from_config(&config) {
-                Ok(router) => {
-                    let status = router.provider_status();
-                    let providers: Vec<&std::sync::Arc<dyn AIProvider>> = router.available_providers();
+        ProviderAction::Status => match ProviderRouter::from_config(&config) {
+            Ok(router) => {
+                let status = router.provider_status();
+                let providers: Vec<&std::sync::Arc<dyn AIProvider>> = router.available_providers();
 
-                    match format {
-                        OutputFormat::Json => {
-                            let json: Vec<serde_json::Value> = providers.iter()
-                                .map(|p| {
-                                    serde_json::json!({
-                                        "id": p.provider_id(),
-                                        "name": p.display_name(),
-                                        "status": format!("{:?}", status.get(p.provider_id())),
-                                        "default_model": p.default_model(),
-                                        "streaming": p.supports_streaming(),
-                                        "tools": p.supports_tools(),
-                                        "vision": p.supports_vision(),
-                                    })
+                match format {
+                    OutputFormat::Json => {
+                        let json: Vec<serde_json::Value> = providers
+                            .iter()
+                            .map(|p| {
+                                serde_json::json!({
+                                    "id": p.provider_id(),
+                                    "name": p.display_name(),
+                                    "status": format!("{:?}", status.get(p.provider_id())),
+                                    "default_model": p.default_model(),
+                                    "streaming": p.supports_streaming(),
+                                    "tools": p.supports_tools(),
+                                    "vision": p.supports_vision(),
                                 })
-                                .collect();
-                            serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
-                        }
-                        _ => {
-                            let mut output = String::new();
-                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROVIDER STATUS")).render());
-                            output.push('\n');
+                            })
+                            .collect();
+                        serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                    }
+                    _ => {
+                        let mut output = String::new();
+                        output.push_str(
+                            &FormatBox::new(&SenaConfig::brand_title("PROVIDER STATUS")).render(),
+                        );
+                        output.push('\n');
 
-                            for provider in providers {
-                                let provider_status = status.get(provider.provider_id());
-                                let status_icon = match provider_status {
-                                    Some(sena_providers::ProviderStatus::Connected) => "🟢",
-                                    Some(sena_providers::ProviderStatus::RateLimited) => "🟡",
-                                    Some(sena_providers::ProviderStatus::Disconnected) => "🔴",
-                                    Some(sena_providers::ProviderStatus::Error) | None => "⚪",
-                                };
+                        for provider in providers {
+                            let provider_status = status.get(provider.provider_id());
+                            let status_icon = match provider_status {
+                                Some(sena_providers::ProviderStatus::Connected) => "🟢",
+                                Some(sena_providers::ProviderStatus::RateLimited) => "🟡",
+                                Some(sena_providers::ProviderStatus::Disconnected) => "🔴",
+                                Some(sena_providers::ProviderStatus::Error) | None => "⚪",
+                            };
 
-                                output.push_str(&format!(
+                            output.push_str(&format!(
                                     "{} {} ({})\n   Model: {}\n   Features: streaming={}, tools={}, vision={}\n\n",
                                     status_icon,
                                     provider.display_name(),
@@ -2270,179 +2508,196 @@ async fn execute_provider(action: ProviderAction, format: OutputFormat) -> Resul
                                     provider.supports_tools(),
                                     provider.supports_vision(),
                                 ));
-                            }
-
-                            Ok(output)
                         }
+
+                        Ok(output)
                     }
                 }
-                Err(e) => {
-                    Err(format!("Failed to initialize providers: {}", e))
+            }
+            Err(e) => Err(format!("Failed to initialize providers: {}", e)),
+        },
+
+        ProviderAction::Models { provider } => match ProviderRouter::from_config(&config) {
+            Ok(router) => {
+                let models = if let Some(provider_id) = &provider {
+                    router
+                        .get_provider(provider_id)
+                        .map(|p| p.available_models().to_vec())
+                        .unwrap_or_default()
+                } else {
+                    router.all_models()
+                };
+
+                match format {
+                    OutputFormat::Json => {
+                        serde_json::to_string_pretty(&models).map_err(|e| e.to_string())
+                    }
+                    _ => {
+                        let mut output = String::new();
+                        output.push_str(
+                            &FormatBox::new(&SenaConfig::brand_title("AVAILABLE MODELS")).render(),
+                        );
+                        output.push('\n');
+
+                        if models.is_empty() {
+                            output.push_str("No models available. Check API keys.\n");
+                        } else {
+                            for model in &models {
+                                let features = vec![
+                                    if model.supports_streaming {
+                                        "stream"
+                                    } else {
+                                        ""
+                                    },
+                                    if model.supports_tools { "tools" } else { "" },
+                                    if model.supports_vision { "vision" } else { "" },
+                                ]
+                                .into_iter()
+                                .filter(|s| !s.is_empty())
+                                .collect::<Vec<_>>()
+                                .join(", ");
+
+                                output.push_str(&format!(
+                                    "  {} ({}) - {}k context [{}]\n",
+                                    model.id,
+                                    model.provider,
+                                    model.context_length / 1000,
+                                    features
+                                ));
+                            }
+                        }
+
+                        Ok(output)
+                    }
                 }
             }
-        }
+            Err(e) => Err(format!("Failed to initialize providers: {}", e)),
+        },
 
-        ProviderAction::Models { provider } => {
-            match ProviderRouter::from_config(&config) {
-                Ok(router) => {
-                    let models = if let Some(provider_id) = &provider {
-                        router.get_provider(provider_id)
-                            .map(|p| p.available_models().to_vec())
-                            .unwrap_or_default()
-                    } else {
-                        router.all_models()
-                    };
+        ProviderAction::Chat {
+            message,
+            provider,
+            model,
+        } => match ProviderRouter::from_config(&config) {
+            Ok(router) => {
+                let mut request = ChatRequest::new(vec![Message::user(&message)]);
 
-                    match format {
-                        OutputFormat::Json => {
-                            serde_json::to_string_pretty(&models).map_err(|e| e.to_string())
-                        }
+                if let Some(m) = model {
+                    request = request.with_model(m);
+                }
+
+                let result = if provider.is_some() {
+                    router.chat(request).await
+                } else {
+                    router.chat_with_fallback(request).await
+                };
+
+                match result {
+                    Ok(response) => match format {
+                        OutputFormat::Json => serde_json::to_string_pretty(&serde_json::json!({
+                            "provider": response.provider,
+                            "model": response.model,
+                            "content": response.content,
+                            "usage": {
+                                "prompt_tokens": response.usage.prompt_tokens,
+                                "completion_tokens": response.usage.completion_tokens,
+                                "total_tokens": response.usage.total_tokens,
+                            }
+                        }))
+                        .map_err(|e| e.to_string()),
                         _ => {
                             let mut output = String::new();
-                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("AVAILABLE MODELS")).render());
+                            output.push_str(
+                                &FormatBox::new(&SenaConfig::brand_title("AI RESPONSE")).render(),
+                            );
                             output.push('\n');
-
-                            if models.is_empty() {
-                                output.push_str("No models available. Check API keys.\n");
-                            } else {
-                                for model in &models {
-                                    let features = vec![
-                                        if model.supports_streaming { "stream" } else { "" },
-                                        if model.supports_tools { "tools" } else { "" },
-                                        if model.supports_vision { "vision" } else { "" },
-                                    ].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
-
-                                    output.push_str(&format!(
-                                        "  {} ({}) - {}k context [{}]\n",
-                                        model.id,
-                                        model.provider,
-                                        model.context_length / 1000,
-                                        features
-                                    ));
-                                }
-                            }
-
-                            Ok(output)
-                        }
-                    }
-                }
-                Err(e) => {
-                    Err(format!("Failed to initialize providers: {}", e))
-                }
-            }
-        }
-
-        ProviderAction::Chat { message, provider, model } => {
-            match ProviderRouter::from_config(&config) {
-                Ok(router) => {
-                    let mut request = ChatRequest::new(vec![Message::user(&message)]);
-
-                    if let Some(m) = model {
-                        request = request.with_model(m);
-                    }
-
-                    let result = if provider.is_some() {
-                        router.chat(request).await
-                    } else {
-                        router.chat_with_fallback(request).await
-                    };
-
-                    match result {
-                        Ok(response) => {
-                            match format {
-                                OutputFormat::Json => {
-                                    serde_json::to_string_pretty(&serde_json::json!({
-                                        "provider": response.provider,
-                                        "model": response.model,
-                                        "content": response.content,
-                                        "usage": {
-                                            "prompt_tokens": response.usage.prompt_tokens,
-                                            "completion_tokens": response.usage.completion_tokens,
-                                            "total_tokens": response.usage.total_tokens,
-                                        }
-                                    })).map_err(|e| e.to_string())
-                                }
-                                _ => {
-                                    let mut output = String::new();
-                                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI RESPONSE")).render());
-                                    output.push('\n');
-                                    output.push_str(&format!("Provider: {} | Model: {}\n\n", response.provider, response.model));
-                                    output.push_str(&response.content);
-                                    output.push_str(&format!("\n\n─────────────────────────────────────────\nTokens: {} prompt + {} completion = {} total\n",
+                            output.push_str(&format!(
+                                "Provider: {} | Model: {}\n\n",
+                                response.provider, response.model
+                            ));
+                            output.push_str(&response.content);
+                            output.push_str(&format!("\n\n─────────────────────────────────────────\nTokens: {} prompt + {} completion = {} total\n",
                                         response.usage.prompt_tokens,
                                         response.usage.completion_tokens,
                                         response.usage.total_tokens
                                     ));
-                                    Ok(output)
-                                }
-                            }
+                            Ok(output)
                         }
-                        Err(e) => Err(format!("Chat failed: {}", e))
-                    }
+                    },
+                    Err(e) => Err(format!("Chat failed: {}", e)),
                 }
-                Err(e) => Err(format!("Failed to initialize providers: {}", e))
             }
-        }
+            Err(e) => Err(format!("Failed to initialize providers: {}", e)),
+        },
 
         ProviderAction::Default { provider_id } => {
             let mut config = config;
             if config.set_default_provider(&provider_id) {
                 let path = ProvidersConfig::config_path();
                 match config.save_to_file(&path) {
-                    Ok(()) => Ok(format!("Default provider set to: {}\nConfig saved to: {}", provider_id, path.display())),
-                    Err(e) => Err(format!("Failed to save config: {}", e))
+                    Ok(()) => Ok(format!(
+                        "Default provider set to: {}\nConfig saved to: {}",
+                        provider_id,
+                        path.display()
+                    )),
+                    Err(e) => Err(format!("Failed to save config: {}", e)),
                 }
             } else {
-                Err(format!("Unknown provider: {}. Available: {:?}", provider_id, config.providers.keys().collect::<Vec<_>>()))
+                Err(format!(
+                    "Unknown provider: {}. Available: {:?}",
+                    provider_id,
+                    config.providers.keys().collect::<Vec<_>>()
+                ))
             }
         }
 
-        ProviderAction::Test { provider } => {
-            match ProviderRouter::from_config(&config) {
-                Ok(router) => {
-                    let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROVIDER TEST")).render());
-                    output.push('\n');
+        ProviderAction::Test { provider } => match ProviderRouter::from_config(&config) {
+            Ok(router) => {
+                let mut output = String::new();
+                output
+                    .push_str(&FormatBox::new(&SenaConfig::brand_title("PROVIDER TEST")).render());
+                output.push('\n');
 
-                    let providers_to_test: Vec<_> = if provider == "all" {
-                        router.available_providers()
-                    } else {
-                        router.get_provider(&provider)
-                            .map(|p| vec![p])
-                            .unwrap_or_default()
-                    };
+                let providers_to_test: Vec<_> = if provider == "all" {
+                    router.available_providers()
+                } else {
+                    router
+                        .get_provider(&provider)
+                        .map(|p| vec![p])
+                        .unwrap_or_default()
+                };
 
-                    if providers_to_test.is_empty() {
-                        return Err(format!("Provider not found: {}", provider));
-                    }
+                if providers_to_test.is_empty() {
+                    return Err(format!("Provider not found: {}", provider));
+                }
 
-                    for p in providers_to_test {
-                        let test_request = ChatRequest::new(vec![Message::user("Say 'OK' if you can hear me.")])
+                for p in providers_to_test {
+                    let test_request =
+                        ChatRequest::new(vec![Message::user("Say 'OK' if you can hear me.")])
                             .with_max_tokens(10);
 
-                        output.push_str(&format!("Testing {}... ", p.display_name()));
+                    output.push_str(&format!("Testing {}... ", p.display_name()));
 
-                        match p.chat(test_request).await {
-                            Ok(response) => {
-                                output.push_str(&format!("✅ OK ({})\n", response.model));
-                            }
-                            Err(e) => {
-                                output.push_str(&format!("❌ Failed: {}\n", e));
-                            }
+                    match p.chat(test_request).await {
+                        Ok(response) => {
+                            output.push_str(&format!("✅ OK ({})\n", response.model));
+                        }
+                        Err(e) => {
+                            output.push_str(&format!("❌ Failed: {}\n", e));
                         }
                     }
-
-                    Ok(output)
                 }
-                Err(e) => Err(format!("Failed to initialize providers: {}", e))
+
+                Ok(output)
             }
-        }
+            Err(e) => Err(format!("Failed to initialize providers: {}", e)),
+        },
     }
 }
 
 async fn execute_collab(action: CollabAction, format: OutputFormat) -> Result<String, String> {
-    use sena_providers::config::ProvidersConfig;
     use sena_collab::{CollabOrchestrator, RequestPayload, RequestType};
+    use sena_providers::config::ProvidersConfig;
     use std::sync::Arc;
 
     let config = ProvidersConfig::load_or_default();

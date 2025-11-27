@@ -1,8 +1,8 @@
-pub mod error;
-pub mod types;
-pub mod provider;
 pub mod config;
+pub mod error;
+pub mod provider;
 pub mod router;
+pub mod types;
 
 #[cfg(feature = "claude")]
 pub mod claude;
@@ -19,11 +19,11 @@ pub mod ollama;
 #[cfg(feature = "mistral")]
 pub mod mistral;
 
-pub use error::{ProviderError, Result};
-pub use types::*;
-pub use provider::AIProvider;
 pub use config::ProviderConfig;
+pub use error::{ProviderError, Result};
+pub use provider::AIProvider;
 pub use router::ProviderRouter;
+pub use types::*;
 
 #[cfg(feature = "claude")]
 pub use claude::ClaudeProvider;

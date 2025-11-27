@@ -1,8 +1,8 @@
 //! SENA Interface Definitions
 //! Defines contracts (traits) that components must implement
 
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 
 /// Result type for verification operations
 pub type VerificationResult = (bool, String);
@@ -20,7 +20,8 @@ pub trait IVerifier: Send + Sync {
     ///
     /// # Returns
     /// Tuple of (allowed: bool, reason: String)
-    fn verify(&self, content: &str, context: Option<&HashMap<String, Value>>) -> VerificationResult;
+    fn verify(&self, content: &str, context: Option<&HashMap<String, Value>>)
+        -> VerificationResult;
 }
 
 /// Interface for storage components

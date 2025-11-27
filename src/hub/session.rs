@@ -4,12 +4,12 @@
 //! Includes command history, preferences, and cross-session continuity
 //! (Merged from deprecated session/manager.rs)
 
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 
 use super::HubConfig;
 
@@ -144,7 +144,13 @@ impl Session {
             .map(|h| h.to_string_lossy().to_string())
             .unwrap_or_else(|_| "unknown".to_string());
 
-        let data = format!("{}{}{}{}", role.name(), hostname, timestamp, std::process::id());
+        let data = format!(
+            "{}{}{}{}",
+            role.name(),
+            hostname,
+            timestamp,
+            std::process::id()
+        );
         let mut hasher = Sha256::new();
         hasher.update(data.as_bytes());
         format!("{}-{}", role.name(), hex::encode(&hasher.finalize()[..4]))
@@ -333,15 +339,17 @@ impl SessionRegistry {
 
     /// Get a session by role
     pub fn get_by_role(&self, role: SessionRole) -> Option<&Session> {
-        self.sessions.values().find(|s| s.role == role && !s.is_stale())
+        self.sessions
+            .values()
+            .find(|s| s.role == role && !s.is_stale())
     }
 
     /// Get a session by name (case-insensitive)
     pub fn get_by_name(&self, name: &str) -> Option<&Session> {
         let name_lower = name.to_lowercase();
-        self.sessions.values().find(|s| {
-            !s.is_stale() && s.name.to_lowercase() == name_lower
-        })
+        self.sessions
+            .values()
+            .find(|s| !s.is_stale() && s.name.to_lowercase() == name_lower)
     }
 
     /// Resolve session identifier (can be ID or name) to session ID
@@ -388,7 +396,11 @@ impl SessionRegistry {
     }
 
     /// Update what session is working on
-    pub fn set_working_on(&mut self, session_id: &str, file_path: Option<&str>) -> Result<(), String> {
+    pub fn set_working_on(
+        &mut self,
+        session_id: &str,
+        file_path: Option<&str>,
+    ) -> Result<(), String> {
         if let Some(session) = self.sessions.get_mut(session_id) {
             session.working_on = file_path.map(|s| s.to_string());
             session.heartbeat();
@@ -400,7 +412,8 @@ impl SessionRegistry {
 
     /// Clean up stale sessions
     pub fn cleanup_stale(&mut self) {
-        let stale_ids: Vec<String> = self.sessions
+        let stale_ids: Vec<String> = self
+            .sessions
             .iter()
             .filter(|(_, s)| s.is_stale())
             .map(|(id, _)| id.clone())
@@ -467,7 +480,11 @@ impl SessionRegistry {
     // ========================================
 
     /// Set a global preference (persists across sessions)
-    pub fn set_global_preference(&mut self, key: &str, value: serde_json::Value) -> Result<(), String> {
+    pub fn set_global_preference(
+        &mut self,
+        key: &str,
+        value: serde_json::Value,
+    ) -> Result<(), String> {
         self.global_preferences.insert(key.to_string(), value);
         self.save_preferences()
     }
@@ -529,7 +546,12 @@ impl SessionRegistry {
     // ========================================
 
     /// Record a command for a session
-    pub fn record_command(&mut self, session_id: &str, command: &str, success: bool) -> Result<(), String> {
+    pub fn record_command(
+        &mut self,
+        session_id: &str,
+        command: &str,
+        success: bool,
+    ) -> Result<(), String> {
         if let Some(session) = self.sessions.get_mut(session_id) {
             session.record_command(command, success);
             self.save()?;
@@ -540,7 +562,12 @@ impl SessionRegistry {
     }
 
     /// Set a preference for a session
-    pub fn set_session_preference(&mut self, session_id: &str, key: &str, value: serde_json::Value) -> Result<(), String> {
+    pub fn set_session_preference(
+        &mut self,
+        session_id: &str,
+        key: &str,
+        value: serde_json::Value,
+    ) -> Result<(), String> {
         if let Some(session) = self.sessions.get_mut(session_id) {
             session.set_preference(key, value);
             self.save()?;
@@ -552,14 +579,14 @@ impl SessionRegistry {
 
     /// Get session command history
     pub fn get_session_history(&self, session_id: &str, limit: usize) -> Option<Vec<String>> {
-        self.sessions.get(session_id)
+        self.sessions
+            .get(session_id)
             .map(|s| s.get_command_history(limit))
     }
 
     /// Get session stats
     pub fn get_session_stats(&self, session_id: &str) -> Option<serde_json::Value> {
-        self.sessions.get(session_id)
-            .map(|s| s.stats())
+        self.sessions.get(session_id).map(|s| s.stats())
     }
 
     /// Get mutable session reference

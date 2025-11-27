@@ -43,7 +43,11 @@ pub struct Observation {
 }
 
 impl Observation {
-    pub fn new(content: String, context: HashMap<String, serde_json::Value>, source: String) -> Self {
+    pub fn new(
+        content: String,
+        context: HashMap<String, serde_json::Value>,
+        source: String,
+    ) -> Self {
         let timestamp = Utc::now();
         let id = generate_id(&format!("{}{}", content, timestamp));
 
@@ -237,7 +241,8 @@ impl FirstPrinciplesEngine {
             },
             FirstPrinciple {
                 id: "bedrock_004".to_string(),
-                statement: "Knowledge stored in structure is faster than knowledge retrieved".to_string(),
+                statement: "Knowledge stored in structure is faster than knowledge retrieved"
+                    .to_string(),
                 verification_method: "Polynesian navigation proof".to_string(),
                 evidence: vec![
                     "Star compass encoded in memory, not tools".to_string(),
@@ -251,7 +256,8 @@ impl FirstPrinciplesEngine {
             },
             FirstPrinciple {
                 id: "bedrock_005".to_string(),
-                statement: "Define what must NEVER happen before defining what should happen".to_string(),
+                statement: "Define what must NEVER happen before defining what should happen"
+                    .to_string(),
                 verification_method: "Sushruta surgical methodology".to_string(),
                 evidence: vec!["2600 years of successful surgical practice".to_string()],
                 status: TruthStatus::Bedrock,
@@ -347,7 +353,8 @@ impl FirstPrinciplesEngine {
         let assumption = Assumption::new(belief.clone(), why_believed, risk);
 
         self.question_queue.push(format!("VERIFY: {}", belief));
-        self.assumptions.insert(assumption.id.clone(), assumption.clone());
+        self.assumptions
+            .insert(assumption.id.clone(), assumption.clone());
 
         assumption
     }
@@ -447,7 +454,8 @@ impl FirstPrinciplesEngine {
         // Remove from assumptions if present
         self.assumptions.retain(|_, a| a.belief != statement);
 
-        self.principles.insert(principle.id.clone(), principle.clone());
+        self.principles
+            .insert(principle.id.clone(), principle.clone());
         principle
     }
 
@@ -492,7 +500,9 @@ impl FirstPrinciplesEngine {
                     risk: assumption.risk_if_wrong.clone(),
                 });
                 result.safe_to_build = false;
-                result.warnings.push(format!("Unverified assumption: {}", assumption.belief));
+                result
+                    .warnings
+                    .push(format!("Unverified assumption: {}", assumption.belief));
             }
         }
 
@@ -504,7 +514,10 @@ impl FirstPrinciplesEngine {
     // =========================================================================
 
     pub fn get_bedrock_principles(&self) -> Vec<&FirstPrinciple> {
-        self.principles.values().filter(|p| p.is_bedrock()).collect()
+        self.principles
+            .values()
+            .filter(|p| p.is_bedrock())
+            .collect()
     }
 
     pub fn get_unverified_assumptions(&self) -> Vec<&Assumption> {
@@ -525,7 +538,8 @@ impl FirstPrinciplesEngine {
         };
 
         for principle in self.principles.values() {
-            if principle.status != TruthStatus::Verified && principle.status != TruthStatus::Bedrock {
+            if principle.status != TruthStatus::Verified && principle.status != TruthStatus::Bedrock
+            {
                 continue;
             }
 
@@ -566,7 +580,6 @@ pub struct SupportInfo {
     pub principle: String,
     pub reason: String,
 }
-
 
 /// Generate a deterministic ID from content
 fn generate_id(content: &str) -> String {

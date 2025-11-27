@@ -2,6 +2,7 @@
 //!
 //! Lightning-fast IPC for real-time session communication
 
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -9,7 +10,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
 
 use super::HubConfig;
 
@@ -17,24 +17,52 @@ use super::HubConfig;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HubCommand {
     // Session commands
-    Join { role: String, name: Option<String> },
-    Leave { session_id: String },
-    Heartbeat { session_id: String },
+    Join {
+        role: String,
+        name: Option<String>,
+    },
+    Leave {
+        session_id: String,
+    },
+    Heartbeat {
+        session_id: String,
+    },
     Who,
 
     // Message commands
-    Tell { from: String, to: String, message: String },
-    Broadcast { from: String, message: String },
-    GetInbox { session_id: String },
+    Tell {
+        from: String,
+        to: String,
+        message: String,
+    },
+    Broadcast {
+        from: String,
+        message: String,
+    },
+    GetInbox {
+        session_id: String,
+    },
 
     // Task commands
-    CreateTask { title: String, assignee: String, priority: String },
+    CreateTask {
+        title: String,
+        assignee: String,
+        priority: String,
+    },
     ListTasks,
-    UpdateTask { id: u64, status: String },
+    UpdateTask {
+        id: u64,
+        status: String,
+    },
 
     // State commands
-    SetWorkingOn { session_id: String, file_path: String },
-    ClearWorkingOn { session_id: String },
+    SetWorkingOn {
+        session_id: String,
+        file_path: String,
+    },
+    ClearWorkingOn {
+        session_id: String,
+    },
     GetState,
     GetConflicts,
 
@@ -110,7 +138,8 @@ impl HubServer {
             .map_err(|e| format!("Cannot bind socket: {}", e))?;
 
         // Set non-blocking for graceful shutdown
-        listener.set_nonblocking(true)
+        listener
+            .set_nonblocking(true)
             .map_err(|e| format!("Cannot set non-blocking: {}", e))?;
 
         *self.running.lock().expect("running lock poisoned") = true;
@@ -156,8 +185,8 @@ impl HubServer {
             let line = line.map_err(|e| e.to_string())?;
 
             // Parse command
-            let command: HubCommand = serde_json::from_str(&line)
-                .map_err(|e| format!("Invalid command: {}", e))?;
+            let command: HubCommand =
+                serde_json::from_str(&line).map_err(|e| format!("Invalid command: {}", e))?;
 
             // Process command
             let response = Self::process_command(command);
@@ -180,23 +209,25 @@ impl HubServer {
         match command {
             HubCommand::Ping => HubResponse::pong(),
 
-            HubCommand::Status => {
-                HubResponse::ok_with_data("Hub status", serde_json::json!({
+            HubCommand::Status => HubResponse::ok_with_data(
+                "Hub status",
+                serde_json::json!({
                     "running": true,
                     "version": crate::VERSION
-                }))
-            }
+                }),
+            ),
 
             HubCommand::Who => {
                 // TODO: Get from actual hub state
-                HubResponse::ok_with_data("Active sessions", serde_json::json!({
-                    "sessions": []
-                }))
+                HubResponse::ok_with_data(
+                    "Active sessions",
+                    serde_json::json!({
+                        "sessions": []
+                    }),
+                )
             }
 
-            HubCommand::Shutdown => {
-                HubResponse::ok("Shutting down")
-            }
+            HubCommand::Shutdown => HubResponse::ok("Shutting down"),
 
             _ => {
                 // For now, acknowledge other commands
@@ -238,15 +269,15 @@ impl HubClient {
         let command_json = serde_json::to_string(&command)
             .map_err(|e| format!("Cannot serialize command: {}", e))?;
 
-        writeln!(stream, "{}", command_json)
-            .map_err(|e| format!("Cannot send command: {}", e))?;
+        writeln!(stream, "{}", command_json).map_err(|e| format!("Cannot send command: {}", e))?;
 
         stream.flush().map_err(|e| e.to_string())?;
 
         // Read response
         let mut reader = BufReader::new(stream);
         let mut response_line = String::new();
-        reader.read_line(&mut response_line)
+        reader
+            .read_line(&mut response_line)
             .map_err(|e| format!("Cannot read response: {}", e))?;
 
         let response: HubResponse = serde_json::from_str(response_line.trim())
@@ -299,7 +330,12 @@ impl HubClient {
     }
 
     /// Create a task
-    pub fn create_task(&self, title: &str, assignee: &str, priority: &str) -> Result<HubResponse, String> {
+    pub fn create_task(
+        &self,
+        title: &str,
+        assignee: &str,
+        priority: &str,
+    ) -> Result<HubResponse, String> {
         self.send(HubCommand::CreateTask {
             title: title.to_string(),
             assignee: assignee.to_string(),

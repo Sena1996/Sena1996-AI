@@ -1,29 +1,30 @@
-pub mod error;
-pub mod permission;
-pub mod message;
 pub mod agent;
-pub mod session;
-pub mod orchestrator;
 pub mod consensus;
+pub mod error;
+pub mod message;
+pub mod orchestrator;
+pub mod permission;
 pub mod routing;
+pub mod session;
 
-pub use error::{CollabError, Result};
-pub use permission::{Permission, PermissionSet, PermissionRequest, PermissionApproval, ApprovalStatus};
-pub use message::{
-    CollabMessage, MessageType, MessagePriority, MessageContent,
-    RequestPayload, RequestType, ResponsePayload,
-    ToolCallPayload, ToolResultPayload,
-    ContextPayload, ContextOperation,
-    StatusPayload, AgentStatus, MessageMetadata,
-};
-pub use agent::{AgentInfo, AgentCapability, AgentRegistry, CollabAgent};
-pub use session::{CollabSession, SessionConfig, SessionState, SessionType, SessionManager, Participant};
-pub use orchestrator::{CollabOrchestrator, SessionSummary, ParticipantSummary};
+pub use agent::{AgentCapability, AgentInfo, AgentRegistry, CollabAgent};
 pub use consensus::{
-    Vote, VoteChoice, Proposal, ProposalState, ConsensusStrategy,
-    ConsensusResult, ConsensusManager,
+    ConsensusManager, ConsensusResult, ConsensusStrategy, Proposal, ProposalState, Vote, VoteChoice,
+};
+pub use error::{CollabError, Result};
+pub use message::{
+    AgentStatus, CollabMessage, ContextOperation, ContextPayload, MessageContent, MessageMetadata,
+    MessagePriority, MessageType, RequestPayload, RequestType, ResponsePayload, StatusPayload,
+    ToolCallPayload, ToolResultPayload,
+};
+pub use orchestrator::{CollabOrchestrator, ParticipantSummary, SessionSummary};
+pub use permission::{
+    ApprovalStatus, Permission, PermissionApproval, PermissionRequest, PermissionSet,
 };
 pub use routing::{
-    TaskDomain, SpecialistProfile, SpecialistRouter, RoutingStrategy,
-    RoutingDecision, create_default_profiles,
+    create_default_profiles, RoutingDecision, RoutingStrategy, SpecialistProfile, SpecialistRouter,
+    TaskDomain,
+};
+pub use session::{
+    CollabSession, Participant, SessionConfig, SessionManager, SessionState, SessionType,
 };

@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use crate::config::SenaConfig;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ThinkingDepth {
@@ -169,7 +169,9 @@ impl ThinkingEngine {
                 description: "Considering consequences of consequences".to_string(),
                 output: "Analyzing downstream effects...".to_string(),
             });
-            result.frameworks_used.push("Second-Order Thinking".to_string());
+            result
+                .frameworks_used
+                .push("Second-Order Thinking".to_string());
         }
 
         if depth as u8 >= ThinkingDepth::Maximum as u8 {

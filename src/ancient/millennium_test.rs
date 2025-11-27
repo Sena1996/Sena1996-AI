@@ -530,8 +530,10 @@ impl MillenniumTestFramework {
         degradation.success_probability = 0.9;
 
         // Catastrophic failure recovery
-        let mut catastrophic =
-            RecoveryPlan::new(FailureMode::Catastrophic, "Recovery from catastrophic failure");
+        let mut catastrophic = RecoveryPlan::new(
+            FailureMode::Catastrophic,
+            "Recovery from catastrophic failure",
+        );
         catastrophic.add_step(
             RecoveryStep::new(1, "Activate disaster recovery")
                 .with_duration("15 minutes")
@@ -551,10 +553,8 @@ impl MillenniumTestFramework {
         catastrophic.success_probability = 0.8;
 
         // Obsolescence recovery
-        let mut obsolescence = RecoveryPlan::new(
-            FailureMode::Obsolescence,
-            "Recovery from obsolescence",
-        );
+        let mut obsolescence =
+            RecoveryPlan::new(FailureMode::Obsolescence, "Recovery from obsolescence");
         obsolescence.add_step(
             RecoveryStep::new(1, "Assess current state and requirements")
                 .with_duration("1 week")
@@ -573,9 +573,12 @@ impl MillenniumTestFramework {
         obsolescence.estimated_recovery_time = "Weeks to months".to_string();
         obsolescence.success_probability = 0.7;
 
-        self.recovery_plans.insert(FailureMode::Degradation, degradation);
-        self.recovery_plans.insert(FailureMode::Catastrophic, catastrophic);
-        self.recovery_plans.insert(FailureMode::Obsolescence, obsolescence);
+        self.recovery_plans
+            .insert(FailureMode::Degradation, degradation);
+        self.recovery_plans
+            .insert(FailureMode::Catastrophic, catastrophic);
+        self.recovery_plans
+            .insert(FailureMode::Obsolescence, obsolescence);
     }
 
     /// Add a criterion
@@ -586,7 +589,11 @@ impl MillenniumTestFramework {
     }
 
     /// Register a component for testing
-    pub fn register_component(&mut self, name: impl Into<String>, version: impl Into<String>) -> String {
+    pub fn register_component(
+        &mut self,
+        name: impl Into<String>,
+        version: impl Into<String>,
+    ) -> String {
         let name = name.into();
         let info = ComponentInfo {
             name: name.clone(),
@@ -611,7 +618,9 @@ impl MillenniumTestFramework {
         for criterion in self.criteria.values() {
             // Simulate evaluation (in real implementation, this would be more sophisticated)
             let score = self.evaluate_criterion(component_name, criterion);
-            assessment.criterion_scores.insert(criterion.id.clone(), score);
+            assessment
+                .criterion_scores
+                .insert(criterion.id.clone(), score);
 
             total_score += score * criterion.weight;
             total_weight += criterion.weight;
@@ -669,7 +678,10 @@ impl MillenniumTestFramework {
     }
 
     /// Identify potential failure modes
-    fn identify_failure_modes(&self, assessment: &DurabilityAssessment) -> Vec<IdentifiedFailureMode> {
+    fn identify_failure_modes(
+        &self,
+        assessment: &DurabilityAssessment,
+    ) -> Vec<IdentifiedFailureMode> {
         let mut modes = Vec::new();
 
         // Check for degradation risk
@@ -746,7 +758,8 @@ impl MillenniumTestFramework {
         }
 
         if recommendations.is_empty() {
-            recommendations.push("System meets millennium standards. Continue monitoring.".to_string());
+            recommendations
+                .push("System meets millennium standards. Continue monitoring.".to_string());
         }
 
         recommendations
@@ -825,7 +838,11 @@ impl MillenniumTestFramework {
         }
 
         let avg_score = if total_assessments > 0 {
-            self.assessments.iter().map(|a| a.overall_score).sum::<f64>() / total_assessments as f64
+            self.assessments
+                .iter()
+                .map(|a| a.overall_score)
+                .sum::<f64>()
+                / total_assessments as f64
         } else {
             0.0
         };

@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
@@ -57,15 +57,13 @@ impl MessageContent {
     pub fn as_text(&self) -> Option<&str> {
         match self {
             MessageContent::Text(text) => Some(text),
-            MessageContent::Parts(parts) => {
-                parts.iter().find_map(|p| {
-                    if let ContentPart::Text { text } = p {
-                        Some(text.as_str())
-                    } else {
-                        None
-                    }
-                })
-            }
+            MessageContent::Parts(parts) => parts.iter().find_map(|p| {
+                if let ContentPart::Text { text } = p {
+                    Some(text.as_str())
+                } else {
+                    None
+                }
+            }),
         }
     }
 }

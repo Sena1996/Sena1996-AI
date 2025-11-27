@@ -99,7 +99,12 @@ impl CollabMessage {
         }
     }
 
-    pub fn response(session_id: &str, sender_id: &str, in_reply_to: Uuid, response: ResponsePayload) -> Self {
+    pub fn response(
+        session_id: &str,
+        sender_id: &str,
+        in_reply_to: Uuid,
+        response: ResponsePayload,
+    ) -> Self {
         Self {
             id: Uuid::new_v4(),
             session_id: session_id.to_string(),
@@ -120,7 +125,9 @@ impl CollabMessage {
     }
 
     pub fn with_metadata(mut self, key: &str, value: &str) -> Self {
-        self.metadata.extra.insert(key.to_string(), value.to_string());
+        self.metadata
+            .extra
+            .insert(key.to_string(), value.to_string());
         self
     }
 

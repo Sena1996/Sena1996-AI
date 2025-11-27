@@ -66,9 +66,7 @@ impl TaskDomain {
             return TaskDomain::Documentation;
         }
 
-        if lower.contains("review")
-            || lower.contains("refactor")
-            || lower.contains("code quality")
+        if lower.contains("review") || lower.contains("refactor") || lower.contains("code quality")
         {
             return TaskDomain::CodeReview;
         }
@@ -245,7 +243,10 @@ impl SpecialistRouter {
 
         let reasoning = format!(
             "Selected {} (score: {:.2}) for {} task using {:?} strategy",
-            selected_id, score, format!("{:?}", domain).to_lowercase(), self.strategy
+            selected_id,
+            score,
+            format!("{:?}", domain).to_lowercase(),
+            self.strategy
         );
 
         Ok(RoutingDecision {
@@ -258,11 +259,7 @@ impl SpecialistRouter {
         })
     }
 
-    fn select_best_match(
-        &self,
-        available_ids: &[String],
-        domain: TaskDomain,
-    ) -> SelectionResult {
+    fn select_best_match(&self, available_ids: &[String], domain: TaskDomain) -> SelectionResult {
         let mut scored: Vec<(String, f32)> = available_ids
             .iter()
             .filter_map(|id| {
@@ -316,11 +313,7 @@ impl SpecialistRouter {
         Some((selected_id, score, alternatives))
     }
 
-    fn select_least_loaded(
-        &self,
-        available_ids: &[String],
-        domain: TaskDomain,
-    ) -> SelectionResult {
+    fn select_least_loaded(&self, available_ids: &[String], domain: TaskDomain) -> SelectionResult {
         let mut with_loads: Vec<(String, f32, f32)> = available_ids
             .iter()
             .filter_map(|id| {
@@ -347,11 +340,7 @@ impl SpecialistRouter {
         Some((selected_id, score, alternatives))
     }
 
-    fn select_random(
-        &self,
-        available_ids: &[String],
-        domain: TaskDomain,
-    ) -> SelectionResult {
+    fn select_random(&self, available_ids: &[String], domain: TaskDomain) -> SelectionResult {
         if available_ids.is_empty() {
             return None;
         }
@@ -560,12 +549,10 @@ mod tests {
         let mut router = SpecialistRouter::new(RoutingStrategy::BestMatch);
 
         let agent1 = AgentInfo::new("claude", "claude-sonnet-4-5");
-        let profile1 =
-            SpecialistProfile::new(&agent1).with_specialty(TaskDomain::General, 0.95);
+        let profile1 = SpecialistProfile::new(&agent1).with_specialty(TaskDomain::General, 0.95);
 
         let agent2 = AgentInfo::new("openai", "gpt-4.1");
-        let profile2 =
-            SpecialistProfile::new(&agent2).with_specialty(TaskDomain::General, 0.70);
+        let profile2 = SpecialistProfile::new(&agent2).with_specialty(TaskDomain::General, 0.70);
 
         router.register_specialist(profile1);
         router.register_specialist(profile2);

@@ -5,10 +5,10 @@
 //! - Component registry for dependency injection
 //! - Base component trait for lifecycle management
 
+pub mod component;
 pub mod interfaces;
 pub mod registry;
-pub mod component;
 
+pub use component::{BaseComponent, ComponentMetrics, ComponentState, ComponentStatus};
 pub use interfaces::*;
-pub use registry::{ComponentRegistry, CircularDependencyError};
-pub use component::{BaseComponent, ComponentMetrics, ComponentStatus, ComponentState};
+pub use registry::{CircularDependencyError, ComponentRegistry};

@@ -25,23 +25,22 @@ impl TlsConfig {
 
     pub fn generate(&self, peer_name: &str) -> Result<(), String> {
         if let Some(parent) = self.cert_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         let subject_alt_names = vec![peer_name.to_string(), "localhost".to_string()];
         let cert = generate_simple_self_signed(subject_alt_names)
             .map_err(|e| format!("Failed to generate certificate: {}", e))?;
 
-        let cert_pem = cert.serialize_pem()
+        let cert_pem = cert
+            .serialize_pem()
             .map_err(|e| format!("Failed to serialize certificate: {}", e))?;
         let key_pem = cert.serialize_private_key_pem();
 
         fs::write(&self.cert_path, cert_pem)
             .map_err(|e| format!("Failed to write certificate: {}", e))?;
 
-        fs::write(&self.key_path, key_pem)
-            .map_err(|e| format!("Failed to write key: {}", e))?;
+        fs::write(&self.key_path, key_pem).map_err(|e| format!("Failed to write key: {}", e))?;
 
         Ok(())
     }
@@ -49,8 +48,8 @@ impl TlsConfig {
     pub fn load_server_config(&self) -> Result<Arc<rustls::ServerConfig>, String> {
         let cert_file = fs::File::open(&self.cert_path)
             .map_err(|e| format!("Failed to open certificate: {}", e))?;
-        let key_file = fs::File::open(&self.key_path)
-            .map_err(|e| format!("Failed to open key: {}", e))?;
+        let key_file =
+            fs::File::open(&self.key_path).map_err(|e| format!("Failed to open key: {}", e))?;
 
         let mut cert_reader = BufReader::new(cert_file);
         let mut key_reader = BufReader::new(key_file);
@@ -84,7 +83,8 @@ impl TlsConfig {
                 .collect();
 
             for cert in certs {
-                root_store.add(cert)
+                root_store
+                    .add(cert)
                     .map_err(|e| format!("Failed to add certificate: {}", e))?;
             }
         }
@@ -115,7 +115,7 @@ impl TlsConfig {
             .next()
             .ok_or_else(|| "No certificate found".to_string())?;
 
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(cert.as_ref());
         let result = hasher.finalize();

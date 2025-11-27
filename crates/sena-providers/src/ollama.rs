@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     provider::{AIProvider, ChatStream},
-    ChatRequest, ChatResponse, Message, MessageContent, ModelInfo, ProviderCapabilities,
-    ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk, Usage,
-    FinishReason,
+    ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
+    ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
+    Usage,
 };
 
 const DEFAULT_OLLAMA_URL: &str = "http://localhost:11434";
@@ -23,7 +23,9 @@ pub struct OllamaProvider {
 impl OllamaProvider {
     pub fn new(config: ProviderConfig) -> Result<Self> {
         let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.timeout_secs.unwrap_or(300)))
+            .timeout(std::time::Duration::from_secs(
+                config.timeout_secs.unwrap_or(300),
+            ))
             .build()
             .map_err(|e| ProviderError::NetworkError(e.to_string()))?;
 
@@ -136,19 +138,17 @@ impl OllamaProvider {
     fn extract_text(content: &MessageContent) -> String {
         match content {
             MessageContent::Text(text) => text.clone(),
-            MessageContent::Parts(parts) => {
-                parts
-                    .iter()
-                    .filter_map(|part| {
-                        if let crate::ContentPart::Text { text } = part {
-                            Some(text.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            }
+            MessageContent::Parts(parts) => parts
+                .iter()
+                .filter_map(|part| {
+                    if let crate::ContentPart::Text { text } = part {
+                        Some(text.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n"),
         }
     }
 
@@ -192,10 +192,7 @@ impl AIProvider for OllamaProvider {
     }
 
     fn default_model(&self) -> &str {
-        self.config
-            .default_model
-            .as_deref()
-            .unwrap_or("llama3.2")
+        self.config.default_model.as_deref().unwrap_or("llama3.2")
     }
 
     fn available_models(&self) -> &[ModelInfo] {
@@ -207,7 +204,10 @@ impl AIProvider for OllamaProvider {
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let messages = self.convert_messages(&request.messages);
 
         let ollama_request = OllamaRequest {
@@ -240,7 +240,10 @@ impl AIProvider for OllamaProvider {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
 
-            return Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text)));
+            return Err(ProviderError::RequestFailed(format!(
+                "{}: {}",
+                status, error_text
+            )));
         }
 
         let ollama_response: OllamaResponse = response.json().await?;
@@ -268,7 +271,10 @@ impl AIProvider for OllamaProvider {
     }
 
     async fn chat_stream(&self, request: ChatRequest) -> Result<ChatStream> {
-        let model = request.model.as_deref().unwrap_or_else(|| self.default_model());
+        let model = request
+            .model
+            .as_deref()
+            .unwrap_or_else(|| self.default_model());
         let messages = self.convert_messages(&request.messages);
 
         let ollama_request = OllamaRequest {
@@ -301,7 +307,10 @@ impl AIProvider for OllamaProvider {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
 
-            return Err(ProviderError::RequestFailed(format!("{}: {}", status, error_text)));
+            return Err(ProviderError::RequestFailed(format!(
+                "{}: {}",
+                status, error_text
+            )));
         }
 
         let model_clone = model.to_string();

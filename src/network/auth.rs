@@ -96,8 +96,7 @@ impl AuthTokenStore {
 
     pub fn save(&self) -> Result<(), String> {
         if let Some(parent) = self.file_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         let content = serde_json::to_string_pretty(self)
@@ -114,7 +113,11 @@ impl AuthTokenStore {
         Ok(token)
     }
 
-    pub fn create_token_for_peer(&mut self, peer_id: &str, expires_in_seconds: i64) -> Result<AuthToken, String> {
+    pub fn create_token_for_peer(
+        &mut self,
+        peer_id: &str,
+        expires_in_seconds: i64,
+    ) -> Result<AuthToken, String> {
         let token = AuthToken::for_peer(peer_id, expires_in_seconds);
         self.tokens.insert(token.token.clone(), token.clone());
         self.save()?;
@@ -122,7 +125,9 @@ impl AuthTokenStore {
     }
 
     pub fn validate_token(&mut self, token_str: &str, peer_id: &str) -> Result<bool, String> {
-        let token = self.tokens.get_mut(token_str)
+        let token = self
+            .tokens
+            .get_mut(token_str)
             .ok_or_else(|| "Token not found".to_string())?;
 
         if !token.is_valid() {
@@ -145,7 +150,8 @@ impl AuthTokenStore {
     }
 
     pub fn revoke_token(&mut self, token_str: &str) -> Result<(), String> {
-        self.tokens.remove(token_str)
+        self.tokens
+            .remove(token_str)
             .ok_or_else(|| "Token not found".to_string())?;
         self.save()
     }
@@ -155,15 +161,11 @@ impl AuthTokenStore {
     }
 
     pub fn get_active_tokens(&self) -> Vec<&AuthToken> {
-        self.tokens.values()
-            .filter(|t| t.is_valid())
-            .collect()
+        self.tokens.values().filter(|t| t.is_valid()).collect()
     }
 
     pub fn get_used_tokens(&self) -> Vec<&AuthToken> {
-        self.tokens.values()
-            .filter(|t| t.used)
-            .collect()
+        self.tokens.values().filter(|t| t.used).collect()
     }
 
     pub fn token_count(&self) -> usize {
@@ -188,7 +190,8 @@ impl AuthChallenge {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let bytes: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
-        let challenge = base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &bytes);
+        let challenge =
+            base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &bytes);
 
         let now = chrono::Utc::now().timestamp();
         Self {
@@ -209,7 +212,7 @@ impl AuthChallenge {
     }
 
     pub fn compute_response(&self, shared_secret: &str) -> String {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(self.challenge.as_bytes());
         hasher.update(shared_secret.as_bytes());

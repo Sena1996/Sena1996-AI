@@ -10,22 +10,22 @@
 //! - Conflict detection and warnings
 //! - Lightning-fast Unix socket messaging
 
+pub mod conflicts;
+pub mod messages;
 pub mod session;
+pub mod socket;
 pub mod state;
 pub mod tasks;
-pub mod messages;
-pub mod conflicts;
-pub mod socket;
 
+pub use conflicts::{ConflictDetector, FileConflict};
+pub use messages::{Broadcast, Message, MessageQueue};
 pub use session::{Session, SessionRegistry, SessionRole, SessionStatus};
+pub use socket::{HubClient, HubServer};
 pub use state::{HubState, SharedState};
 pub use tasks::{Task, TaskBoard, TaskPriority, TaskStatus};
-pub use messages::{Message, MessageQueue, Broadcast};
-pub use conflicts::{ConflictDetector, FileConflict};
-pub use socket::{HubServer, HubClient};
 
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 /// Hub configuration
 pub struct HubConfig {
@@ -53,8 +53,7 @@ impl HubConfig {
 
     /// Ensure all hub directories exist
     pub fn ensure_dirs(&self) -> Result<(), String> {
-        fs::create_dir_all(&self.hub_dir)
-            .map_err(|e| format!("Cannot create hub dir: {}", e))?;
+        fs::create_dir_all(&self.hub_dir).map_err(|e| format!("Cannot create hub dir: {}", e))?;
         fs::create_dir_all(&self.messages_dir)
             .map_err(|e| format!("Cannot create messages dir: {}", e))?;
         Ok(())
@@ -128,7 +127,12 @@ impl Hub {
     }
 
     /// Create a new task
-    pub fn create_task(&mut self, title: &str, assignee: &str, priority: TaskPriority) -> Result<Task, String> {
+    pub fn create_task(
+        &mut self,
+        title: &str,
+        assignee: &str,
+        priority: TaskPriority,
+    ) -> Result<Task, String> {
         self.tasks.create(title, assignee, priority)
     }
 
@@ -149,8 +153,14 @@ impl Hub {
 
     /// Set working state for a session
     pub fn set_working_on(&mut self, session_id: &str, file_path: &str) -> Result<(), String> {
-        if let Some(conflict) = self.conflicts.check_file(file_path, session_id, &self.state) {
-            eprintln!("⚠️  Warning: {} is also editing {}", conflict.other_session, file_path);
+        if let Some(conflict) = self
+            .conflicts
+            .check_file(file_path, session_id, &self.state)
+        {
+            eprintln!(
+                "⚠️  Warning: {} is also editing {}",
+                conflict.other_session, file_path
+            );
         }
 
         self.state.set_working_on(session_id, file_path);

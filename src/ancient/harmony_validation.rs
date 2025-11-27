@@ -192,11 +192,9 @@ impl AnchorValue {
             (AnchorValue::Number(a), AnchorValue::Number(b)) => (a - b).abs() < 1e-10,
             (AnchorValue::Text(a), AnchorValue::Text(b)) => a == b,
             (AnchorValue::Range { min, max }, AnchorValue::Number(n)) => n >= min && n <= max,
-            (AnchorValue::Pattern(pattern), AnchorValue::Text(text)) => {
-                regex::Regex::new(pattern)
-                    .map(|re| re.is_match(text))
-                    .unwrap_or(false)
-            }
+            (AnchorValue::Pattern(pattern), AnchorValue::Text(text)) => regex::Regex::new(pattern)
+                .map(|re| re.is_match(text))
+                .unwrap_or(false),
             (AnchorValue::List(list), AnchorValue::Text(item)) => list.contains(item),
             _ => false,
         }
@@ -515,11 +513,19 @@ impl HarmonyValidationEngine {
         let mut violations_count = 0;
 
         // First, collect rule check results
-        let rule_checks: Vec<(String, bool, String, String, f64)> = self.rules.values()
+        let rule_checks: Vec<(String, bool, String, String, f64)> = self
+            .rules
+            .values()
             .filter(|rule| rule.enabled)
             .map(|rule| {
                 let (passed, details) = Self::check_rule_static(rule, content);
-                (rule.id.clone(), passed, rule.name.clone(), details, rule.severity)
+                (
+                    rule.id.clone(),
+                    passed,
+                    rule.name.clone(),
+                    details,
+                    rule.severity,
+                )
             })
             .collect();
 
@@ -545,10 +551,18 @@ impl HarmonyValidationEngine {
         }
 
         // Collect anchor check results
-        let anchor_checks: Vec<(String, String, bool, String, f64)> = self.anchors.values()
+        let anchor_checks: Vec<(String, String, bool, String, f64)> = self
+            .anchors
+            .values()
             .map(|anchor| {
                 let (passed, details) = Self::check_anchor_static(anchor, content);
-                (anchor.id.clone(), anchor.name.clone(), passed, details, anchor.confidence.to_f64())
+                (
+                    anchor.id.clone(),
+                    anchor.name.clone(),
+                    passed,
+                    details,
+                    anchor.confidence.to_f64(),
+                )
             })
             .collect();
 
@@ -605,7 +619,10 @@ impl HarmonyValidationEngine {
             RuleCondition::MustNotContain(pattern) => {
                 if let Ok(re) = regex::Regex::new(pattern) {
                     if re.is_match(content) {
-                        return (false, format!("Content matches forbidden pattern: {}", pattern));
+                        return (
+                            false,
+                            format!("Content matches forbidden pattern: {}", pattern),
+                        );
                     }
                 }
                 (true, "No forbidden patterns found".to_string())
@@ -613,7 +630,10 @@ impl HarmonyValidationEngine {
             RuleCondition::MustContain(pattern) => {
                 if let Ok(re) = regex::Regex::new(pattern) {
                     if !re.is_match(content) {
-                        return (false, format!("Content missing required pattern: {}", pattern));
+                        return (
+                            false,
+                            format!("Content missing required pattern: {}", pattern),
+                        );
                     }
                 }
                 (true, "Required pattern found".to_string())
@@ -625,7 +645,10 @@ impl HarmonyValidationEngine {
                     || (content.contains("always") && content.contains("never"));
 
                 if has_contradiction {
-                    (false, "Potential logical contradiction detected".to_string())
+                    (
+                        false,
+                        "Potential logical contradiction detected".to_string(),
+                    )
                 } else {
                     (true, "No logical contradictions detected".to_string())
                 }
@@ -633,8 +656,8 @@ impl HarmonyValidationEngine {
             RuleCondition::TemporalOrder => {
                 // Simplified temporal check
                 let before_after = content.contains("before") && content.contains("after");
-                let conflicting =
-                    before_after && content.matches("before").count() == content.matches("after").count();
+                let conflicting = before_after
+                    && content.matches("before").count() == content.matches("after").count();
 
                 if conflicting {
                     (true, "Temporal ordering appears consistent".to_string())
@@ -645,9 +668,8 @@ impl HarmonyValidationEngine {
             RuleCondition::NumericRange { min, max } => {
                 // Extract numbers and check range
                 use once_cell::sync::Lazy;
-                static NUMERIC_RE: Lazy<regex::Regex> = Lazy::new(|| {
-                    regex::Regex::new(r"\d+\.?\d*").expect("invalid numeric regex")
-                });
+                static NUMERIC_RE: Lazy<regex::Regex> =
+                    Lazy::new(|| regex::Regex::new(r"\d+\.?\d*").expect("invalid numeric regex"));
                 for cap in NUMERIC_RE.find_iter(content) {
                     if let Ok(num) = cap.as_str().parse::<f64>() {
                         if num < *min || num > *max {
@@ -811,7 +833,10 @@ mod tests {
 
     #[test]
     fn test_anchor_value_matching() {
-        let range = AnchorValue::Range { min: 0.0, max: 10.0 };
+        let range = AnchorValue::Range {
+            min: 0.0,
+            max: 10.0,
+        };
         assert!(range.matches(&AnchorValue::Number(5.0)));
         assert!(!range.matches(&AnchorValue::Number(15.0)));
 

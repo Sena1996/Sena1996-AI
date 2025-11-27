@@ -3,10 +3,10 @@
 //! Handles MCP protocol requests
 
 use super::protocol::*;
-use crate::config::SenaConfig;
-use crate::metrics::SenaHealth;
-use crate::integration::AutoIntegration;
 use crate::ancient::HarmonyValidationEngine;
+use crate::config::SenaConfig;
+use crate::integration::AutoIntegration;
+use crate::metrics::SenaHealth;
 use std::collections::HashMap;
 
 /// Handle MCP requests
@@ -28,7 +28,8 @@ pub fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
 }
 
 fn handle_initialize(request: &JsonRpcRequest) -> JsonRpcResponse {
-    let requested_version = request.params
+    let requested_version = request
+        .params
         .as_ref()
         .and_then(|p| p.get("protocolVersion"))
         .and_then(|v| v.as_str())
@@ -37,7 +38,9 @@ fn handle_initialize(request: &JsonRpcRequest) -> JsonRpcResponse {
     let result = InitializeResult {
         protocol_version: requested_version.to_string(),
         capabilities: ServerCapabilities {
-            tools: Some(ToolsCapability { list_changed: false }),
+            tools: Some(ToolsCapability {
+                list_changed: false,
+            }),
             resources: Some(ResourcesCapability {
                 subscribe: false,
                 list_changed: false,
@@ -246,7 +249,10 @@ fn handle_tools_call(request: &JsonRpcRequest) -> JsonRpcResponse {
 }
 
 fn call_health(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
-    let detailed = args.get("detailed").and_then(|v| v.as_bool()).unwrap_or(false);
+    let detailed = args
+        .get("detailed")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let health = SenaHealth::new();
     let report = health.get_health();
 
@@ -256,10 +262,7 @@ fn call_health(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
         let brand = SenaConfig::brand();
         format!(
             "{} v{} - Status: {} ({}%)",
-            brand,
-            report.version,
-            report.overall_status,
-            report.metrics.overall_health_percentage
+            brand, report.version, report.overall_status, report.metrics.overall_health_percentage
         )
     };
 
@@ -270,7 +273,10 @@ fn call_health(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
 }
 
 fn call_metrics(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
-    let category = args.get("category").and_then(|v| v.as_str()).unwrap_or("all");
+    let category = args
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("all");
     let health = SenaHealth::new();
 
     let metrics = match category {
@@ -328,7 +334,10 @@ fn call_validate(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
 
 fn call_process(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
     let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    let request_type = args.get("request_type").and_then(|v| v.as_str()).unwrap_or("general");
+    let request_type = args
+        .get("request_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("general");
 
     // Use first principles analysis
     use crate::ancient::FirstPrinciplesEngine;
@@ -354,11 +363,13 @@ fn call_process(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
 }
 
 fn call_format_table(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
-    let headers: Vec<String> = args.get("headers")
+    let headers: Vec<String> = args
+        .get("headers")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
-    let rows: Vec<Vec<String>> = args.get("rows")
+    let rows: Vec<Vec<String>> = args
+        .get("rows")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
@@ -383,7 +394,8 @@ fn call_format_table(args: &HashMap<String, serde_json::Value>) -> ToolCallResul
 }
 
 fn call_progress(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
-    let tasks: Vec<serde_json::Value> = args.get("tasks")
+    let tasks: Vec<serde_json::Value> = args
+        .get("tasks")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
@@ -435,7 +447,8 @@ fn handle_resources_list(request: &JsonRpcRequest) -> JsonRpcResponse {
 }
 
 fn handle_resources_read(request: &JsonRpcRequest) -> JsonRpcResponse {
-    let uri = request.params
+    let uri = request
+        .params
         .as_ref()
         .and_then(|p| p.get("uri"))
         .and_then(|u| u.as_str())
@@ -446,15 +459,13 @@ fn handle_resources_read(request: &JsonRpcRequest) -> JsonRpcResponse {
             let health = SenaHealth::new();
             serde_json::to_string_pretty(&health.get_health()).unwrap_or_default()
         }
-        "sena://metrics" => {
-            serde_json::to_string_pretty(&crate::metrics::SenaMetrics::collect()).unwrap_or_default()
-        }
-        "sena://config" => {
-            serde_json::json!({
-                "version": crate::VERSION,
-                "codename": crate::CODENAME,
-            }).to_string()
-        }
+        "sena://metrics" => serde_json::to_string_pretty(&crate::metrics::SenaMetrics::collect())
+            .unwrap_or_default(),
+        "sena://config" => serde_json::json!({
+            "version": crate::VERSION,
+            "codename": crate::CODENAME,
+        })
+        .to_string(),
         _ => {
             return JsonRpcResponse::error(
                 request.id.clone(),

@@ -1,21 +1,24 @@
-pub mod protocol;
-pub mod peer;
-pub mod tcp;
-pub mod discovery;
 pub mod auth;
+pub mod discovery;
+pub mod peer;
+pub mod protocol;
+pub mod tcp;
 pub mod tls;
 
-pub use protocol::{NetworkCommand, NetworkMessage, RemoteSession, SharedPath, DEFAULT_PORT, MDNS_SERVICE_TYPE, PROTOCOL_VERSION};
+pub use auth::{AuthChallenge, AuthToken, AuthTokenStore, DEFAULT_TOKEN_EXPIRY};
+pub use discovery::{discover_once, DiscoveredPeer, NetworkDiscovery};
 pub use peer::{Peer, PeerRegistry};
-pub use tcp::{NetworkServer, NetworkClient, ClientConnection, Connection, ConnectionId};
-pub use discovery::{NetworkDiscovery, DiscoveredPeer, discover_once};
-pub use auth::{AuthToken, AuthTokenStore, AuthChallenge, DEFAULT_TOKEN_EXPIRY};
-pub use tls::{TlsConfig, ensure_certificates};
+pub use protocol::{
+    NetworkCommand, NetworkMessage, RemoteSession, SharedPath, DEFAULT_PORT, MDNS_SERVICE_TYPE,
+    PROTOCOL_VERSION,
+};
+pub use tcp::{ClientConnection, Connection, ConnectionId, NetworkClient, NetworkServer};
+pub use tls::{ensure_certificates, TlsConfig};
 
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkConfig {
@@ -56,13 +59,13 @@ impl NetworkManager {
         std::fs::create_dir_all(&data_dir)
             .map_err(|e| format!("Failed to create data directory: {}", e))?;
 
-        let peer_registry = Arc::new(RwLock::new(
-            PeerRegistry::load(data_dir.join("peers.json"))?
-        ));
+        let peer_registry = Arc::new(RwLock::new(PeerRegistry::load(
+            data_dir.join("peers.json"),
+        )?));
 
-        let token_store = Arc::new(RwLock::new(
-            AuthTokenStore::load(data_dir.join("tokens.json"))?
-        ));
+        let token_store = Arc::new(RwLock::new(AuthTokenStore::load(
+            data_dir.join("tokens.json"),
+        )?));
 
         let tls_config = TlsConfig::new(data_dir.join("tls"));
 
@@ -91,7 +94,10 @@ impl NetworkManager {
             ensure_certificates(&self.tls_config, &peer_name)?;
         }
 
-        let server = Arc::new(NetworkServer::new(self.config.port, self.peer_registry.clone()));
+        let server = Arc::new(NetworkServer::new(
+            self.config.port,
+            self.peer_registry.clone(),
+        ));
         server.start().await?;
         self.server = Some(server);
 
@@ -157,7 +163,12 @@ impl NetworkManager {
         discover_once(timeout_secs).await
     }
 
-    pub async fn add_peer(&self, address: &str, port: u16, name: Option<&str>) -> Result<Peer, String> {
+    pub async fn add_peer(
+        &self,
+        address: &str,
+        port: u16,
+        name: Option<&str>,
+    ) -> Result<Peer, String> {
         let peer_id = uuid::Uuid::new_v4().to_string();
         let peer_name = name.unwrap_or("Unknown").to_string();
         let peer = Peer::new(&peer_id, &peer_name, address, port);
@@ -171,14 +182,30 @@ impl NetworkManager {
     }
 
     pub async fn get_peers(&self) -> Vec<Peer> {
-        self.peer_registry.read().await.get_all_peers().into_iter().cloned().collect()
+        self.peer_registry
+            .read()
+            .await
+            .get_all_peers()
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
     pub async fn get_authorized_peers(&self) -> Vec<Peer> {
-        self.peer_registry.read().await.get_authorized_peers().into_iter().cloned().collect()
+        self.peer_registry
+            .read()
+            .await
+            .get_authorized_peers()
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
-    pub async fn create_auth_token(&self, peer_id: Option<&str>, expires_in: i64) -> Result<AuthToken, String> {
+    pub async fn create_auth_token(
+        &self,
+        peer_id: Option<&str>,
+        expires_in: i64,
+    ) -> Result<AuthToken, String> {
         let mut store = self.token_store.write().await;
         if let Some(id) = peer_id {
             store.create_token_for_peer(id, expires_in)
@@ -188,21 +215,38 @@ impl NetworkManager {
     }
 
     pub async fn validate_token(&self, token: &str, peer_id: &str) -> Result<bool, String> {
-        self.token_store.write().await.validate_token(token, peer_id)
+        self.token_store
+            .write()
+            .await
+            .validate_token(token, peer_id)
     }
 
     pub async fn authorize_peer(&self, peer_id: &str) -> Result<AuthToken, String> {
-        let token = self.create_auth_token(Some(peer_id), DEFAULT_TOKEN_EXPIRY).await?;
-        self.peer_registry.write().await.authorize_peer(peer_id, &token.token)?;
+        let token = self
+            .create_auth_token(Some(peer_id), DEFAULT_TOKEN_EXPIRY)
+            .await?;
+        self.peer_registry
+            .write()
+            .await
+            .authorize_peer(peer_id, &token.token)?;
         Ok(token)
     }
 
-    pub async fn connect_to_peer(&self, address: &str, port: u16) -> Result<ClientConnection, String> {
+    pub async fn connect_to_peer(
+        &self,
+        address: &str,
+        port: u16,
+    ) -> Result<ClientConnection, String> {
         let client = NetworkClient::new(self.peer_registry.clone());
         client.connect(address, port).await
     }
 
-    pub async fn connect_and_auth(&self, address: &str, port: u16, token: &str) -> Result<ClientConnection, String> {
+    pub async fn connect_and_auth(
+        &self,
+        address: &str,
+        port: u16,
+        token: &str,
+    ) -> Result<ClientConnection, String> {
         let client = NetworkClient::new(self.peer_registry.clone());
         client.connect_and_auth(address, port, token).await
     }
@@ -215,7 +259,13 @@ impl NetworkManager {
         }
     }
 
-    pub async fn announce_session(&self, session_id: &str, session_name: &str, role: &str, working_dir: &str) {
+    pub async fn announce_session(
+        &self,
+        session_id: &str,
+        session_name: &str,
+        role: &str,
+        working_dir: &str,
+    ) {
         if let Some(ref server) = self.server {
             let registry = self.peer_registry.read().await;
             let session = RemoteSession {
@@ -292,7 +342,10 @@ mod tests {
     #[tokio::test]
     async fn test_network_status() {
         let dir = temp_dir().join("sena_network_status_test");
-        let config = NetworkConfig { enabled: false, ..Default::default() };
+        let config = NetworkConfig {
+            enabled: false,
+            ..Default::default()
+        };
         let manager = NetworkManager::new(config, dir.clone()).unwrap();
         let status = manager.status().await;
         assert!(!status.running);

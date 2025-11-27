@@ -2,12 +2,12 @@
 //!
 //! Cross-session task board for collaboration
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 
 use super::HubConfig;
 
@@ -112,7 +112,13 @@ pub struct Task {
 
 impl Task {
     /// Create a new task
-    pub fn new(id: u64, title: &str, assignee: &str, creator: &str, priority: TaskPriority) -> Self {
+    pub fn new(
+        id: u64,
+        title: &str,
+        assignee: &str,
+        creator: &str,
+        priority: TaskPriority,
+    ) -> Self {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -180,7 +186,12 @@ impl TaskBoard {
     }
 
     /// Create a new task
-    pub fn create(&mut self, title: &str, assignee: &str, priority: TaskPriority) -> Result<Task, String> {
+    pub fn create(
+        &mut self,
+        title: &str,
+        assignee: &str,
+        priority: TaskPriority,
+    ) -> Result<Task, String> {
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
         let creator = "hub"; // TODO: Get from context
 
@@ -192,7 +203,13 @@ impl TaskBoard {
     }
 
     /// Create task with specific creator
-    pub fn create_from(&mut self, title: &str, assignee: &str, creator: &str, priority: TaskPriority) -> Result<Task, String> {
+    pub fn create_from(
+        &mut self,
+        title: &str,
+        assignee: &str,
+        creator: &str,
+        priority: TaskPriority,
+    ) -> Result<Task, String> {
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
 
         let task = Task::new(id, title, assignee, creator, priority);
@@ -258,7 +275,9 @@ impl TaskBoard {
 
     /// Update task status
     pub fn update_status(&mut self, id: u64, status: TaskStatus) -> Result<(), String> {
-        let task = self.tasks.get_mut(&id)
+        let task = self
+            .tasks
+            .get_mut(&id)
             .ok_or_else(|| format!("Task #{} not found", id))?;
 
         task.status = status;
@@ -277,7 +296,9 @@ impl TaskBoard {
 
     /// Update task assignee
     pub fn reassign(&mut self, id: u64, new_assignee: &str) -> Result<(), String> {
-        let task = self.tasks.get_mut(&id)
+        let task = self
+            .tasks
+            .get_mut(&id)
             .ok_or_else(|| format!("Task #{} not found", id))?;
 
         task.assignee = new_assignee.to_string();
@@ -292,7 +313,9 @@ impl TaskBoard {
 
     /// Add description to task
     pub fn set_description(&mut self, id: u64, description: &str) -> Result<(), String> {
-        let task = self.tasks.get_mut(&id)
+        let task = self
+            .tasks
+            .get_mut(&id)
             .ok_or_else(|| format!("Task #{} not found", id))?;
 
         task.description = Some(description.to_string());
@@ -307,7 +330,8 @@ impl TaskBoard {
 
     /// Delete a task
     pub fn delete(&mut self, id: u64) -> Result<(), String> {
-        self.tasks.remove(&id)
+        self.tasks
+            .remove(&id)
             .ok_or_else(|| format!("Task #{} not found", id))?;
         self.save()?;
         Ok(())
@@ -334,8 +358,7 @@ impl TaskBoard {
                 .map_err(|e| format!("Cannot create tasks directory: {}", e))?;
         }
 
-        fs::write(&self.tasks_file, json)
-            .map_err(|e| format!("Cannot write tasks file: {}", e))?;
+        fs::write(&self.tasks_file, json).map_err(|e| format!("Cannot write tasks file: {}", e))?;
 
         Ok(())
     }
@@ -365,7 +388,10 @@ impl TaskBoard {
 
     /// Get pending count
     pub fn pending_count(&self) -> usize {
-        self.tasks.values().filter(|t| t.status == TaskStatus::Pending).count()
+        self.tasks
+            .values()
+            .filter(|t| t.status == TaskStatus::Pending)
+            .count()
     }
 }
 

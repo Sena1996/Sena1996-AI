@@ -50,8 +50,8 @@ pub use negative_space::{
 };
 
 pub use relationship_model::{
-    ModelStatistics, NodeType, Relationship, RelationshipCluster, RelationshipDataModel,
-    RelationshipNode, RelationshipPath, RelationshipQuery, RelationType,
+    ModelStatistics, NodeType, RelationType, Relationship, RelationshipCluster,
+    RelationshipDataModel, RelationshipNode, RelationshipPath, RelationshipQuery,
 };
 
 pub use self_healing::{

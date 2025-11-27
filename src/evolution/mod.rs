@@ -1,12 +1,12 @@
+mod feedback;
 mod learner;
 mod optimizer;
-mod feedback;
 
-pub use learner::{PatternLearner, LearnedPattern, PatternType};
-pub use optimizer::{SelfOptimizer, OptimizationResult, OptimizationTarget};
-pub use feedback::{FeedbackLoop, FeedbackEntry, FeedbackType};
+pub use feedback::{FeedbackEntry, FeedbackLoop, FeedbackType};
+pub use learner::{LearnedPattern, PatternLearner, PatternType};
+pub use optimizer::{OptimizationResult, OptimizationTarget, SelfOptimizer};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Debug)]

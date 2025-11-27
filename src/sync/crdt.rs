@@ -1,11 +1,11 @@
 //! Conflict-Free Replicated Data Type (CRDT)
 //! Last-Write-Wins Register implementation for offline-first sync
 
+use hex;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
-use hex;
 
 use super::offline::Change;
 

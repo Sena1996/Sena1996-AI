@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum FeedbackType {
@@ -69,7 +69,8 @@ impl FeedbackEntry {
         ];
 
         let content_lower = content.to_lowercase();
-        let mut tags: Vec<String> = keywords.iter()
+        let mut tags: Vec<String> = keywords
+            .iter()
             .filter(|(keyword, _)| content_lower.contains(keyword))
             .map(|(_, tag)| tag.to_string())
             .collect();
@@ -112,8 +113,7 @@ impl FeedbackLoop {
     }
 
     pub fn add_with_context(&mut self, feedback_type: FeedbackType, content: &str, context: &str) {
-        let entry = FeedbackEntry::new(feedback_type, content)
-            .with_context(context);
+        let entry = FeedbackEntry::new(feedback_type, content).with_context(context);
 
         *self.type_counts.entry(feedback_type).or_insert(0) += 1;
 
@@ -129,9 +129,7 @@ impl FeedbackLoop {
     }
 
     pub fn unprocessed(&self) -> Vec<&FeedbackEntry> {
-        self.entries.iter()
-            .filter(|e| !e.processed)
-            .collect()
+        self.entries.iter().filter(|e| !e.processed).collect()
     }
 
     pub fn analyze(&self) -> Vec<FeedbackInsight> {
@@ -150,7 +148,13 @@ impl FeedbackLoop {
                 } else {
                     None
                 },
-                priority: if sentiment < 0.5 { 1 } else if sentiment < 0.7 { 2 } else { 3 },
+                priority: if sentiment < 0.5 {
+                    1
+                } else if sentiment < 0.7 {
+                    2
+                } else {
+                    3
+                },
             });
         }
 
@@ -197,7 +201,10 @@ impl FeedbackLoop {
             positive: *self.type_counts.get(&FeedbackType::Positive).unwrap_or(&0),
             negative: *self.type_counts.get(&FeedbackType::Negative).unwrap_or(&0),
             bugs: *self.type_counts.get(&FeedbackType::Bug).unwrap_or(&0),
-            features: *self.type_counts.get(&FeedbackType::FeatureRequest).unwrap_or(&0),
+            features: *self
+                .type_counts
+                .get(&FeedbackType::FeatureRequest)
+                .unwrap_or(&0),
             unprocessed: self.unprocessed().len(),
         }
     }
@@ -212,8 +219,7 @@ impl FeedbackLoop {
         let json = serde_json::to_string_pretty(&self.entries)
             .map_err(|e| format!("Failed to serialize feedback: {}", e))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| format!("Failed to write feedback: {}", e))?;
+        std::fs::write(path, json).map_err(|e| format!("Failed to write feedback: {}", e))?;
 
         Ok(())
     }
@@ -223,8 +229,8 @@ impl FeedbackLoop {
             return Ok(());
         }
 
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read feedback: {}", e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| format!("Failed to read feedback: {}", e))?;
 
         let entries: Vec<FeedbackEntry> = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse feedback: {}", e))?;
@@ -278,8 +284,7 @@ impl FeedbackSummary {
             ├─ Bugs: {} 🐛\n\
             ├─ Features: {} ✨\n\
             └─ Unprocessed: {}",
-            self.total, self.positive, self.negative,
-            self.bugs, self.features, self.unprocessed
+            self.total, self.positive, self.negative, self.bugs, self.features, self.unprocessed
         )
     }
 }

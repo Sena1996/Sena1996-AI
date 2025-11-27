@@ -190,8 +190,8 @@ impl NetworkMessage {
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
-        let json = serde_json::to_string(self)
-            .map_err(|e| format!("Serialization failed: {}", e))?;
+        let json =
+            serde_json::to_string(self).map_err(|e| format!("Serialization failed: {}", e))?;
         let mut bytes = (json.len() as u32).to_be_bytes().to_vec();
         bytes.extend(json.as_bytes());
         Ok(bytes)
@@ -205,10 +205,9 @@ impl NetworkMessage {
         if bytes.len() < 4 + len {
             return Err("Incomplete message".to_string());
         }
-        let json = std::str::from_utf8(&bytes[4..4 + len])
-            .map_err(|e| format!("Invalid UTF-8: {}", e))?;
-        serde_json::from_str(json)
-            .map_err(|e| format!("Deserialization failed: {}", e))
+        let json =
+            std::str::from_utf8(&bytes[4..4 + len]).map_err(|e| format!("Invalid UTF-8: {}", e))?;
+        serde_json::from_str(json).map_err(|e| format!("Deserialization failed: {}", e))
     }
 }
 
@@ -233,7 +232,12 @@ mod tests {
         let msg = NetworkMessage::handshake("peer1", "Test Peer", "1.0");
         let bytes = msg.to_bytes().unwrap();
         let decoded = NetworkMessage::from_bytes(&bytes).unwrap();
-        if let NetworkCommand::Handshake { peer_id, peer_name, version } = decoded.command {
+        if let NetworkCommand::Handshake {
+            peer_id,
+            peer_name,
+            version,
+        } = decoded.command
+        {
             assert_eq!(peer_id, "peer1");
             assert_eq!(peer_name, "Test Peer");
             assert_eq!(version, "1.0");

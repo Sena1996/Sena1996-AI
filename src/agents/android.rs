@@ -91,7 +91,10 @@ impl AndroidAgent {
             });
         }
 
-        if input.contains("isSystemInDarkTheme") || input_lower.contains("dark_theme") || input_lower.contains("night") {
+        if input.contains("isSystemInDarkTheme")
+            || input_lower.contains("dark_theme")
+            || input_lower.contains("night")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Dark theme support".to_string(),
@@ -129,7 +132,10 @@ impl AndroidAgent {
             });
         }
 
-        if input.contains("TopAppBar") || input.contains("BottomAppBar") || input_lower.contains("toolbar") {
+        if input.contains("TopAppBar")
+            || input.contains("BottomAppBar")
+            || input_lower.contains("toolbar")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "App bar implemented".to_string(),
@@ -200,7 +206,8 @@ impl AndroidAgent {
                 });
             }
 
-            if input.contains("Dispatchers.Main") || input.contains("withContext(Dispatchers.Main)") {
+            if input.contains("Dispatchers.Main") || input.contains("withContext(Dispatchers.Main)")
+            {
                 findings.push(Finding {
                     severity: Severity::Info,
                     title: "Main dispatcher usage".to_string(),
@@ -239,7 +246,10 @@ impl AndroidAgent {
             }
         }
 
-        if input_lower.contains("glide") || input_lower.contains("coil") || input_lower.contains("picasso") {
+        if input_lower.contains("glide")
+            || input_lower.contains("coil")
+            || input_lower.contains("picasso")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Image loading library used".to_string(),
@@ -279,7 +289,10 @@ impl AndroidAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 45 } else { 80 };
 
         DomainAnalysis {
@@ -386,7 +399,9 @@ impl AndroidAgent {
                 title: "Manual config changes handling".to_string(),
                 description: "Handling configuration changes manually".to_string(),
                 location: None,
-                suggestion: Some("Consider ViewModel for configuration change survival".to_string()),
+                suggestion: Some(
+                    "Consider ViewModel for configuration change survival".to_string(),
+                ),
             });
         }
 
@@ -657,7 +672,10 @@ mod tests {
             }
         "#;
         let result = agent.analyze("lifecycle", code);
-        assert!(result.findings.iter().any(|f| f.title.contains("ViewModel")));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.title.contains("ViewModel")));
     }
 
     #[test]
@@ -671,6 +689,9 @@ mod tests {
             }
         "#;
         let result = agent.analyze("perf", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Critical));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical));
     }
 }

@@ -128,7 +128,14 @@ impl TableBuilder {
         output
     }
 
-    fn build_border(&self, widths: &[usize], left: char, fill: char, mid: char, right: char) -> String {
+    fn build_border(
+        &self,
+        widths: &[usize],
+        left: char,
+        fill: char,
+        mid: char,
+        right: char,
+    ) -> String {
         let mut output = String::new();
         output.push(left);
 
@@ -180,9 +187,7 @@ mod tests {
 
     #[test]
     fn test_single_row() {
-        let table = TableBuilder::new()
-            .row(vec!["Header".to_string()])
-            .build();
+        let table = TableBuilder::new().row(vec!["Header".to_string()]).build();
 
         assert!(table.contains("┌"));
         assert!(table.contains("└"));
@@ -209,7 +214,7 @@ mod tests {
             .row(vec!["baz".to_string(), "qux".to_string()])
             .build();
 
-        assert!(table.contains("├"));  // Row separator
+        assert!(table.contains("├")); // Row separator
         assert!(table.contains("foo"));
         assert!(table.contains("qux"));
     }

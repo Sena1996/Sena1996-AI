@@ -123,7 +123,13 @@ impl RelationshipNode {
     fn generate_id(name: &str) -> String {
         let mut hasher = Sha256::new();
         hasher.update(name.as_bytes());
-        hasher.update(Utc::now().timestamp_nanos_opt().unwrap_or(0).to_string().as_bytes());
+        hasher.update(
+            Utc::now()
+                .timestamp_nanos_opt()
+                .unwrap_or(0)
+                .to_string()
+                .as_bytes(),
+        );
         format!("node_{}", hex::encode(&hasher.finalize()[..8]))
     }
 
@@ -232,7 +238,13 @@ impl RelationshipPath {
         }
     }
 
-    pub fn add_step(&mut self, node_id: String, relationship_id: String, strength: f64, confidence: f64) {
+    pub fn add_step(
+        &mut self,
+        node_id: String,
+        relationship_id: String,
+        strength: f64,
+        confidence: f64,
+    ) {
         self.nodes.push(node_id);
         self.relationships.push(relationship_id);
         self.total_strength *= strength;
@@ -602,11 +614,7 @@ impl RelationshipDataModel {
     }
 
     /// Infer new relationships based on existing patterns
-    pub fn infer_relationship(
-        &self,
-        source_id: &str,
-        target_id: &str,
-    ) -> Vec<(RelationType, f64)> {
+    pub fn infer_relationship(&self, source_id: &str, target_id: &str) -> Vec<(RelationType, f64)> {
         let mut inferences = Vec::new();
 
         // Check for transitive relationships
@@ -668,7 +676,12 @@ impl RelationshipDataModel {
     }
 
     /// Create a cluster from related nodes
-    pub fn create_cluster(&mut self, name: impl Into<String>, seed_node_id: &str, depth: usize) -> Option<String> {
+    pub fn create_cluster(
+        &mut self,
+        name: impl Into<String>,
+        seed_node_id: &str,
+        depth: usize,
+    ) -> Option<String> {
         if !self.nodes.contains_key(seed_node_id) {
             return None;
         }

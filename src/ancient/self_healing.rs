@@ -138,7 +138,13 @@ impl DamageEvent {
     fn generate_id(component_id: &str) -> String {
         let mut hasher = Sha256::new();
         hasher.update(component_id.as_bytes());
-        hasher.update(Utc::now().timestamp_nanos_opt().unwrap_or(0).to_string().as_bytes());
+        hasher.update(
+            Utc::now()
+                .timestamp_nanos_opt()
+                .unwrap_or(0)
+                .to_string()
+                .as_bytes(),
+        );
         format!("dmg_{}", hex::encode(&hasher.finalize()[..8]))
     }
 
@@ -263,11 +269,7 @@ impl HealingResult {
 
     pub fn complete(&mut self, success: bool, message: impl Into<String>) {
         self.completed_at = Some(Utc::now());
-        self.duration_ms = Some(
-            (Utc::now() - self.started_at)
-                .num_milliseconds()
-                .max(0) as u64,
-        );
+        self.duration_ms = Some((Utc::now() - self.started_at).num_milliseconds().max(0) as u64);
         self.status = if success {
             HealingStatus::Completed
         } else {
@@ -752,7 +754,8 @@ impl<T> HealingWrapper<T> {
     }
 
     pub fn unwrap(self) -> T {
-        self.value.expect("Called unwrap on a failed HealingWrapper")
+        self.value
+            .expect("Called unwrap on a failed HealingWrapper")
     }
 }
 

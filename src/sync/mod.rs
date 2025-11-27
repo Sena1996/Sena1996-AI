@@ -6,4 +6,4 @@ pub mod crdt;
 pub mod offline;
 
 pub use crdt::CRDT;
-pub use offline::{OfflineSync, Change};
+pub use offline::{Change, OfflineSync};

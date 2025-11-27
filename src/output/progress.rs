@@ -6,11 +6,11 @@
 //! - Spinner animation
 //! - Color support
 
+use crate::config::SenaConfig;
 use std::io::{self, Write};
-use std::time::{Duration, Instant};
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use crate::config::SenaConfig;
+use std::time::{Duration, Instant};
 
 /// ANSI Escape Codes for terminal control
 pub mod ansi {
@@ -162,7 +162,11 @@ impl ProgressBar {
 
         // Build the bar with optional emoji marker
         let bar: String = if self.config.show_emoji {
-            let filled_str = self.config.filled_char.to_string().repeat(filled.saturating_sub(1));
+            let filled_str = self
+                .config
+                .filled_char
+                .to_string()
+                .repeat(filled.saturating_sub(1));
             let empty_str = self.config.empty_char.to_string().repeat(empty);
             if filled > 0 {
                 format!("{}{}{}", filled_str, self.config.emoji, empty_str)
@@ -176,11 +180,7 @@ impl ProgressBar {
         };
 
         // Status indicator
-        let status = if self.percent >= 100.0 {
-            " ✅"
-        } else {
-            ""
-        };
+        let status = if self.percent >= 100.0 { " ✅" } else { "" };
 
         // Spinner
         let spinner = if self.config.show_spinner && self.percent < 100.0 {
@@ -210,18 +210,31 @@ impl ProgressBar {
             String::new()
         };
 
-        format!("{}{}: {}{}{}", spinner, self.label, colored_bar, pct, status)
+        format!(
+            "{}{}: {}{}{}",
+            spinner, self.label, colored_bar, pct, status
+        )
     }
 
     /// Print the progress bar (updates in-place)
     pub fn print(&self) {
-        print!("{}{}{}", ansi::CURSOR_START, ansi::CLEAR_LINE, self.render());
+        print!(
+            "{}{}{}",
+            ansi::CURSOR_START,
+            ansi::CLEAR_LINE,
+            self.render()
+        );
         io::stdout().flush().unwrap_or(());
     }
 
     /// Print and move to next line (for final state)
     pub fn println(&self) {
-        println!("{}{}{}", ansi::CURSOR_START, ansi::CLEAR_LINE, self.render());
+        println!(
+            "{}{}{}",
+            ansi::CURSOR_START,
+            ansi::CLEAR_LINE,
+            self.render()
+        );
     }
 }
 
@@ -400,7 +413,8 @@ impl Spinner {
     /// Tick the spinner animation
     pub fn tick(&mut self) {
         self.index = (self.index + 1) % SPINNERS.len();
-        print!("{}{}{} {} {}...",
+        print!(
+            "{}{}{} {} {}...",
             ansi::CURSOR_START,
             ansi::CLEAR_LINE,
             self.config.emoji,
@@ -412,7 +426,8 @@ impl Spinner {
 
     /// Stop with success message
     pub fn success(&self, message: &str) {
-        println!("{}{}{} ✅ {}",
+        println!(
+            "{}{}{} ✅ {}",
             ansi::CURSOR_START,
             ansi::CLEAR_LINE,
             self.config.emoji,
@@ -422,7 +437,8 @@ impl Spinner {
 
     /// Stop with error message
     pub fn error(&self, message: &str) {
-        println!("{}{}{} ❌ {}",
+        println!(
+            "{}{}{} ❌ {}",
             ansi::CURSOR_START,
             ansi::CLEAR_LINE,
             self.config.emoji,
@@ -471,7 +487,8 @@ impl MultiProgress {
         let config = ProgressConfig::from_user_config();
         let title = format!("{} {} TASK PROGRESS", config.prefix, config.emoji);
 
-        let bars: Vec<ProgressBar> = self.tasks
+        let bars: Vec<ProgressBar> = self
+            .tasks
             .iter()
             .map(|(name, pct)| ProgressBar::with_config(name, *pct, config.clone()))
             .collect();

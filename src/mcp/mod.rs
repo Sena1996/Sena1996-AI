@@ -2,9 +2,9 @@
 //!
 //! Model Context Protocol server implementation using JSON-RPC over stdio
 
-pub mod server;
-pub mod protocol;
 pub mod handlers;
+pub mod protocol;
+pub mod server;
 
-pub use server::run_server;
 pub use protocol::*;
+pub use server::run_server;

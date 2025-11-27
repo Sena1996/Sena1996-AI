@@ -76,7 +76,14 @@ pub struct Participant {
 
 impl CollabSession {
     pub fn new(name: &str, host: AgentInfo) -> Self {
-        let session_id = format!("session_{}", Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"));
+        let session_id = format!(
+            "session_{}",
+            Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("unknown")
+        );
         let host_id = host.id.clone();
 
         let host_participant = Participant {
@@ -165,7 +172,9 @@ impl CollabSession {
 
     pub fn add_participant(&mut self, agent: AgentInfo, permissions: PermissionSet) -> Result<()> {
         if self.participants.len() >= self.config.max_participants {
-            return Err(CollabError::SessionLimitReached(self.config.max_participants));
+            return Err(CollabError::SessionLimitReached(
+                self.config.max_participants,
+            ));
         }
 
         if self.participants.contains_key(&agent.id) {
@@ -182,7 +191,8 @@ impl CollabSession {
             joined_at: chrono::Utc::now(),
         };
 
-        self.participants.insert(participant.agent.id.clone(), participant);
+        self.participants
+            .insert(participant.agent.id.clone(), participant);
         self.updated_at = chrono::Utc::now();
         Ok(())
     }
@@ -231,7 +241,10 @@ impl CollabSession {
     }
 
     pub fn messages_from(&self, agent_id: &str) -> Vec<&CollabMessage> {
-        self.messages.iter().filter(|m| m.sender_id == agent_id).collect()
+        self.messages
+            .iter()
+            .filter(|m| m.sender_id == agent_id)
+            .collect()
     }
 
     pub fn set_context(&mut self, key: &str, value: serde_json::Value) {
@@ -290,7 +303,9 @@ impl SessionManager {
         let session = CollabSession::new(name, host);
         let session_id = session.id.clone();
         self.sessions.insert(session_id.clone(), session);
-        self.sessions.get(&session_id).ok_or(CollabError::SessionNotFound(session_id))
+        self.sessions
+            .get(&session_id)
+            .ok_or(CollabError::SessionNotFound(session_id))
     }
 
     pub fn get_session(&self, session_id: &str) -> Option<&CollabSession> {

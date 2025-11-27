@@ -2,11 +2,11 @@
 //!
 //! CRDT-powered shared state for real-time synchronization
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 
 use super::HubConfig;
 use crate::sync::CRDT;
@@ -80,7 +80,8 @@ impl HubState {
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        let state = self.session_states
+        let state = self
+            .session_states
             .entry(session_id.to_string())
             .or_insert_with(|| SessionWorkState {
                 session_id: session_id.to_string(),
@@ -101,7 +102,8 @@ impl HubState {
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        let state = self.session_states
+        let state = self
+            .session_states
             .entry(session_id.to_string())
             .or_insert_with(|| SessionWorkState {
                 session_id: session_id.to_string(),
@@ -153,9 +155,7 @@ impl HubState {
     pub fn get_working_sessions(&self) -> Vec<(&String, &String)> {
         self.session_states
             .iter()
-            .filter_map(|(id, state)| {
-                state.working_on.as_ref().map(|file| (id, file))
-            })
+            .filter_map(|(id, state)| state.working_on.as_ref().map(|file| (id, file)))
             .collect()
     }
 
@@ -164,7 +164,12 @@ impl HubState {
         self.session_states
             .iter()
             .filter_map(|(id, state)| {
-                if state.working_on.as_ref().map(|f| f == file_path).unwrap_or(false) {
+                if state
+                    .working_on
+                    .as_ref()
+                    .map(|f| f == file_path)
+                    .unwrap_or(false)
+                {
                     Some(id.clone())
                 } else {
                     None
@@ -188,8 +193,7 @@ impl HubState {
         let json = serde_json::to_string_pretty(&data)
             .map_err(|e| format!("Cannot serialize state: {}", e))?;
 
-        fs::write(&self.state_file, json)
-            .map_err(|e| format!("Cannot write state file: {}", e))?;
+        fs::write(&self.state_file, json).map_err(|e| format!("Cannot write state file: {}", e))?;
 
         Ok(())
     }

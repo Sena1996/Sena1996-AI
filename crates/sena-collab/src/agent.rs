@@ -22,7 +22,15 @@ pub struct AgentInfo {
 
 impl AgentInfo {
     pub fn new(provider: &str, model: &str) -> Self {
-        let id = format!("{}_{}", provider, Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"));
+        let id = format!(
+            "{}_{}",
+            provider,
+            Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("unknown")
+        );
         let name = format!("{} ({})", provider, model);
 
         Self {

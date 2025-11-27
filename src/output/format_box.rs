@@ -50,7 +50,9 @@ impl FormatBox {
         let inner_width = self.width - 2;
         let title_len = self.title.chars().count();
         let left_pad = (inner_width.saturating_sub(title_len)) / 2;
-        let right_pad = inner_width.saturating_sub(title_len).saturating_sub(left_pad);
+        let right_pad = inner_width
+            .saturating_sub(title_len)
+            .saturating_sub(left_pad);
 
         let mut output = String::new();
 
@@ -88,7 +90,9 @@ impl FormatBox {
         let inner_width = self.width - 2;
         let title_len = self.title.chars().count();
         let left_pad = (inner_width.saturating_sub(title_len)) / 2;
-        let right_pad = inner_width.saturating_sub(title_len).saturating_sub(left_pad);
+        let right_pad = inner_width
+            .saturating_sub(title_len)
+            .saturating_sub(left_pad);
 
         let mut output = String::new();
 

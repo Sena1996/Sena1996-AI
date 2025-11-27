@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SolidPrinciple {
@@ -24,10 +24,18 @@ impl std::fmt::Display for SolidPrinciple {
 impl SolidPrinciple {
     pub fn description(&self) -> &'static str {
         match self {
-            SolidPrinciple::SingleResponsibility => "A class should have one, and only one, reason to change.",
-            SolidPrinciple::OpenClosed => "Software entities should be open for extension, but closed for modification.",
-            SolidPrinciple::LiskovSubstitution => "Subtypes must be substitutable for their base types.",
-            SolidPrinciple::InterfaceSegregation => "Clients should not be forced to depend on interfaces they do not use.",
+            SolidPrinciple::SingleResponsibility => {
+                "A class should have one, and only one, reason to change."
+            }
+            SolidPrinciple::OpenClosed => {
+                "Software entities should be open for extension, but closed for modification."
+            }
+            SolidPrinciple::LiskovSubstitution => {
+                "Subtypes must be substitutable for their base types."
+            }
+            SolidPrinciple::InterfaceSegregation => {
+                "Clients should not be forced to depend on interfaces they do not use."
+            }
             SolidPrinciple::DependencyInversion => "Depend on abstractions, not concretions.",
         }
     }
@@ -73,26 +81,43 @@ impl std::fmt::Display for DesignPattern {
 impl DesignPattern {
     pub fn category(&self) -> &'static str {
         match self {
-            DesignPattern::Factory | DesignPattern::Singleton | DesignPattern::Builder | DesignPattern::Prototype => "Creational",
-            DesignPattern::Adapter | DesignPattern::Decorator | DesignPattern::Facade | DesignPattern::Proxy => "Structural",
-            DesignPattern::Strategy | DesignPattern::Observer | DesignPattern::Command | DesignPattern::State => "Behavioral",
+            DesignPattern::Factory
+            | DesignPattern::Singleton
+            | DesignPattern::Builder
+            | DesignPattern::Prototype => "Creational",
+            DesignPattern::Adapter
+            | DesignPattern::Decorator
+            | DesignPattern::Facade
+            | DesignPattern::Proxy => "Structural",
+            DesignPattern::Strategy
+            | DesignPattern::Observer
+            | DesignPattern::Command
+            | DesignPattern::State => "Behavioral",
         }
     }
 
     pub fn description(&self) -> &'static str {
         match self {
-            DesignPattern::Factory => "Creates objects without specifying the exact class to create.",
-            DesignPattern::Singleton => "Ensures a class has only one instance with a global access point.",
+            DesignPattern::Factory => {
+                "Creates objects without specifying the exact class to create."
+            }
+            DesignPattern::Singleton => {
+                "Ensures a class has only one instance with a global access point."
+            }
             DesignPattern::Builder => "Constructs complex objects step by step.",
             DesignPattern::Prototype => "Creates new objects by cloning an existing object.",
             DesignPattern::Adapter => "Allows incompatible interfaces to work together.",
             DesignPattern::Decorator => "Adds behavior to objects dynamically.",
             DesignPattern::Facade => "Provides a simplified interface to a complex subsystem.",
             DesignPattern::Proxy => "Provides a placeholder for another object to control access.",
-            DesignPattern::Strategy => "Defines a family of algorithms and makes them interchangeable.",
+            DesignPattern::Strategy => {
+                "Defines a family of algorithms and makes them interchangeable."
+            }
             DesignPattern::Observer => "Defines a one-to-many dependency between objects.",
             DesignPattern::Command => "Encapsulates a request as an object.",
-            DesignPattern::State => "Allows an object to alter its behavior when its state changes.",
+            DesignPattern::State => {
+                "Allows an object to alter its behavior when its state changes."
+            }
         }
     }
 }
@@ -229,11 +254,14 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
             class User { /* domain logic only */ }\n\
             class UserRepository { save(user: User) { } }\n\
             class EmailService { sendWelcomeEmail(user: User) { } }\n\
-            class UserValidator { validate(user: User) { } }"
+            class UserValidator { validate(user: User) { } }",
         )
-        .with_benefits(&["Easier to understand", "Easier to test", "More maintainable"])
+        .with_benefits(&[
+            "Easier to understand",
+            "Easier to test",
+            "More maintainable",
+        ])
         .with_use_case("Refactoring monolithic classes"),
-
         ArchitecturePattern::new(
             "Open/Closed Principle",
             "Open for extension, closed for modification.",
@@ -257,10 +285,9 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                 process(method: PaymentMethod, amount: number) {\n\
                     method.process(amount);  // No modification needed\n\
                 }\n\
-            }"
+            }",
         )
         .with_benefits(&["Stable code", "Easy to extend", "Less regression risk"]),
-
         ArchitecturePattern::new(
             "Dependency Inversion Principle",
             "Depend on abstractions, not concretions.",
@@ -279,10 +306,13 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
             class UserService {\n\
                 constructor(private notifier: NotificationService) {}  // Abstract!\n\
                 async createUser() { await this.notifier.send('Welcome!'); }\n\
-            }"
+            }",
         )
-        .with_benefits(&["Loose coupling", "Easy to test (mock)", "Swappable implementations"]),
-
+        .with_benefits(&[
+            "Loose coupling",
+            "Easy to test (mock)",
+            "Swappable implementations",
+        ]),
         ArchitecturePattern::new(
             "Factory Pattern",
             "Creates objects without specifying the exact class to create.",
@@ -303,11 +333,10 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                 factoryMethod(): Product {\n\
                     return new ConcreteProduct();\n\
                 }\n\
-            }"
+            }",
         )
         .with_benefits(&["Decouples creation from usage", "Easy to add new types"])
         .with_use_case("Creating objects based on configuration"),
-
         ArchitecturePattern::new(
             "Builder Pattern",
             "Constructs complex objects step by step.",
@@ -337,10 +366,13 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                 .select(['id', 'name'])\n\
                 .from('users')\n\
                 .where('age > 18')\n\
-                .build();"
+                .build();",
         )
-        .with_benefits(&["Fluent API", "Immutable construction", "Optional parameters"]),
-
+        .with_benefits(&[
+            "Fluent API",
+            "Immutable construction",
+            "Optional parameters",
+        ]),
         ArchitecturePattern::new(
             "Adapter Pattern",
             "Allows incompatible interfaces to work together.",
@@ -362,11 +394,10 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                     const text = document.toString();\n\
                     this.legacy.printOldFormat(text);\n\
                 }\n\
-            }"
+            }",
         )
         .with_benefits(&["Integrates legacy code", "No changes to existing code"])
         .with_use_case("Integrating third-party libraries"),
-
         ArchitecturePattern::new(
             "Decorator Pattern",
             "Adds behavior to objects dynamically.",
@@ -392,10 +423,13 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
             // Usage:\n\
             let source = new FileDataSource();\n\
             source = new EncryptionDecorator(source);\n\
-            source = new CompressionDecorator(source);"
+            source = new CompressionDecorator(source);",
         )
-        .with_benefits(&["Composable behaviors", "Single responsibility", "Runtime flexibility"]),
-
+        .with_benefits(&[
+            "Composable behaviors",
+            "Single responsibility",
+            "Runtime flexibility",
+        ]),
         ArchitecturePattern::new(
             "Strategy Pattern",
             "Defines a family of algorithms and makes them interchangeable.",
@@ -419,10 +453,9 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                 sort(data: number[]): number[] {\n\
                     return this.strategy.sort(data);\n\
                 }\n\
-            }"
+            }",
         )
         .with_benefits(&["Runtime algorithm swapping", "Easy to add new algorithms"]),
-
         ArchitecturePattern::new(
             "Observer Pattern",
             "Defines a one-to-many dependency between objects.",
@@ -446,11 +479,10 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                         observer.update(data);\n\
                     }\n\
                 }\n\
-            }"
+            }",
         )
         .with_benefits(&["Loose coupling", "Dynamic subscription", "Event-driven"])
         .with_use_case("Event systems, pub/sub, reactive programming"),
-
         ArchitecturePattern::new(
             "Hexagonal Architecture",
             "Separates domain logic from external concerns through ports and adapters.",
@@ -468,7 +500,7 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
      ┌────▼─────┐                  ┌───────▼───┐\n\
      │  Adapter │                  │  Adapter  │\n\
      │  (HTTP)  │                  │   (DB)    │\n\
-     └──────────┘                  └───────────┘"
+     └──────────┘                  └───────────┘",
         )
         .with_example(
             "// Port (interface in domain)\n\
@@ -486,11 +518,10 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
                 }\n\
             }\n\n\
             // Adapter\n\
-            class PostgresUserRepository implements UserRepository { }"
+            class PostgresUserRepository implements UserRepository { }",
         )
         .with_benefits(&["Domain isolation", "Easy to swap adapters", "Testable"])
         .with_drawbacks(&["More boilerplate", "Learning curve"]),
-
         ArchitecturePattern::new(
             "CQRS",
             "Command Query Responsibility Segregation - separate read and write models.",
@@ -504,7 +535,7 @@ pub fn default_patterns() -> Vec<ArchitecturePattern> {
             │  Write   │   Sync/    │   Read   │\n\
             │  Model   │───Async───▶│  Model   │\n\
             └──────────┘            └──────────┘\n\
-               (Normalized)         (Denormalized)"
+               (Normalized)         (Denormalized)",
         )
         .with_benefits(&["Optimized read/write", "Scalability", "Complex domains"])
         .with_drawbacks(&["Eventual consistency", "Complexity"])

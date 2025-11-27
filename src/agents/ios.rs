@@ -17,7 +17,8 @@ static MEMORY_LEAK_REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static MAIN_THREAD_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"(DispatchQueue\.main|@MainActor|MainActor\.run)"#).expect("invalid main thread regex")
+    Regex::new(r#"(DispatchQueue\.main|@MainActor|MainActor\.run)"#)
+        .expect("invalid main thread regex")
 });
 
 pub struct IOSAgent {
@@ -90,7 +91,9 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("44") && (input_lower.contains("width") || input_lower.contains("height")) {
+        if input_lower.contains("44")
+            && (input_lower.contains("width") || input_lower.contains("height"))
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "HIG touch target size (44pt)".to_string(),
@@ -108,7 +111,10 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("safearea") || input_lower.contains("safe area") || input.contains(".safeAreaInset") {
+        if input_lower.contains("safearea")
+            || input_lower.contains("safe area")
+            || input.contains(".safeAreaInset")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Safe area handling implemented".to_string(),
@@ -126,7 +132,9 @@ impl IOSAgent {
             });
         }
 
-        if input.contains("@Environment(\\.colorScheme)") || input_lower.contains("traitcollection.userinterfacestyle") {
+        if input.contains("@Environment(\\.colorScheme)")
+            || input_lower.contains("traitcollection.userinterfacestyle")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Dark mode support detected".to_string(),
@@ -136,7 +144,10 @@ impl IOSAgent {
             });
         }
 
-        if input.contains("DynamicTypeSize") || input_lower.contains("preferredcontentsizecategory") || input.contains(".dynamicTypeSize") {
+        if input.contains("DynamicTypeSize")
+            || input_lower.contains("preferredcontentsizecategory")
+            || input.contains(".dynamicTypeSize")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Dynamic Type support detected".to_string(),
@@ -150,11 +161,16 @@ impl IOSAgent {
                 title: "Dynamic Type not detected".to_string(),
                 description: "Text may not scale with accessibility settings".to_string(),
                 location: None,
-                suggestion: Some("Use .font(.body) or UIFont.preferredFont for Dynamic Type".to_string()),
+                suggestion: Some(
+                    "Use .font(.body) or UIFont.preferredFont for Dynamic Type".to_string(),
+                ),
             });
         }
 
-        if input.contains("SF Symbols") || input.contains("systemName") || input.contains("Image(systemName:") {
+        if input.contains("SF Symbols")
+            || input.contains("systemName")
+            || input.contains("Image(systemName:")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "SF Symbols used".to_string(),
@@ -164,7 +180,10 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("alert") || input_lower.contains("actionsheet") || input.contains(".alert(") {
+        if input_lower.contains("alert")
+            || input_lower.contains("actionsheet")
+            || input.contains(".alert(")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "System dialogs used".to_string(),
@@ -174,7 +193,16 @@ impl IOSAgent {
             });
         }
 
-        let score = if findings.iter().filter(|f| f.severity == Severity::Success).count() > 3 { 85 } else { 65 };
+        let score = if findings
+            .iter()
+            .filter(|f| f.severity == Severity::Success)
+            .count()
+            > 3
+        {
+            85
+        } else {
+            65
+        };
 
         DomainAnalysis {
             agent: DomainAgentType::IOS,
@@ -196,7 +224,10 @@ impl IOSAgent {
         let mut findings = Vec::new();
         let input_lower = input.to_lowercase();
 
-        if input.contains("DispatchQueue.global") || input.contains("Task {") || input.contains("async {") {
+        if input.contains("DispatchQueue.global")
+            || input.contains("Task {")
+            || input.contains("async {")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Background processing detected".to_string(),
@@ -216,7 +247,11 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("lazyv") || input_lower.contains("lazyhstack") || input.contains("LazyVStack") || input.contains("LazyHStack") {
+        if input_lower.contains("lazyv")
+            || input_lower.contains("lazyhstack")
+            || input.contains("LazyVStack")
+            || input.contains("LazyHStack")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Lazy loading views used".to_string(),
@@ -227,14 +262,17 @@ impl IOSAgent {
         }
 
         if (input_lower.contains("list") || input_lower.contains("foreach"))
-            && !input_lower.contains("lazy") && !input.contains("List")
+            && !input_lower.contains("lazy")
+            && !input.contains("List")
         {
             findings.push(Finding {
                 severity: Severity::Warning,
                 title: "Consider lazy loading for lists".to_string(),
                 description: "Large lists should use lazy containers".to_string(),
                 location: None,
-                suggestion: Some("Use LazyVStack/List instead of VStack/ForEach for large datasets".to_string()),
+                suggestion: Some(
+                    "Use LazyVStack/List instead of VStack/ForEach for large datasets".to_string(),
+                ),
             });
         }
 
@@ -378,7 +416,9 @@ impl IOSAgent {
             });
         }
 
-        if input.contains(".accessibilityElement(children:") || input.contains(".accessibilityChildren") {
+        if input.contains(".accessibilityElement(children:")
+            || input.contains(".accessibilityChildren")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Accessibility grouping implemented".to_string(),
@@ -388,8 +428,17 @@ impl IOSAgent {
             });
         }
 
-        let a11y_count = findings.iter().filter(|f| f.severity == Severity::Success).count();
-        let score = if a11y_count >= 3 { 85 } else if a11y_count >= 1 { 65 } else { 40 };
+        let a11y_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Success)
+            .count();
+        let score = if a11y_count >= 3 {
+            85
+        } else if a11y_count >= 1 {
+            65
+        } else {
+            40
+        };
 
         DomainAnalysis {
             agent: DomainAgentType::IOS,
@@ -427,7 +476,9 @@ impl IOSAgent {
                 title: "Location services detected".to_string(),
                 description: "App accesses user location".to_string(),
                 location: None,
-                suggestion: Some("Add appropriate location usage description to Info.plist".to_string()),
+                suggestion: Some(
+                    "Add appropriate location usage description to Info.plist".to_string(),
+                ),
             });
         }
 
@@ -437,7 +488,9 @@ impl IOSAgent {
                 title: "HealthKit integration detected".to_string(),
                 description: "App accesses health data".to_string(),
                 location: None,
-                suggestion: Some("Ensure proper HealthKit entitlements and descriptions".to_string()),
+                suggestion: Some(
+                    "Ensure proper HealthKit entitlements and descriptions".to_string(),
+                ),
             });
         }
 
@@ -461,7 +514,8 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("notificationcenter") || input.contains("UNUserNotificationCenter") {
+        if input_lower.contains("notificationcenter") || input.contains("UNUserNotificationCenter")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "Push notifications detected".to_string(),
@@ -530,7 +584,9 @@ impl IOSAgent {
             });
         }
 
-        if input_lower.contains("didreceivememorywarning") || input.contains("applicationDidReceiveMemoryWarning") {
+        if input_lower.contains("didreceivememorywarning")
+            || input.contains("applicationDidReceiveMemoryWarning")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Memory warning handling".to_string(),
@@ -653,7 +709,10 @@ mod tests {
                 .accessibilityHint("Double tap to submit")
         "#;
         let result = agent.analyze("a11y", code);
-        assert!(result.findings.iter().any(|f| f.severity == Severity::Success));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.severity == Severity::Success));
     }
 
     #[test]

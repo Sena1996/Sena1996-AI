@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OptimizationTarget {
@@ -196,8 +196,13 @@ impl SelfOptimizer {
         &self.metrics
     }
 
-    pub fn update_metrics(&mut self, quality: Option<f64>, speed: Option<f64>,
-                          accuracy: Option<f64>, satisfaction: Option<f64>) {
+    pub fn update_metrics(
+        &mut self,
+        quality: Option<f64>,
+        speed: Option<f64>,
+        accuracy: Option<f64>,
+        satisfaction: Option<f64>,
+    ) {
         if let Some(q) = quality {
             self.metrics.quality = self.blend(self.metrics.quality, q);
         }
@@ -218,7 +223,8 @@ impl SelfOptimizer {
     }
 
     pub fn history(&self) -> Vec<(OptimizationTarget, f64, f64)> {
-        self.history.iter()
+        self.history
+            .iter()
             .map(|r| (r.target, r.before, r.after))
             .collect()
     }
@@ -243,7 +249,10 @@ impl OptimizationResult {
     pub fn format(&self) -> String {
         let mut output = String::new();
         output.push_str(&format!("Optimization Target: {}\n", self.target));
-        output.push_str(&format!("Success: {}\n", if self.success { "✅" } else { "❌" }));
+        output.push_str(&format!(
+            "Success: {}\n",
+            if self.success { "✅" } else { "❌" }
+        ));
         output.push_str(&format!("Improvement: +{:.1}%\n", self.improvement * 100.0));
         output.push_str(&format!("New Score: {:.1}%\n", self.new_score * 100.0));
 

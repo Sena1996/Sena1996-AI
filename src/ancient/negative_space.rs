@@ -530,7 +530,8 @@ impl NegativeSpaceArchitecture {
 
     /// Add a prohibition to the engine
     pub fn add_prohibition(&mut self, prohibition: Prohibition) {
-        self.prohibitions.insert(prohibition.id.clone(), prohibition);
+        self.prohibitions
+            .insert(prohibition.id.clone(), prohibition);
     }
 
     /// Add a boundary to the engine
@@ -546,7 +547,8 @@ impl NegativeSpaceArchitecture {
                 .insert(prohibition.id.clone(), prohibition.clone());
         }
         for boundary in &definition.boundaries {
-            self.boundaries.insert(boundary.id.clone(), boundary.clone());
+            self.boundaries
+                .insert(boundary.id.clone(), boundary.clone());
         }
         self.definitions.insert(definition.id.clone(), definition);
     }
@@ -560,7 +562,8 @@ impl NegativeSpaceArchitecture {
         category: ProhibitionCategory,
         patterns: Vec<String>,
     ) -> String {
-        let prohibition = Prohibition::new(name, description, level, category).with_patterns(patterns);
+        let prohibition =
+            Prohibition::new(name, description, level, category).with_patterns(patterns);
 
         let id = prohibition.id.clone();
         self.add_prohibition(prohibition);
@@ -632,7 +635,11 @@ impl NegativeSpaceArchitecture {
     }
 
     /// Check a value against boundaries
-    pub fn check_boundary(&self, boundary_id: &str, value: &BoundaryValue) -> Result<bool, NegativeSpaceError> {
+    pub fn check_boundary(
+        &self,
+        boundary_id: &str,
+        value: &BoundaryValue,
+    ) -> Result<bool, NegativeSpaceError> {
         let boundary = self
             .boundaries
             .get(boundary_id)

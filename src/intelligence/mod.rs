@@ -1,14 +1,14 @@
-mod thinking;
 mod agents;
 mod routing;
 mod skills;
+mod thinking;
 
-pub use thinking::{ThinkingEngine, ThinkingDepth, ThinkingResult};
-pub use agents::{Agent, AgentType, AgentPool, AgentResult};
+pub use agents::{Agent, AgentPool, AgentResult, AgentType};
 pub use routing::{ModelRouter, ModelType, RoutingDecision};
-pub use skills::{Skill, SkillRegistry, SkillExecution};
+pub use skills::{Skill, SkillExecution, SkillRegistry};
+pub use thinking::{ThinkingDepth, ThinkingEngine, ThinkingResult};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 pub struct IntelligenceSystem {

@@ -12,9 +12,8 @@
 
 use clap::Parser;
 use sena1996_ai::{
-    Cli, execute_command,
-    create_system, ProcessingRequest, SystemHealth, VERSION, CODENAME,
-    config::SenaConfig,
+    config::SenaConfig, create_system, execute_command, Cli, ProcessingRequest, SystemHealth,
+    CODENAME, VERSION,
 };
 use std::io::{self, BufRead, Write};
 
@@ -50,9 +49,15 @@ async fn run_interactive() {
 
     println!("╔══════════════════════════════════════════════════════════════╗");
     println!("║                                                              ║");
-    println!("║     {} Controller v{} - {}           ║", user.prefix, VERSION, CODENAME);
+    println!(
+        "║     {} Controller v{} - {}           ║",
+        user.prefix, VERSION, CODENAME
+    );
     println!("║                                                              ║");
-    println!("║     Welcome, {}!                                        ║", user.name);
+    println!(
+        "║     Welcome, {}!                                        ║",
+        user.name
+    );
     println!("║                                                              ║");
     println!("║     7 Ancient Wisdom Layers:                                 ║");
     println!("║       0. First Principles (Eratosthenes, 240 BCE)            ║");
@@ -156,11 +161,26 @@ async fn run_interactive() {
                     println!("  Success Rate: {:.1}%", report.success_rate * 100.0);
                     println!();
                     println!("Layer Statistics:");
-                    println!("  Harmony Validations: {}", report.harmony_stats.total_validations);
-                    println!("  Harmony Rate: {:.1}%", report.harmony_stats.harmony_rate * 100.0);
-                    println!("  Healing Components: {}", report.healing_stats.total_components);
-                    println!("  Healing Operations: {}", report.healing_stats.total_healing_operations);
-                    println!("  Millennium Criteria: {}", report.millennium_stats.total_criteria);
+                    println!(
+                        "  Harmony Validations: {}",
+                        report.harmony_stats.total_validations
+                    );
+                    println!(
+                        "  Harmony Rate: {:.1}%",
+                        report.harmony_stats.harmony_rate * 100.0
+                    );
+                    println!(
+                        "  Healing Components: {}",
+                        report.healing_stats.total_components
+                    );
+                    println!(
+                        "  Healing Operations: {}",
+                        report.healing_stats.total_healing_operations
+                    );
+                    println!(
+                        "  Millennium Criteria: {}",
+                        report.millennium_stats.total_criteria
+                    );
                     println!();
                 }
                 "/test" => {
@@ -168,7 +188,9 @@ async fn run_interactive() {
                     println!("Running Millennium Test on SENA system...");
                     println!();
 
-                    system.millennium_test().register_component("sena_core", VERSION);
+                    system
+                        .millennium_test()
+                        .register_component("sena_core", VERSION);
                     let result = system.millennium_test().run_millennium_test("sena_core");
 
                     println!("╔══════════════════════════════════════════════════════════════╗");
@@ -176,10 +198,16 @@ async fn run_interactive() {
                     println!("╚══════════════════════════════════════════════════════════════╝");
                     println!();
                     println!("Component: {}", result.component_name);
-                    println!("Overall Passed: {}", if result.passed { "✅ YES" } else { "❌ NO" });
+                    println!(
+                        "Overall Passed: {}",
+                        if result.passed { "✅ YES" } else { "❌ NO" }
+                    );
                     println!("Rating: {:?}", result.assessment.overall_rating);
                     println!("Score: {:.1}%", result.assessment.overall_score * 100.0);
-                    println!("Estimated Lifespan: {} years", result.assessment.estimated_lifespan_years);
+                    println!(
+                        "Estimated Lifespan: {} years",
+                        result.assessment.estimated_lifespan_years
+                    );
                     println!();
                     println!("Passed Criteria: {}", result.passed_criteria.len());
                     println!("Failed Criteria: {}", result.failed_criteria.len());

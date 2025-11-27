@@ -1,7 +1,7 @@
+use crate::config::SenaConfig;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use crate::config::SenaConfig;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FormatType {
@@ -36,17 +36,23 @@ static BRILLIANT_THINKING_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
         Regex::new(r"(?i)\bwhy\s+(?:does|is|are|do|did|would|should)\b").expect("valid regex"),
         Regex::new(r"(?i)\bhow\s+(?:does|is|are|do|did|can|could|should)\b").expect("valid regex"),
         Regex::new(r"(?i)\bexplain\s+(?:why|how|what|the)\b").expect("valid regex"),
-        Regex::new(r"(?i)\bwhat(?:'s|\s+is)\s+the\s+(?:reason|logic|rationale)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bwhat(?:'s|\s+is)\s+the\s+(?:reason|logic|rationale)\b")
+            .expect("valid regex"),
     ]
 });
 
 static TRUTH_VERIFICATION_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
-        Regex::new(r"(?i)\bis\s+(?:it|this|that)\s+(?:true|false|correct|accurate|real|valid)\b").expect("valid regex"),
-        Regex::new(r"(?i)\bis\s+(?:the|a)\s+\w+\s+(?:flat|round|hollow|fake|real)\b").expect("valid regex"),
-        Regex::new(r"(?i)\bis\s+\w+\s+(?:true|false|correct|accurate|valid|real)\b").expect("valid regex"),
-        Regex::new(r"(?i)\b(?:fact\s+check|verify|confirm)\s+(?:that|if|whether)\b").expect("valid regex"),
-        Regex::new(r"(?i)\bmyth\s+(?:or|vs|versus)\s+(?:fact|reality|truth)\b").expect("valid regex"),
+        Regex::new(r"(?i)\bis\s+(?:it|this|that)\s+(?:true|false|correct|accurate|real|valid)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\bis\s+(?:the|a)\s+\w+\s+(?:flat|round|hollow|fake|real)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\bis\s+\w+\s+(?:true|false|correct|accurate|valid|real)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\b(?:fact\s+check|verify|confirm)\s+(?:that|if|whether)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\bmyth\s+(?:or|vs|versus)\s+(?:fact|reality|truth)\b")
+            .expect("valid regex"),
     ]
 });
 
@@ -54,7 +60,8 @@ static CODE_ANALYSIS_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
         Regex::new(r"(?i)\b(?:analyze|review)\s+(?:this|the|my)?\s*code\b").expect("valid regex"),
         Regex::new(r"(?i)\bcode\s+(?:review|analysis|quality)\b").expect("valid regex"),
-        Regex::new(r"(?i)\b(?:refactor|optimize|debug|fix)\s+(?:this|the|my)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:refactor|optimize|debug|fix)\s+(?:this|the|my)\b")
+            .expect("valid regex"),
         Regex::new(r"(?i)\bcheck\s+(?:for|the)\s+(?:bugs|errors|issues)\b").expect("valid regex"),
     ]
 });
@@ -63,20 +70,34 @@ static TABLE_FORMAT_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
         Regex::new(r"(?i)\b(?:in|as|with)?\s*(?:a\s+)?table\b").expect("valid regex"),
         Regex::new(r"(?i)\btabular\s+(?:format|form|data)\b").expect("valid regex"),
-        Regex::new(r"(?i)\b(?:show|display|present)\s+(?:in|as)\s+(?:table|grid)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:show|display|present)\s+(?:in|as)\s+(?:table|grid)\b")
+            .expect("valid regex"),
     ]
 });
 
 static PROGRESS_DISPLAY_PATTERNS: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
         Regex::new(r"(?i)\b(?:find|search|locate)\s+(?:all|the|files|in)\b").expect("valid regex"),
-        Regex::new(r"(?i)\b(?:scan|process|analyze)\s+(?:multiple|all|the)\b").expect("valid regex"),
-        Regex::new(r"(?i)\b(?:read|check|examine)\s+(?:multiple|several|all)\b").expect("valid regex"),
+        Regex::new(r"(?i)\b(?:scan|process|analyze)\s+(?:multiple|all|the)\b")
+            .expect("valid regex"),
+        Regex::new(r"(?i)\b(?:read|check|examine)\s+(?:multiple|several|all)\b")
+            .expect("valid regex"),
     ]
 });
 
-const BRILLIANT_THINKING_KEYWORDS: &[&str] = &["why", "how", "explain", "reasoning", "understanding", "logic", "rationale", "because"];
-const CODE_ANALYSIS_KEYWORDS: &[&str] = &["analyze", "review", "quality", "refactor", "optimize", "debug", "fix", "improve"];
+const BRILLIANT_THINKING_KEYWORDS: &[&str] = &[
+    "why",
+    "how",
+    "explain",
+    "reasoning",
+    "understanding",
+    "logic",
+    "rationale",
+    "because",
+];
+const CODE_ANALYSIS_KEYWORDS: &[&str] = &[
+    "analyze", "review", "quality", "refactor", "optimize", "debug", "fix", "improve",
+];
 const TABLE_FORMAT_KEYWORDS: &[&str] = &["table", "tabular", "grid", "matrix", "columns", "rows"];
 const PROGRESS_DISPLAY_KEYWORDS: &[&str] = &["find", "search", "locate", "scan", "process"];
 
@@ -124,16 +145,24 @@ impl AutoIntegration {
     }
 
     fn matches_brilliant_thinking(&self, input: &str) -> bool {
-        BRILLIANT_THINKING_KEYWORDS.iter().any(|kw| input.contains(kw))
-            || BRILLIANT_THINKING_PATTERNS.iter().any(|p| p.is_match(input))
+        BRILLIANT_THINKING_KEYWORDS
+            .iter()
+            .any(|kw| input.contains(kw))
+            || BRILLIANT_THINKING_PATTERNS
+                .iter()
+                .any(|p| p.is_match(input))
     }
 
     fn matches_truth_verification(&self, input: &str) -> bool {
-        TRUTH_VERIFICATION_PATTERNS.iter().any(|p| p.is_match(input))
+        TRUTH_VERIFICATION_PATTERNS
+            .iter()
+            .any(|p| p.is_match(input))
     }
 
     fn matches_progress_display(&self, input: &str) -> bool {
-        PROGRESS_DISPLAY_KEYWORDS.iter().any(|kw| input.contains(kw))
+        PROGRESS_DISPLAY_KEYWORDS
+            .iter()
+            .any(|kw| input.contains(kw))
             || PROGRESS_DISPLAY_PATTERNS.iter().any(|p| p.is_match(input))
     }
 

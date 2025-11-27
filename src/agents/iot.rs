@@ -10,14 +10,12 @@ static BLE_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(ble|bluetooth|characteristic|gatt|uuid)"#).expect("invalid ble regex")
 });
 
-static COAP_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"(coap|constrained|observe)"#).expect("invalid coap regex")
-});
+static COAP_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"(coap|constrained|observe)"#).expect("invalid coap regex"));
 
 #[allow(dead_code)]
-static GPIO_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"(gpio|pin|digital|analog|pwm|adc)"#).expect("invalid gpio regex")
-});
+static GPIO_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"(gpio|pin|digital|analog|pwm|adc)"#).expect("invalid gpio regex"));
 
 static INTERRUPT_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r#"(interrupt|isr|attachinterrupt|nvic|irq)"#).expect("invalid interrupt regex")
@@ -65,7 +63,8 @@ impl IoTAgent {
             });
 
             if input_lower.contains("qos") {
-                let _qos_level = if input_lower.contains("qos: 2") || input_lower.contains("qos=2") {
+                let _qos_level = if input_lower.contains("qos: 2") || input_lower.contains("qos=2")
+                {
                     findings.push(Finding {
                         severity: Severity::Success,
                         title: "QoS 2 (Exactly Once) configured".to_string(),
@@ -99,11 +98,16 @@ impl IoTAgent {
                     title: "No QoS level specified".to_string(),
                     description: "MQTT QoS defaults to 0, messages may be lost".to_string(),
                     location: None,
-                    suggestion: Some("Explicitly set QoS level based on message importance".to_string()),
+                    suggestion: Some(
+                        "Explicitly set QoS level based on message importance".to_string(),
+                    ),
                 });
             }
 
-            if !input_lower.contains("tls") && !input_lower.contains("ssl") && !input_lower.contains("8883") {
+            if !input_lower.contains("tls")
+                && !input_lower.contains("ssl")
+                && !input_lower.contains("8883")
+            {
                 findings.push(Finding {
                     severity: Severity::Critical,
                     title: "MQTT without TLS detected".to_string(),
@@ -182,7 +186,10 @@ impl IoTAgent {
             });
         }
 
-        let critical_count = findings.iter().filter(|f| f.severity == Severity::Critical).count();
+        let critical_count = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
         let score = if critical_count > 0 { 50 } else { 80 };
 
         DomainAnalysis {
@@ -204,7 +211,10 @@ impl IoTAgent {
         let mut findings = Vec::new();
         let input_lower = input.to_lowercase();
 
-        if input_lower.contains("error") || input_lower.contains("fail") || input_lower.contains("exception") {
+        if input_lower.contains("error")
+            || input_lower.contains("fail")
+            || input_lower.contains("exception")
+        {
             findings.push(Finding {
                 severity: Severity::Warning,
                 title: "Error handling detected".to_string(),
@@ -234,13 +244,18 @@ impl IoTAgent {
             });
         }
 
-        if input_lower.contains("printf") || input_lower.contains("serial.print") || input_lower.contains("log") {
+        if input_lower.contains("printf")
+            || input_lower.contains("serial.print")
+            || input_lower.contains("log")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "Debug logging detected".to_string(),
                 description: "Debug output is available for troubleshooting".to_string(),
                 location: None,
-                suggestion: Some("Disable verbose logging in production for power savings".to_string()),
+                suggestion: Some(
+                    "Disable verbose logging in production for power savings".to_string(),
+                ),
             });
         }
 
@@ -272,7 +287,10 @@ impl IoTAgent {
             }
         }
 
-        if input_lower.contains("malloc") || input_lower.contains("free") || input_lower.contains("heap") {
+        if input_lower.contains("malloc")
+            || input_lower.contains("free")
+            || input_lower.contains("heap")
+        {
             findings.push(Finding {
                 severity: Severity::Warning,
                 title: "Dynamic memory allocation detected".to_string(),
@@ -351,7 +369,10 @@ impl IoTAgent {
             });
         }
 
-        if input_lower.contains("wifi") || input_lower.contains("radio") || input_lower.contains("lora") {
+        if input_lower.contains("wifi")
+            || input_lower.contains("radio")
+            || input_lower.contains("lora")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "Radio/WiFi usage detected".to_string(),
@@ -371,7 +392,10 @@ impl IoTAgent {
             }
         }
 
-        if input_lower.contains("led") || input_lower.contains("display") || input_lower.contains("oled") {
+        if input_lower.contains("led")
+            || input_lower.contains("display")
+            || input_lower.contains("oled")
+        {
             findings.push(Finding {
                 severity: Severity::Info,
                 title: "LED/Display usage detected".to_string(),
@@ -432,7 +456,10 @@ impl IoTAgent {
             });
         }
 
-        if input_lower.contains("ping") || input_lower.contains("heartbeat") || input_lower.contains("keepalive") {
+        if input_lower.contains("ping")
+            || input_lower.contains("heartbeat")
+            || input_lower.contains("keepalive")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Connection keepalive implemented".to_string(),
@@ -442,7 +469,10 @@ impl IoTAgent {
             });
         }
 
-        if input_lower.contains("offline") || input_lower.contains("queue") || input_lower.contains("buffer") {
+        if input_lower.contains("offline")
+            || input_lower.contains("queue")
+            || input_lower.contains("buffer")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Offline data handling detected".to_string(),
@@ -515,7 +545,10 @@ impl IoTAgent {
             });
         }
 
-        if input_lower.contains("filter") || input_lower.contains("average") || input_lower.contains("median") {
+        if input_lower.contains("filter")
+            || input_lower.contains("average")
+            || input_lower.contains("median")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "Data filtering implemented".to_string(),
@@ -554,7 +587,10 @@ impl IoTAgent {
         let mut findings = Vec::new();
         let input_lower = input.to_lowercase();
 
-        if input_lower.contains("ota") || input_lower.contains("fota") || input_lower.contains("update") {
+        if input_lower.contains("ota")
+            || input_lower.contains("fota")
+            || input_lower.contains("update")
+        {
             findings.push(Finding {
                 severity: Severity::Success,
                 title: "OTA update capability detected".to_string(),
@@ -563,7 +599,10 @@ impl IoTAgent {
                 suggestion: None,
             });
 
-            if input_lower.contains("signature") || input_lower.contains("verify") || input_lower.contains("checksum") {
+            if input_lower.contains("signature")
+                || input_lower.contains("verify")
+                || input_lower.contains("checksum")
+            {
                 findings.push(Finding {
                     severity: Severity::Success,
                     title: "Firmware verification implemented".to_string(),
@@ -714,6 +753,9 @@ mod tests {
             );
         "#;
         let result = agent.analyze("protocol", code);
-        assert!(result.findings.iter().any(|f| f.title.contains("Bluetooth")));
+        assert!(result
+            .findings
+            .iter()
+            .any(|f| f.title.contains("Bluetooth")));
     }
 }

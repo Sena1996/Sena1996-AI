@@ -1,10 +1,10 @@
 //! Base Component
 //! All controller components inherit from this trait
 
-use std::collections::HashMap;
-use std::time::Instant;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::time::Instant;
 
 /// Component metrics
 #[derive(Debug, Clone, Serialize, Deserialize)]

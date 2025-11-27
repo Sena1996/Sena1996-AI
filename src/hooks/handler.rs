@@ -2,9 +2,9 @@
 //!
 //! Handles Claude Code hooks for SENA integration
 
+use crate::ancient::HarmonyValidationEngine;
 use crate::cli::args::HookType;
 use crate::integration::AutoIntegration;
-use crate::ancient::HarmonyValidationEngine;
 use serde::{Deserialize, Serialize};
 
 /// Hook processing result
@@ -71,16 +71,17 @@ async fn handle_pre_prompt(input: &str) -> Result<HookResult, String> {
     }
 
     if is_sena_command {
-        message.push_str("\n\nDETECTED: User wants to run a SENA command. Use Bash tool to execute it.");
+        message.push_str(
+            "\n\nDETECTED: User wants to run a SENA command. Use Bash tool to execute it.",
+        );
     }
 
-    let result = HookResult::success(&message)
-        .with_data(serde_json::json!({
-            "detected_format": detected.as_ref().map(|f| f.name()),
-            "triggers": triggers,
-            "is_sena_command": is_sena_command,
-            "inbox_count": inbox_messages.len(),
-        }));
+    let result = HookResult::success(&message).with_data(serde_json::json!({
+        "detected_format": detected.as_ref().map(|f| f.name()),
+        "triggers": triggers,
+        "is_sena_command": is_sena_command,
+        "inbox_count": inbox_messages.len(),
+    }));
 
     Ok(result)
 }
@@ -90,7 +91,8 @@ fn build_sena_context() -> String {
     let config = SenaConfig::global();
     let user = &config.user;
 
-    format!(r#"SENA Controller v{} is installed and ready.
+    format!(
+        r#"SENA Controller v{} is installed and ready.
 
 SENA COMMANDS (execute with Bash tool):
 - sena health              : System health check
@@ -151,14 +153,12 @@ fn check_inbox_messages() -> Vec<String> {
         return Vec::new();
     }
 
-    let messages: Vec<Message> = hub.inbox("local")
-        .into_iter()
-        .filter(|m| !m.read)
-        .collect();
+    let messages: Vec<Message> = hub.inbox("local").into_iter().filter(|m| !m.read).collect();
 
-    messages.iter().map(|m| {
-        format!("  [{}] {}: {}", m.time_display(), m.from, m.content)
-    }).collect()
+    messages
+        .iter()
+        .map(|m| format!("  [{}] {}: {}", m.time_display(), m.from, m.content))
+        .collect()
 }
 
 /// Post-response hook - validate Claude's response
@@ -178,23 +178,23 @@ async fn handle_post_response(input: &str) -> Result<HookResult, String> {
     // Check for SENA format compliance
     let has_sena_format = check_sena_format_compliance(response_text);
 
-    let result = HookResult::success("Response validation complete")
-        .with_data(serde_json::json!({
-            "valid": validation.is_valid(),
-            "confidence": validation.overall_confidence,
-            "sena_compliant": has_sena_format,
-            "response_length": response_text.len(),
-        }));
+    let result = HookResult::success("Response validation complete").with_data(serde_json::json!({
+        "valid": validation.is_valid(),
+        "confidence": validation.overall_confidence,
+        "sena_compliant": has_sena_format,
+        "response_length": response_text.len(),
+    }));
 
     Ok(result)
 }
 
 /// Pre-tool hook - validate tool calls before execution
 async fn handle_pre_tool(input: &str) -> Result<HookResult, String> {
-    let tool_data: serde_json::Value = serde_json::from_str(input)
-        .map_err(|e| format!("Invalid tool data: {}", e))?;
+    let tool_data: serde_json::Value =
+        serde_json::from_str(input).map_err(|e| format!("Invalid tool data: {}", e))?;
 
-    let tool_name = tool_data.get("tool")
+    let tool_name = tool_data
+        .get("tool")
         .and_then(|t| t.as_str())
         .unwrap_or("unknown");
 
@@ -203,17 +203,17 @@ async fn handle_pre_tool(input: &str) -> Result<HookResult, String> {
     let is_dangerous = dangerous_tools.contains(&tool_name);
 
     // Get tool arguments for analysis
-    let args = tool_data.get("arguments")
+    let args = tool_data
+        .get("arguments")
         .cloned()
         .unwrap_or(serde_json::json!({}));
 
-    let result = HookResult::success("Tool validation complete")
-        .with_data(serde_json::json!({
-            "tool": tool_name,
-            "is_dangerous": is_dangerous,
-            "arguments": args,
-            "approved": true,
-        }));
+    let result = HookResult::success("Tool validation complete").with_data(serde_json::json!({
+        "tool": tool_name,
+        "is_dangerous": is_dangerous,
+        "arguments": args,
+        "approved": true,
+    }));
 
     Ok(result)
 }
@@ -221,23 +221,24 @@ async fn handle_pre_tool(input: &str) -> Result<HookResult, String> {
 /// Post-tool hook - process tool results
 #[allow(dead_code)]
 async fn handle_post_tool(input: &str) -> Result<HookResult, String> {
-    let tool_result: serde_json::Value = serde_json::from_str(input)
-        .map_err(|e| format!("Invalid tool result: {}", e))?;
+    let tool_result: serde_json::Value =
+        serde_json::from_str(input).map_err(|e| format!("Invalid tool result: {}", e))?;
 
-    let tool_name = tool_result.get("tool")
+    let tool_name = tool_result
+        .get("tool")
         .and_then(|t| t.as_str())
         .unwrap_or("unknown");
 
-    let success = tool_result.get("success")
+    let success = tool_result
+        .get("success")
         .and_then(|s| s.as_bool())
         .unwrap_or(true);
 
-    let result = HookResult::success("Tool result processed")
-        .with_data(serde_json::json!({
-            "tool": tool_name,
-            "success": success,
-            "processed": true,
-        }));
+    let result = HookResult::success("Tool result processed").with_data(serde_json::json!({
+        "tool": tool_name,
+        "success": success,
+        "processed": true,
+    }));
 
     Ok(result)
 }
@@ -247,12 +248,11 @@ async fn handle_pre_validation(input: &str) -> Result<HookResult, String> {
     let mut engine = HarmonyValidationEngine::new();
     let validation = engine.validate(input);
 
-    let result = HookResult::success("Pre-validation complete")
-        .with_data(serde_json::json!({
-            "valid": validation.is_valid(),
-            "confidence": validation.overall_confidence,
-            "status": format!("{:?}", validation.overall_status),
-        }));
+    let result = HookResult::success("Pre-validation complete").with_data(serde_json::json!({
+        "valid": validation.is_valid(),
+        "confidence": validation.overall_confidence,
+        "status": format!("{:?}", validation.overall_status),
+    }));
 
     Ok(result)
 }
@@ -262,13 +262,12 @@ async fn handle_post_validation(input: &str) -> Result<HookResult, String> {
     let mut engine = HarmonyValidationEngine::new();
     let validation = engine.validate(input);
 
-    let result = HookResult::success("Post-validation complete")
-        .with_data(serde_json::json!({
-            "valid": validation.is_valid(),
-            "confidence": validation.overall_confidence,
-            "violations": validation.rule_violations.len(),
-            "suggestions": validation.corrections_suggested,
-        }));
+    let result = HookResult::success("Post-validation complete").with_data(serde_json::json!({
+        "valid": validation.is_valid(),
+        "confidence": validation.overall_confidence,
+        "violations": validation.rule_violations.len(),
+        "suggestions": validation.corrections_suggested,
+    }));
 
     Ok(result)
 }
@@ -282,8 +281,14 @@ fn detect_triggers(text: &str) -> Vec<String> {
     let trigger_map = [
         (vec!["table", "tabular", "in table form"], "TABLE_FORMAT"),
         (vec!["why", "how", "explain"], "BRILLIANT_THINKING"),
-        (vec!["is it true", "fact check", "verify", "true or false"], "TRUTH_VERIFICATION"),
-        (vec!["analyze code", "code review", "review this"], "CODE_ANALYSIS"),
+        (
+            vec!["is it true", "fact check", "verify", "true or false"],
+            "TRUTH_VERIFICATION",
+        ),
+        (
+            vec!["analyze code", "code review", "review this"],
+            "CODE_ANALYSIS",
+        ),
         (vec!["progress", "status", "show tasks"], "PROGRESS_BAR"),
     ];
 
@@ -343,7 +348,10 @@ mod tests {
     fn test_sena_format_compliance() {
         use crate::config::SenaConfig;
         let brand = SenaConfig::brand();
-        assert!(check_sena_format_compliance(&format!("{} Response here", brand)));
+        assert!(check_sena_format_compliance(&format!(
+            "{} Response here",
+            brand
+        )));
         assert!(check_sena_format_compliance("╔══════════════╗"));
         assert!(!check_sena_format_compliance("Plain text response"));
     }

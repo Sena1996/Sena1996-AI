@@ -2,9 +2,9 @@
 //!
 //! Detects when multiple sessions are editing the same files
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 
 use super::state::HubState;
 
@@ -13,7 +13,7 @@ use super::state::HubState;
 pub struct FileConflict {
     pub file_path: String,
     pub sessions: Vec<String>,
-    pub other_session: String,  // For single conflict reporting
+    pub other_session: String, // For single conflict reporting
     pub detected_at: u64,
     pub severity: ConflictSeverity,
 }
@@ -21,9 +21,9 @@ pub struct FileConflict {
 /// Conflict severity levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ConflictSeverity {
-    Warning,   // Same file, different sections likely OK
-    High,      // Same file, likely conflict
-    Critical,  // Same exact location
+    Warning,  // Same file, different sections likely OK
+    High,     // Same file, likely conflict
+    Critical, // Same exact location
 }
 
 impl ConflictSeverity {
@@ -96,7 +96,12 @@ impl ConflictDetector {
     }
 
     /// Check if a file would cause a conflict
-    pub fn check_file(&mut self, file_path: &str, session_id: &str, state: &HubState) -> Option<FileConflict> {
+    pub fn check_file(
+        &mut self,
+        file_path: &str,
+        session_id: &str,
+        state: &HubState,
+    ) -> Option<FileConflict> {
         // Get all sessions working on this file
         let working_sessions = state.who_is_working_on(file_path);
 
@@ -170,7 +175,12 @@ impl ConflictDetector {
     }
 
     /// Try to acquire a lock on a file
-    pub fn acquire_lock(&mut self, file_path: &str, session_id: &str, duration_secs: u64) -> Result<FileLock, String> {
+    pub fn acquire_lock(
+        &mut self,
+        file_path: &str,
+        session_id: &str,
+        duration_secs: u64,
+    ) -> Result<FileLock, String> {
         // Clean up expired locks
         self.cleanup_expired_locks();
 
@@ -219,7 +229,8 @@ impl ConflictDetector {
 
     /// Clean up expired locks
     pub fn cleanup_expired_locks(&mut self) {
-        let expired: Vec<String> = self.locks
+        let expired: Vec<String> = self
+            .locks
             .iter()
             .filter(|(_, lock)| lock.is_expired())
             .map(|(path, _)| path.clone())

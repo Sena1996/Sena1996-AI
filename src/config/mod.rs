@@ -51,7 +51,12 @@ impl UserConfig {
     }
 
     pub fn farewell(&self) -> String {
-        format!("Thank you for using {} v{}! {}", self.prefix, crate::VERSION, self.emoji)
+        format!(
+            "Thank you for using {} v{}! {}",
+            self.prefix,
+            crate::VERSION,
+            self.emoji
+        )
     }
 
     pub fn command_name(&self) -> &str {
@@ -145,7 +150,10 @@ fn default_model() -> String {
 
 fn default_socket_path() -> String {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(".sena").join("hub.sock").to_string_lossy().to_string()
+    home.join(".sena")
+        .join("hub.sock")
+        .to_string_lossy()
+        .to_string()
 }
 
 fn default_timeout() -> u64 {
@@ -218,7 +226,6 @@ impl Default for OutputConfig {
     }
 }
 
-
 impl SenaConfig {
     pub fn config_path() -> PathBuf {
         dirs::home_dir()
@@ -234,30 +241,28 @@ impl SenaConfig {
             return Ok(Self::default());
         }
 
-        let content = fs::read_to_string(&path)
-            .map_err(|e| ConfigError::ReadError(e.to_string()))?;
+        let content =
+            fs::read_to_string(&path).map_err(|e| ConfigError::ReadError(e.to_string()))?;
 
-        toml::from_str(&content)
-            .map_err(|e| ConfigError::ParseError(e.to_string()))
+        toml::from_str(&content).map_err(|e| ConfigError::ParseError(e.to_string()))
     }
 
     pub fn save(&self) -> Result<(), ConfigError> {
         let path = Self::config_path();
 
         if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| ConfigError::WriteError(e.to_string()))?;
+            fs::create_dir_all(parent).map_err(|e| ConfigError::WriteError(e.to_string()))?;
         }
 
-        let content = toml::to_string_pretty(self)
-            .map_err(|e| ConfigError::SerializeError(e.to_string()))?;
+        let content =
+            toml::to_string_pretty(self).map_err(|e| ConfigError::SerializeError(e.to_string()))?;
 
-        fs::write(&path, content)
-            .map_err(|e| ConfigError::WriteError(e.to_string()))
+        fs::write(&path, content).map_err(|e| ConfigError::WriteError(e.to_string()))
     }
 
     pub fn data_dir(&self) -> PathBuf {
-        self.general.data_dir
+        self.general
+            .data_dir
             .as_ref()
             .map(PathBuf::from)
             .unwrap_or_else(|| {

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -33,19 +33,55 @@ impl AgentType {
     pub fn trigger_keywords(&self) -> Vec<&'static str> {
         match self {
             AgentType::Security => vec![
-                "security", "vulnerability", "xss", "sql injection", "auth",
-                "authentication", "authorization", "csrf", "owasp", "hack",
-                "exploit", "secure", "encrypt", "password", "token", "jwt"
+                "security",
+                "vulnerability",
+                "xss",
+                "sql injection",
+                "auth",
+                "authentication",
+                "authorization",
+                "csrf",
+                "owasp",
+                "hack",
+                "exploit",
+                "secure",
+                "encrypt",
+                "password",
+                "token",
+                "jwt",
             ],
             AgentType::Performance => vec![
-                "performance", "slow", "fast", "optimize", "latency", "throughput",
-                "cache", "memory", "cpu", "bottleneck", "scalable", "efficient",
-                "complexity", "big o", "algorithm"
+                "performance",
+                "slow",
+                "fast",
+                "optimize",
+                "latency",
+                "throughput",
+                "cache",
+                "memory",
+                "cpu",
+                "bottleneck",
+                "scalable",
+                "efficient",
+                "complexity",
+                "big o",
+                "algorithm",
             ],
             AgentType::Architecture => vec![
-                "architecture", "design", "pattern", "solid", "structure",
-                "refactor", "module", "component", "layer", "microservice",
-                "monolith", "dependency", "coupling", "cohesion"
+                "architecture",
+                "design",
+                "pattern",
+                "solid",
+                "structure",
+                "refactor",
+                "module",
+                "component",
+                "layer",
+                "microservice",
+                "monolith",
+                "dependency",
+                "coupling",
+                "cohesion",
             ],
             AgentType::General => vec![],
         }
@@ -187,7 +223,9 @@ impl Agent {
         let task_lower = task.to_lowercase();
         let mut findings = Vec::new();
 
-        if task_lower.contains("class") && (task_lower.contains("many") || task_lower.contains("large")) {
+        if task_lower.contains("class")
+            && (task_lower.contains("many") || task_lower.contains("large"))
+        {
             findings.push("🟡 Consider Single Responsibility Principle - split large classes");
         }
         if task_lower.contains("depend") {
@@ -208,7 +246,10 @@ impl Agent {
     }
 
     fn general_analysis(&self, task: &str) -> String {
-        format!("General Analysis:\nTask received: {}\nReady for detailed analysis.", task)
+        format!(
+            "General Analysis:\nTask received: {}\nReady for detailed analysis.",
+            task
+        )
     }
 
     fn generate_recommendations(&self, _task: &str) -> Vec<String> {
@@ -244,9 +285,7 @@ impl Agent {
             return 0.7;
         }
 
-        let matches = keywords.iter()
-            .filter(|k| task_lower.contains(*k))
-            .count();
+        let matches = keywords.iter().filter(|k| task_lower.contains(*k)).count();
 
         let base_confidence = 0.6;
         let keyword_bonus = (matches as f64 / keywords.len() as f64) * 0.3;
@@ -276,7 +315,9 @@ impl AgentPool {
     }
 
     pub fn dispatch(&self, task: &str, agent_type: AgentType) -> AgentResult {
-        let mut agent = self.agents.get(&agent_type)
+        let mut agent = self
+            .agents
+            .get(&agent_type)
             .cloned()
             .unwrap_or_else(|| Agent::new(AgentType::General));
 
@@ -293,11 +334,13 @@ impl AgentPool {
         let mut best_match = AgentType::General;
         let mut best_score = 0;
 
-        for agent_type in [AgentType::Security, AgentType::Performance, AgentType::Architecture] {
+        for agent_type in [
+            AgentType::Security,
+            AgentType::Performance,
+            AgentType::Architecture,
+        ] {
             let keywords = agent_type.trigger_keywords();
-            let score = keywords.iter()
-                .filter(|k| task_lower.contains(*k))
-                .count();
+            let score = keywords.iter().filter(|k| task_lower.contains(*k)).count();
 
             if score > best_score {
                 best_score = score;
@@ -333,7 +376,10 @@ impl AgentResult {
         let mut output = String::new();
 
         output.push_str("╔══════════════════════════════════════════════════════════════╗\n");
-        output.push_str(&format!("║  {}                                             ║\n", self.agent));
+        output.push_str(&format!(
+            "║  {}                                             ║\n",
+            self.agent
+        ));
         output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
         output.push_str(&format!("{}\n\n", self.analysis));

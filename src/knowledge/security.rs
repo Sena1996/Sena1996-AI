@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VulnerabilityType {
@@ -152,13 +152,13 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                 [email]\n\
             );\n\n\
             // ORM with parameter binding\n\
-            const user = await User.findOne({ where: { email } });"
+            const user = await User.findOne({ where: { email } });",
         )
         .with_insecure_example(
             "// String concatenation - VULNERABLE!\n\
             const user = await db.query(\n\
                 `SELECT * FROM users WHERE email = '${email}'`\n\
-            );"
+            );",
         )
         .with_preventions(&[
             "Always use parameterized queries",
@@ -166,7 +166,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Validate and sanitize all user input",
             "Apply principle of least privilege to database accounts",
         ]),
-
         SecurityPattern::new(
             "XSS Prevention",
             "Prevent Cross-Site Scripting by encoding output and sanitizing HTML.",
@@ -181,13 +180,13 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             <div>{userInput}</div>  // Safe!\n\n\
             // Attribute encoding\n\
             import { escape } from 'html-escaper';\n\
-            const safeAttr = escape(userInput);"
+            const safeAttr = escape(userInput);",
         )
         .with_insecure_example(
             "// Raw HTML injection - VULNERABLE!\n\
             element.innerHTML = userInput;\n\n\
             // dangerouslySetInnerHTML without sanitization\n\
-            <div dangerouslySetInnerHTML={{ __html: userInput }} />"
+            <div dangerouslySetInnerHTML={{ __html: userInput }} />",
         )
         .with_preventions(&[
             "Use DOMPurify or similar for HTML sanitization",
@@ -195,7 +194,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Set Content-Security-Policy headers",
             "Use httpOnly cookies to protect tokens",
         ]),
-
         SecurityPattern::new(
             "Command Injection Prevention",
             "Prevent command injection by avoiding shell execution with user input.",
@@ -207,14 +205,14 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             import { execFile } from 'child_process';\n\n\
             execFile('convert', [inputFile, outputFile], (error, stdout) => {\n\
                 // Safe: No shell interpretation\n\
-            });"
+            });",
         )
         .with_insecure_example(
             "// Shell execution - VULNERABLE!\n\
             import { exec } from 'child_process';\n\n\
             exec(`convert ${userFile} output.png`, (error, stdout) => {\n\
                 // Vulnerable if userFile = 'input.png; rm -rf /'\n\
-            });"
+            });",
         )
         .with_preventions(&[
             "Use execFile instead of exec",
@@ -222,7 +220,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Whitelist allowed commands and arguments",
             "Use libraries instead of shell commands when possible",
         ]),
-
         SecurityPattern::new(
             "Path Traversal Prevention",
             "Prevent path traversal by validating and normalizing file paths.",
@@ -239,13 +236,13 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                     throw new Error('Invalid file path');\n\
                 }\n\n\
                 return fs.readFile(fullPath);\n\
-            }"
+            }",
         )
         .with_insecure_example(
             "function serveFile(filename: string) {\n\
                 // VULNERABLE: filename = '../../../etc/passwd'\n\
                 return fs.readFile(`/var/www/uploads/${filename}`);\n\
-            }"
+            }",
         )
         .with_preventions(&[
             "Normalize paths with path.normalize()",
@@ -253,7 +250,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Use a whitelist of allowed file names when possible",
             "Avoid including user input in file paths",
         ]),
-
         SecurityPattern::new(
             "JWT Security",
             "Secure JWT implementation with short-lived tokens and proper validation.",
@@ -271,7 +267,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                 { userId: user.id, tokenFamily: uuidv4() },\n\
                 process.env.REFRESH_SECRET,\n\
                 { expiresIn: '7d', algorithm: 'HS256' }\n\
-            );"
+            );",
         )
         .with_insecure_example(
             "// VULNERABLE!\n\
@@ -279,7 +275,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                 { userId: user.id },\n\
                 'hardcoded-secret',  // Hardcoded secret!\n\
                 { expiresIn: '30d' } // Too long!\n\
-            );"
+            );",
         )
         .with_preventions(&[
             "Use short-lived access tokens (15 minutes)",
@@ -287,7 +283,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Always specify algorithm explicitly",
             "Implement refresh token rotation",
         ]),
-
         SecurityPattern::new(
             "Password Hashing",
             "Use modern password hashing algorithms like bcrypt or Argon2.",
@@ -302,7 +297,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             // Argon2 (even better)\n\
             import argon2 from 'argon2';\n\
             const hash = await argon2.hash(password);\n\
-            const valid = await argon2.verify(hash, password);"
+            const valid = await argon2.verify(hash, password);",
         )
         .with_insecure_example(
             "// VULNERABLE!\n\
@@ -310,7 +305,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             // Problems:\n\
             // - MD5 is broken\n\
             // - No salt\n\
-            // - Too fast (enables brute force)"
+            // - Too fast (enables brute force)",
         )
         .with_preventions(&[
             "Use bcrypt with at least 12 rounds",
@@ -318,7 +313,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Never use MD5, SHA1, or SHA256 for passwords",
             "Always use a salt (bcrypt/Argon2 handle this automatically)",
         ]),
-
         SecurityPattern::new(
             "Session Security",
             "Configure sessions with secure cookie settings.",
@@ -336,7 +330,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                     sameSite: 'strict',  // CSRF protection\n\
                     maxAge: 3600000      // 1 hour\n\
                 }\n\
-            }));"
+            }));",
         )
         .with_insecure_example(
             "// VULNERABLE!\n\
@@ -346,7 +340,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                     secure: false,    // Works on HTTP!\n\
                     httpOnly: false   // XSS vulnerable!\n\
                 }\n\
-            }));"
+            }));",
         )
         .with_preventions(&[
             "Set secure: true to require HTTPS",
@@ -354,7 +348,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Set sameSite: 'strict' for CSRF protection",
             "Use short session lifetimes",
         ]),
-
         SecurityPattern::new(
             "CORS Configuration",
             "Configure CORS restrictively to prevent unauthorized cross-origin requests.",
@@ -368,13 +361,13 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                 methods: ['GET', 'POST', 'PUT', 'DELETE'],\n\
                 allowedHeaders: ['Content-Type', 'Authorization'],\n\
                 maxAge: 600\n\
-            }));"
+            }));",
         )
         .with_insecure_example(
             "// VULNERABLE: Allows all origins!\n\
             app.use(cors());\n\n\
             // Also vulnerable:\n\
-            app.use(cors({ origin: '*' }));"
+            app.use(cors({ origin: '*' }));",
         )
         .with_preventions(&[
             "Explicitly list allowed origins",
@@ -382,7 +375,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Limit allowed methods and headers",
             "Set appropriate maxAge for preflight caching",
         ]),
-
         SecurityPattern::new(
             "Rate Limiting",
             "Implement rate limiting to prevent brute force and DoS attacks.",
@@ -404,14 +396,14 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                 skipSuccessfulRequests: true\n\
             });\n\n\
             app.use('/api/', limiter);\n\
-            app.post('/api/login', authLimiter, login);"
+            app.post('/api/login', authLimiter, login);",
         )
         .with_insecure_example(
             "// No rate limiting - VULNERABLE to:\n\
             // - Brute force attacks\n\
             // - DoS attacks\n\
             // - Credential stuffing\n\
-            app.post('/api/login', login);"
+            app.post('/api/login', login);",
         )
         .with_preventions(&[
             "Apply rate limiting to all API endpoints",
@@ -419,7 +411,6 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
             "Consider using a distributed rate limiter for clustered apps",
             "Implement exponential backoff for repeated failures",
         ]),
-
         SecurityPattern::new(
             "API Key Security",
             "Properly validate and manage API keys with constant-time comparison.",
@@ -441,7 +432,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                     return res.status(401).json({ error: 'Invalid API key' });\n\
                 }\n\n\
                 next();\n\
-            }"
+            }",
         )
         .with_insecure_example(
             "// VULNERABLE!\n\
@@ -451,7 +442,7 @@ pub fn default_patterns() -> Vec<SecurityPattern> {
                     return res.status(401).send('Invalid key');\n\
                 }\n\
                 next();\n\
-            }"
+            }",
         )
         .with_preventions(&[
             "Store API key hashes, not plaintext keys",
@@ -481,6 +472,9 @@ mod tests {
 
     #[test]
     fn test_vulnerability_type_display() {
-        assert_eq!(format!("{}", VulnerabilityType::SqlInjection), "SQL Injection");
+        assert_eq!(
+            format!("{}", VulnerabilityType::SqlInjection),
+            "SQL Injection"
+        );
     }
 }
