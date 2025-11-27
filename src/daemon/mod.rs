@@ -6,6 +6,7 @@ use crate::config::SenaConfig;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+#[cfg(unix)]
 use std::process::{Command, Stdio};
 
 /// PID file location
@@ -23,10 +24,9 @@ fn log_file() -> PathBuf {
 /// Check if daemon is running
 pub fn is_running() -> bool {
     if let Ok(pid_str) = fs::read_to_string(pid_file()) {
-        if let Ok(pid) = pid_str.trim().parse::<i32>() {
-            // Check if process exists (Unix)
-            #[cfg(unix)]
-            {
+        #[cfg(unix)]
+        {
+            if let Ok(pid) = pid_str.trim().parse::<i32>() {
                 let result = Command::new("kill")
                     .args(["-0", &pid.to_string()])
                     .stdout(Stdio::null())
@@ -35,12 +35,12 @@ pub fn is_running() -> bool {
 
                 return result.map(|s| s.success()).unwrap_or(false);
             }
+        }
 
-            #[cfg(not(unix))]
-            {
-                // On non-Unix, just check if file exists
-                return true;
-            }
+        #[cfg(not(unix))]
+        {
+            let _ = pid_str;
+            return true;
         }
     }
     false

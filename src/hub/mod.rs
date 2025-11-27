@@ -13,6 +13,7 @@
 pub mod conflicts;
 pub mod messages;
 pub mod session;
+#[cfg(unix)]
 pub mod socket;
 pub mod state;
 pub mod tasks;
@@ -20,6 +21,7 @@ pub mod tasks;
 pub use conflicts::{ConflictDetector, FileConflict};
 pub use messages::{Broadcast, Message, MessageQueue};
 pub use session::{Session, SessionRegistry, SessionRole, SessionStatus};
+#[cfg(unix)]
 pub use socket::{HubClient, HubServer};
 pub use state::{HubState, SharedState};
 pub use tasks::{Task, TaskBoard, TaskPriority, TaskStatus};
