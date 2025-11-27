@@ -167,10 +167,10 @@ Connectors: ├┤┬┴┼
 
 The following knowledge files are available:
 
-@{SENA_HOME}/memory/reasoning-frameworks.md
-@{SENA_HOME}/memory/security-patterns.md
-@{SENA_HOME}/memory/performance-patterns.md
-@{SENA_HOME}/memory/architecture-patterns.md
+@~/.claude/memory/reasoning-frameworks.md
+@~/.claude/memory/security-patterns.md
+@~/.claude/memory/performance-patterns.md
+@~/.claude/memory/architecture-patterns.md
 
 ---
 

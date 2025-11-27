@@ -1,6 +1,6 @@
 Show SENA metrics.
 
-Execute: `{SENA_HOME}/target/release/sena metrics all`
+Execute: `sena metrics all`
 
 Display comprehensive metrics:
 - Health metrics

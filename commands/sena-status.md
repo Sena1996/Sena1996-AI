@@ -1,6 +1,6 @@
 Show SENA system status.
 
-Execute: `{SENA_HOME}/target/release/sena health --detailed`
+Execute: `sena health --detailed`
 
 Display the results showing:
 - System health

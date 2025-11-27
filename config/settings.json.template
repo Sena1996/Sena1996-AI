@@ -2,28 +2,16 @@
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "{SENA_HOME}/hooks/user-prompt-submit.sh"
-      }
-    ],
-    "AssistantResponse": [
-      {
-        "command": "{SENA_HOME}/hooks/sena-enforcer.sh"
-      }
-    ],
-    "PostToolUse": [
-      {
-        "command": "{SENA_HOME}/hooks/post-tool-use.sh"
+        "command": "sena hook user-prompt-submit"
       }
     ]
   },
   "permissions": {
     "allow": [
+      "Bash(sena *)",
       "Bash(git *)",
       "Bash(cargo *)",
-      "Bash(npm *)",
-      "Read(*)",
-      "Write(*)",
-      "Edit(*)"
+      "Bash(npm *)"
     ],
     "deny": []
   }

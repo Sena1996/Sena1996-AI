@@ -244,8 +244,8 @@ Add to `~/.claude/settings.json`:
   },
   "permissions": {
     "allow": [
-      "Bash(sena:*)",
-      "Bash(./target/release/sena:*)"
+      "Bash(sena *)",
+      "Bash(./target/release/sena *)"
     ]
   }
 }

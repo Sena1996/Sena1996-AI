@@ -1,6 +1,6 @@
 Run SENA Millennium Test.
 
-Execute: `{SENA_HOME}/target/release/sena process "millennium test" -t test`
+Execute: `sena process "millennium test" -t test`
 
 Display test results showing the 7 Ancient Wisdom Layers evaluation:
 - First Principles (Eratosthenes)

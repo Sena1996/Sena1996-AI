@@ -472,14 +472,10 @@ setup_claude_code_config() {
 {
   "permissions": {
     "allow": [
-      "Bash(sena:*)",
-      "Bash(sena)",
-      "Bash($USER_COMMAND:*)",
-      "Bash($USER_COMMAND)",
-      "Bash($SENA_PATH:*)",
-      "Bash($SENA_PATH)",
-      "Bash(./target/release/sena:*)",
-      "Bash(./target/release/sena)"
+      "Bash(sena *)",
+      "Bash($USER_COMMAND *)",
+      "Bash($SENA_PATH *)",
+      "Bash(./target/release/sena *)"
     ]
   },
   "hooks": {
@@ -633,14 +629,10 @@ if 'allow' not in settings['permissions']:
     settings['permissions']['allow'] = []
 
 new_perms = [
-    "Bash(sena:*)",
-    "Bash(sena)",
-    f"Bash({user_command}:*)",
-    f"Bash({user_command})",
-    f"Bash({sena_path}:*)",
-    f"Bash({sena_path})",
-    "Bash(./target/release/sena:*)",
-    "Bash(./target/release/sena)"
+    "Bash(sena *)",
+    f"Bash({user_command} *)",
+    f"Bash({sena_path} *)",
+    "Bash(./target/release/sena *)"
 ]
 for perm in new_perms:
     if perm not in settings['permissions']['allow']:
