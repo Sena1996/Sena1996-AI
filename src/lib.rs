@@ -132,10 +132,13 @@ pub use output::{
 
 // Re-export collaboration hub
 pub use hub::{
-    Broadcast, ConflictDetector, FileConflict, Hub, HubClient, HubConfig, HubServer, HubState,
-    HubStatus, Message, MessageQueue, Session, SessionRegistry, SessionRole, SessionStatus,
-    SharedState, Task, TaskBoard, TaskPriority, TaskStatus,
+    Broadcast, ConflictDetector, FileConflict, Hub, HubConfig, HubState, HubStatus, Message,
+    MessageQueue, Session, SessionRegistry, SessionRole, SessionStatus, SharedState, Task,
+    TaskBoard, TaskPriority, TaskStatus,
 };
+
+#[cfg(unix)]
+pub use hub::{HubClient, HubServer};
 
 // Re-export knowledge system
 pub use knowledge::{
