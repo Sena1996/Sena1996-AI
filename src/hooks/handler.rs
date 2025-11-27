@@ -55,36 +55,88 @@ pub async fn handle_hook(hook_type: HookType, input: &str) -> Result<HookResult,
 /// Pre-prompt hook - analyze user input before Claude processes
 async fn handle_pre_prompt(input: &str) -> Result<HookResult, String> {
     let ai = AutoIntegration::new();
-
-    // Detect format requirements
     let detected = ai.detect_format(input);
-
-    // Check for SENA trigger keywords
     let triggers = detect_triggers(input);
-
-    // Check inbox for messages from other sessions
     let inbox_messages = check_inbox_messages();
+    let is_sena_command = detect_sena_command(input);
 
-    let mut message = String::from("Pre-prompt analysis complete");
+    let mut message = build_sena_context();
+
     if !inbox_messages.is_empty() {
-        message = format!(
-            "You have {} new message(s) from other sessions:\n{}",
+        message.push_str(&format!(
+            "\n\nINBOX ({} messages):\n{}",
             inbox_messages.len(),
             inbox_messages.join("\n")
-        );
+        ));
+    }
+
+    if is_sena_command {
+        message.push_str("\n\nDETECTED: User wants to run a SENA command. Use Bash tool to execute it.");
     }
 
     let result = HookResult::success(&message)
         .with_data(serde_json::json!({
             "detected_format": detected.as_ref().map(|f| f.name()),
             "triggers": triggers,
-            "input_length": input.len(),
-            "word_count": input.split_whitespace().count(),
+            "is_sena_command": is_sena_command,
             "inbox_count": inbox_messages.len(),
-            "inbox_messages": inbox_messages,
         }));
 
     Ok(result)
+}
+
+fn build_sena_context() -> String {
+    use crate::config::SenaConfig;
+    let config = SenaConfig::global();
+    let user = &config.user;
+
+    format!(r#"SENA Controller v{} is installed and ready.
+
+SENA COMMANDS (execute with Bash tool):
+- sena health              : System health check
+- sena who                 : List active sessions
+- sena session list        : List all sessions with IDs
+- sena session start --name 'Name' --role <role> : Start session (roles: general, backend, web, android, ios, iot)
+- sena session end --id <id> : End session
+- sena tell <Name> "msg"   : Send message to session (use session name, not ID)
+- sena inbox               : Check messages
+- sena task new "title" --to <Name> : Create task
+- sena task list           : List tasks
+- sena think "question"    : Quick analysis
+- sena think --depth deep "question" : Deep analysis
+- sena agent security "code" : Security analysis
+- sena backend/ios/android/iot/web <action> <code> : Domain agents
+
+RULES:
+- Each role can have only ONE active session
+- Use session NAME (not ID) for tell/task commands
+- All sena commands are auto-approved (no bash prompts needed)
+
+User: {} | Prefix: {} {}"#,
+        crate::VERSION,
+        user.name,
+        user.prefix,
+        user.emoji
+    )
+}
+
+fn detect_sena_command(input: &str) -> bool {
+    let lower = input.to_lowercase().trim().to_string();
+    lower.starts_with("sena ")
+        || lower == "sena"
+        || lower.starts_with("sena session")
+        || lower.starts_with("sena health")
+        || lower.starts_with("sena who")
+        || lower.starts_with("sena tell")
+        || lower.starts_with("sena inbox")
+        || lower.starts_with("sena task")
+        || lower.starts_with("sena think")
+        || lower.starts_with("sena agent")
+        || lower.starts_with("sena backend")
+        || lower.starts_with("sena ios")
+        || lower.starts_with("sena android")
+        || lower.starts_with("sena iot")
+        || lower.starts_with("sena web")
 }
 
 fn check_inbox_messages() -> Vec<String> {
