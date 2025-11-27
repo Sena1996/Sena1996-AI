@@ -1,4 +1,4 @@
-# SENA1996-AI Elite Coding Standards v9.0.4
+# SENA1996-AI 🦁 Elite Coding Standards
 
 **MANDATORY RULES - STRICT ENFORCEMENT**
 
@@ -7,7 +7,7 @@
 ## RULE 0: SELF-REMINDER (CRITICAL)
 
 **YOU MUST** acknowledge at the start of EVERY coding response:
-> "Following SENA Elite Standards v9.0.4"
+> "Following SENA1996-AI 🦁 Elite Standards"
 
 This rule cannot be skipped. It ensures all other rules are remembered.
 
@@ -141,7 +141,7 @@ Before EVERY commit:
 
 ---
 
-**SENA 🦁 Elite Coding Standards v9.0.4**
+**SENA1996-AI 🦁 Elite Standards - Helps to manage your AI**
 
 IMPORTANT: These rules are MANDATORY. Claude MUST follow them.
 
