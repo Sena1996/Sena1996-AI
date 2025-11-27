@@ -1,0 +1,87 @@
+name: Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'desktop-v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-tauri:
+    name: Build Desktop App
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+            target: aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+            target: x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ''
+            target: x86_64-unknown-linux-gnu
+          - platform: windows-latest
+            args: ''
+            target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        working-directory: sena-ui
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: sena-ui
+        run: npm run build
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: sena-ui
+          tagName: desktop-v__VERSION__
+          releaseName: 'SENA Desktop v__VERSION__'
+          releaseBody: |
+            ## SENA Desktop Application
+
+            Cross-platform AI Collaboration Hub built with Tauri 2.0.
+
+            ### Downloads
+            - **macOS (Apple Silicon)**: `.dmg` for M1/M2/M3 Macs
+            - **macOS (Intel)**: `.dmg` for Intel Macs
+            - **Windows**: `.msi` installer or `.exe`
+            - **Linux**: `.AppImage` or `.deb`
+
+            ### Features
+            - Multi-provider AI chat (Claude, OpenAI, Gemini, Ollama, Mistral)
+            - AI-to-AI collaboration sessions
+            - Provider health monitoring
+            - Native desktop performance
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

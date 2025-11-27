@@ -1,0 +1,39 @@
+[package]
+name = "sena-providers"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sena1996 <sena1996@github.com>"]
+description = "Multi-AI provider integration for Sena1996 AI Tool"
+license = "MIT"
+repository = "https://github.com/Sena1996/Sena1996-AI"
+keywords = ["ai", "llm", "claude", "openai", "gemini", "ollama"]
+
+[features]
+default = ["claude", "openai", "gemini", "ollama"]
+claude = []
+openai = []
+gemini = []
+ollama = []
+mistral = []
+all-providers = ["claude", "openai", "gemini", "ollama", "mistral"]
+
+[dependencies]
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures = "0.3"
+thiserror = "1.0"
+tracing = "0.1"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio-stream = "0.1"
+bytes = "1.0"
+pin-project-lite = "0.2"
+toml = "0.8"
+dirs-next = "2.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.6"

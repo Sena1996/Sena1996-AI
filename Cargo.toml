@@ -1,6 +1,11 @@
+[workspace]
+members = [".", "crates/sena-providers", "crates/sena-collab"]
+exclude = ["sena-ui/src-tauri"]
+resolver = "2"
+
 [package]
 name = "sena1996-ai"
-version = "11.0.2"
+version = "12.0.0"
 edition = "2021"
 authors = ["Sena1996 <sena1996@github.com>"]
 description = "Sena1996 AI Tool - Make Your AI Collaborative and Smarter"
@@ -86,6 +91,12 @@ rand = "0.8"
 
 # Base64 encoding
 base64 = "0.21"
+
+# Multi-provider AI integration
+sena-providers = { version = "0.1.0", path = "crates/sena-providers" }
+
+# AI-to-AI collaboration
+sena-collab = { version = "0.1.0", path = "crates/sena-collab" }
 
 [dev-dependencies]
 tokio-test = "0.4"

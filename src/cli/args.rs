@@ -267,6 +267,18 @@ pub enum Commands {
         #[arg(short, long, default_value_t = 5, help = "Discovery timeout in seconds")]
         timeout: u64,
     },
+
+    #[command(about = "AI Provider management")]
+    Provider {
+        #[command(subcommand)]
+        action: ProviderAction,
+    },
+
+    #[command(about = "AI-to-AI collaboration")]
+    Collab {
+        #[command(subcommand)]
+        action: CollabAction,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -568,6 +580,45 @@ pub enum NetworkAction {
 }
 
 #[derive(Subcommand, Debug, Clone)]
+pub enum ProviderAction {
+    #[command(about = "List all available AI providers")]
+    List,
+
+    #[command(about = "Show provider status")]
+    Status,
+
+    #[command(about = "List all available models")]
+    Models {
+        #[arg(short, long, help = "Filter by provider")]
+        provider: Option<String>,
+    },
+
+    #[command(about = "Chat with an AI provider")]
+    Chat {
+        #[arg(help = "Message to send")]
+        message: String,
+
+        #[arg(short, long, help = "Provider to use")]
+        provider: Option<String>,
+
+        #[arg(short, long, help = "Model to use")]
+        model: Option<String>,
+    },
+
+    #[command(about = "Set default provider")]
+    Default {
+        #[arg(help = "Provider ID")]
+        provider_id: String,
+    },
+
+    #[command(about = "Test provider connectivity")]
+    Test {
+        #[arg(help = "Provider to test (or 'all')")]
+        provider: String,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
 pub enum PeerAction {
     #[command(about = "List known peers")]
     List {
@@ -627,6 +678,81 @@ pub enum PeerAction {
 
         #[arg(short, long, default_value_t = 9876, help = "Port")]
         port: u16,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum CollabAction {
+    #[command(about = "Create a new collaboration session")]
+    New {
+        #[arg(help = "Session name")]
+        name: String,
+
+        #[arg(short, long, default_value = "claude", help = "Host provider")]
+        provider: String,
+    },
+
+    #[command(about = "List active collaboration sessions")]
+    List,
+
+    #[command(about = "Join an existing session")]
+    Join {
+        #[arg(help = "Session ID")]
+        session_id: String,
+
+        #[arg(short, long, default_value = "openai", help = "Provider to join as")]
+        provider: String,
+    },
+
+    #[command(about = "Start a session")]
+    Start {
+        #[arg(help = "Session ID")]
+        session_id: String,
+    },
+
+    #[command(about = "Send message to session")]
+    Send {
+        #[arg(help = "Session ID")]
+        session_id: String,
+
+        #[arg(help = "Message content")]
+        message: String,
+
+        #[arg(short, long, help = "Sender agent ID")]
+        from: Option<String>,
+    },
+
+    #[command(about = "Broadcast to all agents and get responses")]
+    Broadcast {
+        #[arg(help = "Session ID")]
+        session_id: String,
+
+        #[arg(help = "Message to broadcast")]
+        message: String,
+    },
+
+    #[command(about = "Request analysis from specific provider")]
+    Analyze {
+        #[arg(help = "Session ID")]
+        session_id: String,
+
+        #[arg(help = "Target provider")]
+        provider: String,
+
+        #[arg(help = "Analysis request")]
+        request: String,
+    },
+
+    #[command(about = "Show session details")]
+    Info {
+        #[arg(help = "Session ID")]
+        session_id: String,
+    },
+
+    #[command(about = "End a session")]
+    End {
+        #[arg(help = "Session ID")]
+        session_id: String,
     },
 }
 

@@ -1,26 +1,32 @@
-# Sena1996 AI Tool 🦁 - Usage Guide
+# Sena1996 AI Tool 🦁 - Complete Usage Guide
 
 ## Make Your AI Collaborative and Smarter™
 
-Complete guide to using Sena1996 AI Tool with Claude Code.
+**Version 12.0.0** - Complete guide to using Sena1996 AI Tool with Claude Code.
 
 ---
 
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Network Collaboration](#network-collaboration)
-3. [Session Management](#session-management)
-4. [Cross-Session Messaging](#cross-session-messaging)
-5. [Task Management](#task-management)
-6. [Domain Agents](#domain-agents)
-7. [Intelligence System](#intelligence-system)
-8. [Knowledge System](#knowledge-system)
-9. [Evolution System](#evolution-system)
-10. [Health & Metrics](#health--metrics)
-11. [Hooks & MCP](#hooks--mcp)
-12. [Configuration](#configuration)
-13. [Troubleshooting](#troubleshooting)
+2. [Multi-AI Provider Integration](#multi-ai-provider-integration)
+3. [AI-to-AI Collaboration](#ai-to-ai-collaboration)
+4. [Consensus Voting System](#consensus-voting-system)
+5. [Specialist Routing](#specialist-routing)
+6. [Network Collaboration](#network-collaboration)
+7. [Session Management](#session-management)
+8. [Cross-Session Messaging](#cross-session-messaging)
+9. [Task Management](#task-management)
+10. [Domain Agents](#domain-agents)
+11. [Intelligence System](#intelligence-system)
+12. [Knowledge System](#knowledge-system)
+13. [Evolution System](#evolution-system)
+14. [Health & Metrics](#health--metrics)
+15. [Desktop Application](#desktop-application)
+16. [Hooks & MCP](#hooks--mcp)
+17. [Configuration](#configuration)
+18. [Troubleshooting](#troubleshooting)
+19. [Quick Reference](#quick-reference)
 
 ---
 
@@ -42,8 +48,300 @@ cp target/release/sena ~/.local/bin/sena
 
 ### Verify Installation
 ```bash
-sena --version
-sena health
+sena --version    # Should show: sena 12.0.0
+sena health       # System health check
+```
+
+### Environment Setup
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export PATH="$HOME/.local/bin:$PATH"
+
+# API Keys for multi-provider support
+export ANTHROPIC_API_KEY="your-anthropic-key"
+export OPENAI_API_KEY="your-openai-key"
+export GOOGLE_API_KEY="your-google-key"
+export MISTRAL_API_KEY="your-mistral-key"
+```
+
+---
+
+## Multi-AI Provider Integration
+
+SENA supports multiple AI providers for enhanced capabilities and fallback options.
+
+### Supported Providers
+
+| Provider | Environment Variable | Default Model | Features |
+|----------|---------------------|---------------|----------|
+| **Claude (Anthropic)** | `ANTHROPIC_API_KEY` | claude-sonnet-4-5 | Streaming, Tools, Vision |
+| **OpenAI** | `OPENAI_API_KEY` | gpt-4.1 | Streaming, Tools, Vision |
+| **Google Gemini** | `GOOGLE_API_KEY` | gemini-2.5-flash | Streaming, Tools, Vision |
+| **Ollama (Local)** | None (localhost:11434) | llama3.2 | Local inference |
+| **Mistral AI** | `MISTRAL_API_KEY` | mistral-large-latest | Streaming, Tools |
+
+### Provider Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena provider list` | List all configured providers |
+| `sena provider models` | List available models across all providers |
+| `sena provider models --provider claude` | List models for specific provider |
+| `sena provider status` | Check connectivity for all providers |
+| `sena provider set-default <id>` | Set default provider |
+| `sena provider test <id>` | Test a specific provider |
+
+### Provider Configuration File
+
+Create `~/.sena/providers.toml`:
+```toml
+[providers.claude]
+provider_id = "claude"
+enabled = true
+api_key_env = "ANTHROPIC_API_KEY"
+default_model = "claude-sonnet-4-5-20250929"
+
+[providers.openai]
+provider_id = "openai"
+enabled = true
+api_key_env = "OPENAI_API_KEY"
+default_model = "gpt-4.1"
+
+[providers.gemini]
+provider_id = "gemini"
+enabled = true
+api_key_env = "GOOGLE_API_KEY"
+default_model = "gemini-2.5-flash"
+
+[providers.ollama]
+provider_id = "ollama"
+enabled = true
+base_url = "http://localhost:11434"
+default_model = "llama3.2"
+
+[providers.mistral]
+provider_id = "mistral"
+enabled = true
+api_key_env = "MISTRAL_API_KEY"
+default_model = "mistral-large-latest"
+
+default_provider = "claude"
+fallback_chain = ["openai", "gemini", "ollama"]
+cost_optimization = false
+```
+
+### Examples
+```bash
+# List all providers and their status
+sena provider list
+
+# Check which models are available
+sena provider models
+
+# Test OpenAI connectivity
+sena provider test openai
+
+# Set Claude as default
+sena provider set-default claude
+```
+
+---
+
+## AI-to-AI Collaboration
+
+Create collaboration sessions where multiple AI agents work together on tasks.
+
+### Collaboration Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena collab create "Name" --host <provider>` | Create new collaboration session |
+| `sena collab join <session-id> --provider <id>` | Join session with specified provider |
+| `sena collab start <session-id>` | Start the collaboration |
+| `sena collab broadcast <session-id> "message"` | Send message to all participants |
+| `sena collab send <session-id> <agent-id> "msg"` | Send to specific agent |
+| `sena collab list` | List all active sessions |
+| `sena collab info <session-id>` | Get session details |
+| `sena collab end <session-id>` | End collaboration session |
+
+### Creating a Collaboration Session
+```bash
+# Create session with Claude as host
+sena collab create "Code Review Session" --host claude
+
+# Output: Session created: collab_abc12345
+# Session ID: collab_abc12345
+# Host: claude (claude-sonnet-4-5)
+```
+
+### Adding Participants
+```bash
+# Add OpenAI GPT-4 to the session
+sena collab join collab_abc12345 --provider openai
+
+# Add Gemini
+sena collab join collab_abc12345 --provider gemini
+
+# List participants
+sena collab info collab_abc12345
+```
+
+### Starting Collaboration
+```bash
+# Start the session (all participants ready)
+sena collab start collab_abc12345
+
+# Broadcast a task to all AI agents
+sena collab broadcast collab_abc12345 "Review this code for security issues: [code]"
+
+# Each AI will respond with their analysis
+```
+
+### Example Workflow
+```bash
+# Step 1: Create session
+sena collab create "Architecture Review" --host claude
+
+# Step 2: Add participants
+sena collab join collab_abc12345 --provider openai
+sena collab join collab_abc12345 --provider gemini
+
+# Step 3: Start collaboration
+sena collab start collab_abc12345
+
+# Step 4: Send task
+sena collab broadcast collab_abc12345 "Evaluate microservices vs monolith for our use case"
+
+# Step 5: Each AI provides their perspective
+# Claude: Focuses on code quality and maintainability
+# GPT-4: Provides operational considerations
+# Gemini: Analyzes data flow implications
+
+# Step 6: End session when done
+sena collab end collab_abc12345
+```
+
+---
+
+## Consensus Voting System
+
+Enable democratic decision-making between AI agents.
+
+### Voting Strategies
+
+| Strategy | Threshold | Description |
+|----------|-----------|-------------|
+| `unanimous` | 100% | All participants must approve |
+| `majority` | >50% | More than half must approve |
+| `supermajority` | >67% | Two-thirds must approve |
+| `weighted` | >50% weighted | Votes weighted by expertise |
+
+### Consensus Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena collab propose "Title" --strategy <type>` | Create proposal |
+| `sena collab vote <proposal-id> <choice>` | Cast vote |
+| `sena collab vote <id> approve --reasoning "why"` | Vote with reasoning |
+| `sena collab proposals <session-id>` | List proposals |
+| `sena collab result <proposal-id>` | Get voting result |
+
+### Vote Choices
+- `approve` - Vote in favor
+- `reject` - Vote against
+- `abstain` - No vote (doesn't count toward threshold)
+
+### Example: Architecture Decision
+```bash
+# Create proposal for architecture decision
+sena collab propose "Should we use microservices?" \
+  --session collab_abc12345 \
+  --strategy supermajority
+
+# Output: Proposal created: prop_xyz789
+
+# Each AI agent votes
+# Claude votes:
+sena collab vote prop_xyz789 approve \
+  --reasoning "Better scalability and team autonomy"
+
+# GPT-4 votes:
+sena collab vote prop_xyz789 approve \
+  --reasoning "Easier deployment and fault isolation"
+
+# Gemini votes:
+sena collab vote prop_xyz789 reject \
+  --reasoning "Increased complexity for current team size"
+
+# Check result
+sena collab result prop_xyz789
+# Result: APPROVED (66.7% approval, threshold: 67%)
+```
+
+### Weighted Voting Example
+```bash
+# Create weighted proposal (experts have more influence)
+sena collab propose "Use Rust for backend?" \
+  --session collab_abc12345 \
+  --strategy weighted
+
+# Claude (weight: 2.0 - Rust expert)
+sena collab vote prop_xyz789 approve --weight 2.0
+
+# GPT-4 (weight: 1.0 - General)
+sena collab vote prop_xyz789 reject --weight 1.0
+
+# Result: APPROVED (weighted score: 2.0 vs 1.0)
+```
+
+---
+
+## Specialist Routing
+
+SENA automatically routes tasks to the best AI based on domain expertise.
+
+### Task Domains
+
+| Domain | Detection Keywords | Best Specialist |
+|--------|-------------------|-----------------|
+| `CodeGeneration` | implement, create function, write code | Claude |
+| `CodeReview` | review, refactor, code quality | Claude |
+| `Security` | security, vulnerability, exploit, CVE | Claude |
+| `Performance` | performance, optimize, benchmark, latency | Claude |
+| `Architecture` | architecture, design pattern, system design | Claude |
+| `Testing` | test, spec, coverage, mock | Claude |
+| `Documentation` | document, readme, api doc | Claude/GPT-4 |
+| `NaturalLanguage` | translate, summarize, explain, write | GPT-4 |
+| `Creative` | creative, story, design, brainstorm | GPT-4 |
+| `DataAnalysis` | data, analyze, statistic, chart | Gemini |
+| `Mathematics` | math, equation, calculate, proof | Gemini |
+| `Research` | research, investigate, find information | GPT-4/Gemini |
+
+### Routing Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `BestMatch` | Route to highest expertise score (default) |
+| `RoundRobin` | Distribute evenly across agents |
+| `LeastLoaded` | Route to agent with lowest current load |
+| `Random` | Random selection from available agents |
+
+### How Routing Works
+```bash
+# Task: "Review this code for security vulnerabilities"
+# Domain detected: Security
+# Best match: Claude (score: 0.95)
+# Task routed to Claude
+
+# Task: "Write a creative story about AI"
+# Domain detected: Creative
+# Best match: GPT-4 (score: 0.92)
+# Task routed to GPT-4
+
+# Task: "Analyze this dataset for trends"
+# Domain detected: DataAnalysis
+# Best match: Gemini (score: 0.93)
+# Task routed to Gemini
 ```
 
 ---
@@ -86,24 +384,32 @@ sena discover --timeout 10              # Extended discovery (10 seconds)
 | `sena peer revoke <id>` | Revoke authorization |
 | `sena peer ping <id>` | Ping peer |
 
-### Connection Flow
+### Complete Connection Flow
 ```bash
-# On Machine A:
+# On Machine A (192.168.1.50):
 sena network start --name "Workstation"
 sena peer list
-# Note your peer ID
+# Note your peer ID: peer_abc123
 
-# On Machine B:
+# On Machine B (192.168.1.100):
 sena discover
-# See Machine A in list
+# See "Workstation" at 192.168.1.50
 sena peer add 192.168.1.50 --name "Workstation"
 
 # Back on Machine A:
-sena peer authorize <machine-b-peer-id>
-# Share the generated token with Machine B
+sena peer list
+# See Machine B's request
+sena peer authorize peer_xyz789
+# Output: Token: eyJhbGciOiJIUzI1NiJ9...
+
+# Share the token with Machine B securely
 
 # On Machine B:
-sena peer connect 192.168.1.50 --token <auth-token>
+sena peer connect 192.168.1.50 --token eyJhbGciOiJIUzI1NiJ9...
+# Output: Connected to Workstation!
+
+# Now both machines can collaborate
+sena tell Workstation "Hello from Machine B!"
 ```
 
 ---
@@ -133,13 +439,16 @@ Sessions allow multiple Claude Code windows to collaborate.
 # Start backend session
 sena session start --name 'BackendDev' --role backend
 
-# Start Android session
+# Start Android session in another terminal
 sena session start --name 'AndroidDev' --role android
 
-# List sessions
+# List all active sessions
 sena session list
 
-# End session
+# See who's online
+sena who
+
+# End a session
 sena session end --id backend-8de02244
 ```
 
@@ -263,10 +572,10 @@ Deep thinking and analysis capabilities.
 | `sena agent architecture "code"` | Architecture agent |
 
 ### Thinking Depths
-- `quick` - Fast response
-- `standard` - Balanced (default)
-- `deep` - Thorough analysis
-- `maximum` - Most comprehensive
+- `quick` - Fast response (~1 second)
+- `standard` - Balanced (default, ~3 seconds)
+- `deep` - Thorough analysis (~10 seconds)
+- `maximum` - Most comprehensive (~30 seconds)
 
 ### Examples
 ```bash
@@ -275,6 +584,9 @@ sena think "How to optimize this query?"
 
 # Deep analysis
 sena think --depth deep "Should we use microservices?"
+
+# Maximum depth for critical decisions
+sena think --depth maximum "Design a scalable authentication system"
 
 # Security analysis
 sena agent security "user_input = request.get('data')"
@@ -298,10 +610,10 @@ Access built-in knowledge patterns.
 | `sena knowledge stats` | Knowledge statistics |
 
 ### Available Categories
-- **Reasoning**: First Principles, 5 Whys, Decision Matrix
-- **Security**: OWASP Top 10, Auth patterns, Crypto
-- **Performance**: Algorithm optimization, Caching, N+1
-- **Architecture**: SOLID, Design Patterns, DDD, CQRS
+- **Reasoning**: First Principles, 5 Whys, Decision Matrix, Root Cause
+- **Security**: OWASP Top 10, Auth patterns, Crypto, Input validation
+- **Performance**: Algorithm optimization, Caching, N+1, Memory
+- **Architecture**: SOLID, Design Patterns, DDD, CQRS, Event Sourcing
 
 ---
 
@@ -331,6 +643,52 @@ System health monitoring.
 | `sena health` | Quick health check |
 | `sena health --detailed` | Detailed health report |
 | `sena metrics` | Full system metrics |
+
+### Health Output
+```bash
+sena health
+# Output:
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                    SENA 🦁 HEALTH STATUS                      ║
+# ╠══════════════════════════════════════════════════════════════╣
+# ║  Status: HEALTHY                          Score: 95/100      ║
+# ║  Providers: 4/5 connected                                    ║
+# ║  Sessions: 2 active                                          ║
+# ║  Uptime: 3h 42m                                              ║
+# ╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+## Desktop Application
+
+SENA includes a cross-platform desktop application built with Tauri 2.0.
+
+### Features
+- Provider management with visual status
+- Collaboration session dashboard
+- Real-time chat interface
+- System health monitoring
+- Dark/Light theme support
+
+### Building the Desktop App
+```bash
+cd sena-ui
+
+# Install dependencies
+npm install
+
+# Development mode
+npm run tauri dev
+
+# Build for production
+npm run tauri build
+```
+
+### Platforms
+- **macOS**: `.dmg` and `.app` bundles
+- **Windows**: `.msi` installer and `.exe`
+- **Linux**: `.deb`, `.rpm`, and `.AppImage`
 
 ---
 
@@ -363,7 +721,7 @@ sena daemon stop     # Stop daemon
 ~/.sena/config.toml
 ```
 
-### Config Options
+### Complete Config Options
 ```toml
 [user]
 name = "YourName"       # Your name
@@ -372,7 +730,7 @@ prefix = "SENA"         # Display prefix
 command = "sena"        # CLI command name
 
 [general]
-log_level = "info"      # Log level
+log_level = "info"      # Log level: trace, debug, info, warn, error
 
 [intelligence]
 default_thinking_depth = "standard"  # quick/standard/deep/maximum
@@ -384,6 +742,11 @@ primary_agent = "general"            # Default agent
 pattern_learning = true
 self_optimization = true
 feedback_collection = true
+
+[network]
+default_port = 9876
+auto_discovery = true
+tls_enabled = true
 
 [output]
 color = true
@@ -443,6 +806,29 @@ Check `~/.claude/settings.json` has the hook configured:
 - Check firewall allows port 9876
 - Use manual `peer add` as fallback
 
+### Provider not connecting?
+```bash
+# Check API key is set
+echo $ANTHROPIC_API_KEY
+
+# Test specific provider
+sena provider test claude
+
+# Check provider status
+sena provider status
+```
+
+### Collaboration session fails?
+```bash
+# List active sessions
+sena collab list
+
+# Check session info
+sena collab info <session-id>
+
+# Ensure all participants have joined before starting
+```
+
 ---
 
 ## Quick Reference
@@ -450,6 +836,13 @@ Check `~/.claude/settings.json` has the hook configured:
 | Task | Command |
 |------|---------|
 | Check health | `sena health` |
+| List providers | `sena provider list` |
+| Create collab session | `sena collab create "Name" --host claude` |
+| Join collab session | `sena collab join <id> --provider openai` |
+| Start collaboration | `sena collab start <id>` |
+| Broadcast message | `sena collab broadcast <id> "message"` |
+| Create proposal | `sena collab propose "Question?" --strategy majority` |
+| Vote on proposal | `sena collab vote <id> approve` |
 | Start session | `sena session start --name 'Name' --role backend` |
 | List sessions | `sena who` |
 | Send message | `sena tell SessionName "message"` |
@@ -460,6 +853,17 @@ Check `~/.claude/settings.json` has the hook configured:
 | Start network | `sena network start --name "My PC"` |
 | Discover peers | `sena discover` |
 | List peers | `sena peer list` |
+
+---
+
+## Version History
+
+| Version | Highlights |
+|---------|------------|
+| **12.0.0** | Multi-AI providers, AI-to-AI collaboration, consensus voting, specialist routing, Tauri desktop app |
+| 11.0.x | Network collaboration, peer discovery, TLS encryption |
+| 10.0.x | Session management, cross-session messaging |
+| 9.0.x | Domain agents, intelligence system |
 
 ---
 
@@ -474,6 +878,7 @@ Check `~/.claude/settings.json` has the hook configured:
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
+║                       v12.0.0                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║

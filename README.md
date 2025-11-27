@@ -2,10 +2,24 @@
 
 ## Make Your AI Collaborative and Smarter™
 
+[![Version](https://img.shields.io/badge/Version-12.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-280%20Passed-success)](https://github.com/Sena1996/Sena1996-AI)
+
+---
+
+## What's New in v12.0.0
+
+- **Multi-AI Provider Integration** - Claude, OpenAI, Gemini, Ollama, Mistral support
+- **AI-to-AI Collaboration** - Multiple AI agents working together
+- **Consensus Voting System** - Unanimous, Majority, SuperMajority, Weighted voting
+- **Specialist Routing** - Task-based AI delegation with domain detection
+- **Tauri 2.0 Desktop App** - Cross-platform GUI application
+- **280 Tests Passing** - Comprehensive test coverage
+- **Zero Clippy Warnings** - Elite code quality
 
 ---
 
@@ -13,7 +27,7 @@
 
 **Make Your AI Collaborative and Smarter** - This is the core philosophy behind Sena1996 AI Tool. We believe AI assistants should:
 
-- **Collaborate** across multiple sessions, machines, and networks
+- **Collaborate** across multiple AI providers, sessions, and networks
 - **Learn** from patterns and continuously improve
 - **Adapt** to your personal workflow with custom branding
 - **Connect** with other AI instances over local networks
@@ -29,13 +43,17 @@ Sena1996 AI Tool (SENA) is a powerful controller that enhances AI assistants lik
 
 | Feature | Description |
 |---------|-------------|
+| **Multi-AI Providers** | Claude, OpenAI, Gemini, Ollama, Mistral integration |
+| **AI-to-AI Collaboration** | Multiple AI agents working together on tasks |
+| **Consensus Voting** | Democratic decision-making between AI agents |
+| **Specialist Routing** | Automatic task delegation to best-fit AI |
 | **Network Collaboration** | Connect multiple SENA instances across WiFi/LAN |
 | **Custom Command Names** | Use `jarvis`, `lucy`, or any custom name |
 | **Multi-Session Hub** | Collaborate across multiple Claude windows |
 | **Cross-Machine Messaging** | Send messages between AI instances |
 | **Peer Discovery** | Automatic mDNS/Bonjour peer finding |
 | **TLS Encryption** | Secure communication with certificates |
-| **Token Authentication** | Time-limited authorization tokens |
+| **Desktop Application** | Tauri 2.0 cross-platform GUI |
 
 ### Intelligence Systems
 
@@ -46,6 +64,77 @@ Sena1996 AI Tool (SENA) is a powerful controller that enhances AI assistants lik
 | **Evolution System** | Pattern learning and self-optimization |
 | **7 Ancient Wisdom Layers** | Truth-embedded architecture |
 | **Domain Agents** | Backend, iOS, Android, Web, IoT specialized analysis |
+
+---
+
+## Multi-AI Provider Integration
+
+### Supported Providers
+
+| Provider | Models | Features |
+|----------|--------|----------|
+| **Claude (Anthropic)** | claude-sonnet-4-5, opus | Streaming, Tools, Vision |
+| **OpenAI** | gpt-4.1, gpt-4o | Streaming, Tools, Vision |
+| **Google Gemini** | gemini-2.5-flash, pro | Streaming, Tools, Vision |
+| **Ollama (Local)** | llama3.2, mistral | Local inference |
+| **Mistral AI** | mistral-large-latest | Streaming, Tools |
+
+### Provider Commands
+```bash
+sena provider list              # List all providers
+sena provider models            # List available models
+sena provider status            # Check provider connectivity
+sena provider set-default claude # Set default provider
+```
+
+### Configuration
+```bash
+# Environment variables for API keys
+export ANTHROPIC_API_KEY="your-key"
+export OPENAI_API_KEY="your-key"
+export GOOGLE_API_KEY="your-key"
+export MISTRAL_API_KEY="your-key"
+
+# Or configure in ~/.sena/providers.toml
+```
+
+---
+
+## AI-to-AI Collaboration
+
+### Collaboration Sessions
+```bash
+sena collab create "Code Review" --host claude    # Create session
+sena collab join <session-id> --provider openai   # Join with OpenAI
+sena collab start <session-id>                    # Start collaboration
+sena collab broadcast <session-id> "Review this code"  # Send to all
+sena collab list                                  # List active sessions
+```
+
+### Consensus Voting
+```bash
+# Create proposal with voting
+sena collab propose "Use microservices?" --strategy majority
+sena collab vote <proposal-id> approve --reasoning "Better scalability"
+```
+
+**Voting Strategies:**
+- `unanimous` - All must approve
+- `majority` - >50% approval
+- `supermajority` - >67% approval
+- `weighted` - Weighted by expertise
+
+### Specialist Routing
+
+SENA automatically routes tasks to the best AI based on domain:
+
+| Domain | Best Specialist |
+|--------|-----------------|
+| Code Generation | Claude |
+| Natural Language | GPT-4 |
+| Data Analysis | Gemini |
+| Local/Private | Ollama |
+| Creative Writing | GPT-4 |
 
 ---
 
@@ -101,13 +190,6 @@ jarvis network status
 jarvis peer list
 ```
 
-All outputs adapt to your branding:
-```
-╔══════════════════════════════════════════════════════════════╗
-║                    JARVIS 🤖 HEALTH STATUS                    ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
 ---
 
 ## Quick Start
@@ -149,13 +231,28 @@ unicode = true
 
 ## CLI Commands
 
+### Provider Management
+```bash
+sena provider list              # List providers
+sena provider models            # List models
+sena provider status            # Provider status
+sena provider set-default <id>  # Set default
+```
+
+### AI Collaboration
+```bash
+sena collab create "Name" --host claude  # Create session
+sena collab join <id> --provider openai  # Join session
+sena collab start <id>                   # Start session
+sena collab broadcast <id> "message"     # Broadcast
+sena collab list                         # List sessions
+```
+
 ### Network Collaboration
 ```bash
 sena network start              # Start network server
 sena network stop               # Stop server
 sena network status             # Show status
-sena network info               # Show peer ID and name
-sena network set-name "Name"    # Set display name
 sena discover                   # Discover peers
 sena peer list                  # List known peers
 sena peer add <ip> --name "X"   # Add peer manually
@@ -195,6 +292,24 @@ sena health                     # Quick health check
 sena health --detailed          # Detailed report
 sena metrics                    # Full metrics
 sena evolve stats               # Evolution stats
+```
+
+---
+
+## Desktop Application (Tauri 2.0)
+
+### Features
+- Cross-platform (macOS, Windows, Linux)
+- Provider management UI
+- Collaboration session dashboard
+- Real-time chat interface
+- System health monitoring
+
+### Building
+```bash
+cd sena-ui
+npm install
+npm run tauri build
 ```
 
 ---
@@ -252,6 +367,36 @@ Add to `~/.claude/settings.json`:
 
 ---
 
+## Project Structure
+
+```
+Sena1996-AI/
+├── src/                    # Main application source
+├── crates/
+│   ├── sena-providers/     # Multi-AI provider integration
+│   └── sena-collab/        # AI-to-AI collaboration
+├── sena-ui/                # Tauri desktop application
+│   ├── src/                # React frontend
+│   └── src-tauri/          # Rust backend
+├── tests/                  # Integration tests
+└── .github/workflows/      # CI/CD pipelines
+```
+
+---
+
+## Test Coverage
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Main Crate | 231 | Passing |
+| sena-collab | 34 | Passing |
+| CLI Tests | 6 | Passing |
+| Integration | 8 | Passing |
+| Doc Tests | 1 | Passing |
+| **Total** | **280** | **All Passing** |
+
+---
+
 ## Credits
 
 ### Created By
@@ -270,6 +415,7 @@ Add to `~/.claude/settings.json`:
 
 - **MCP Protocol**: [Anthropic PBC](https://www.anthropic.com/)
 - **Rust Language**: [rust-lang.org](https://www.rust-lang.org/)
+- **Tauri 2.0**: [tauri.app](https://tauri.app/)
 - **mDNS Discovery**: mdns-sd crate
 - **TLS**: rustls + rcgen
 
@@ -305,6 +451,7 @@ copies or substantial portions of the Software.
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
+║                       v12.0.0                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║

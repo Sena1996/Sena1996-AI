@@ -143,6 +143,14 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
             execute_discover(*timeout, cli.format).await
         }
 
+        Some(Commands::Provider { action }) => {
+            execute_provider(action.clone(), cli.format).await
+        }
+
+        Some(Commands::Collab { action }) => {
+            execute_collab(action.clone(), cli.format).await
+        }
+
         None => {
             // No command - show status
             execute_health(false, cli.format)
@@ -2161,6 +2169,536 @@ async fn execute_discover(timeout: u64, format: OutputFormat) -> Result<String, 
                 output.push_str("  3. Share token with peer\n");
             }
             Ok(output)
+        }
+    }
+}
+
+async fn execute_provider(action: ProviderAction, format: OutputFormat) -> Result<String, String> {
+    use sena_providers::{config::ProvidersConfig, ProviderRouter, AIProvider, Message, ChatRequest};
+
+    let config = ProvidersConfig::load_or_default();
+
+    match action {
+        ProviderAction::List => {
+            let providers_info: Vec<serde_json::Value> = config.providers.iter()
+                .map(|(id, cfg)| {
+                    serde_json::json!({
+                        "id": id,
+                        "enabled": cfg.enabled,
+                        "default_model": cfg.default_model,
+                        "has_api_key": cfg.api_key.is_some() || cfg.get_api_key().is_some(),
+                    })
+                })
+                .collect();
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&providers_info).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI PROVIDERS")).render());
+                    output.push('\n');
+
+                    for (id, cfg) in &config.providers {
+                        let status = if cfg.get_api_key().is_some() || id == "ollama" { "✅" } else { "❌" };
+                        let default = if config.default_provider.as_ref() == Some(id) { " (default)" } else { "" };
+                        output.push_str(&format!(
+                            "{} {} - {}{}\n",
+                            status,
+                            id,
+                            cfg.default_model.as_deref().unwrap_or("N/A"),
+                            default
+                        ));
+                    }
+
+                    output.push_str("\nTo use a provider, set the appropriate API key:\n");
+                    output.push_str("  export ANTHROPIC_API_KEY=your-key   # Claude\n");
+                    output.push_str("  export OPENAI_API_KEY=your-key      # OpenAI\n");
+                    output.push_str("  export GOOGLE_API_KEY=your-key      # Gemini\n");
+                    output.push_str("  # Ollama runs locally, no key needed\n");
+
+                    Ok(output)
+                }
+            }
+        }
+
+        ProviderAction::Status => {
+            match ProviderRouter::from_config(&config) {
+                Ok(router) => {
+                    let status = router.provider_status();
+                    let providers: Vec<&std::sync::Arc<dyn AIProvider>> = router.available_providers();
+
+                    match format {
+                        OutputFormat::Json => {
+                            let json: Vec<serde_json::Value> = providers.iter()
+                                .map(|p| {
+                                    serde_json::json!({
+                                        "id": p.provider_id(),
+                                        "name": p.display_name(),
+                                        "status": format!("{:?}", status.get(p.provider_id())),
+                                        "default_model": p.default_model(),
+                                        "streaming": p.supports_streaming(),
+                                        "tools": p.supports_tools(),
+                                        "vision": p.supports_vision(),
+                                    })
+                                })
+                                .collect();
+                            serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROVIDER STATUS")).render());
+                            output.push('\n');
+
+                            for provider in providers {
+                                let provider_status = status.get(provider.provider_id());
+                                let status_icon = match provider_status {
+                                    Some(sena_providers::ProviderStatus::Connected) => "🟢",
+                                    Some(sena_providers::ProviderStatus::RateLimited) => "🟡",
+                                    Some(sena_providers::ProviderStatus::Disconnected) => "🔴",
+                                    Some(sena_providers::ProviderStatus::Error) | None => "⚪",
+                                };
+
+                                output.push_str(&format!(
+                                    "{} {} ({})\n   Model: {}\n   Features: streaming={}, tools={}, vision={}\n\n",
+                                    status_icon,
+                                    provider.display_name(),
+                                    provider.provider_id(),
+                                    provider.default_model(),
+                                    provider.supports_streaming(),
+                                    provider.supports_tools(),
+                                    provider.supports_vision(),
+                                ));
+                            }
+
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => {
+                    Err(format!("Failed to initialize providers: {}", e))
+                }
+            }
+        }
+
+        ProviderAction::Models { provider } => {
+            match ProviderRouter::from_config(&config) {
+                Ok(router) => {
+                    let models = if let Some(provider_id) = &provider {
+                        router.get_provider(provider_id)
+                            .map(|p| p.available_models().to_vec())
+                            .unwrap_or_default()
+                    } else {
+                        router.all_models()
+                    };
+
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&models).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("AVAILABLE MODELS")).render());
+                            output.push('\n');
+
+                            if models.is_empty() {
+                                output.push_str("No models available. Check API keys.\n");
+                            } else {
+                                for model in &models {
+                                    let features = vec![
+                                        if model.supports_streaming { "stream" } else { "" },
+                                        if model.supports_tools { "tools" } else { "" },
+                                        if model.supports_vision { "vision" } else { "" },
+                                    ].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(", ");
+
+                                    output.push_str(&format!(
+                                        "  {} ({}) - {}k context [{}]\n",
+                                        model.id,
+                                        model.provider,
+                                        model.context_length / 1000,
+                                        features
+                                    ));
+                                }
+                            }
+
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => {
+                    Err(format!("Failed to initialize providers: {}", e))
+                }
+            }
+        }
+
+        ProviderAction::Chat { message, provider, model } => {
+            match ProviderRouter::from_config(&config) {
+                Ok(router) => {
+                    let mut request = ChatRequest::new(vec![Message::user(&message)]);
+
+                    if let Some(m) = model {
+                        request = request.with_model(m);
+                    }
+
+                    let result = if provider.is_some() {
+                        router.chat(request).await
+                    } else {
+                        router.chat_with_fallback(request).await
+                    };
+
+                    match result {
+                        Ok(response) => {
+                            match format {
+                                OutputFormat::Json => {
+                                    serde_json::to_string_pretty(&serde_json::json!({
+                                        "provider": response.provider,
+                                        "model": response.model,
+                                        "content": response.content,
+                                        "usage": {
+                                            "prompt_tokens": response.usage.prompt_tokens,
+                                            "completion_tokens": response.usage.completion_tokens,
+                                            "total_tokens": response.usage.total_tokens,
+                                        }
+                                    })).map_err(|e| e.to_string())
+                                }
+                                _ => {
+                                    let mut output = String::new();
+                                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI RESPONSE")).render());
+                                    output.push('\n');
+                                    output.push_str(&format!("Provider: {} | Model: {}\n\n", response.provider, response.model));
+                                    output.push_str(&response.content);
+                                    output.push_str(&format!("\n\n─────────────────────────────────────────\nTokens: {} prompt + {} completion = {} total\n",
+                                        response.usage.prompt_tokens,
+                                        response.usage.completion_tokens,
+                                        response.usage.total_tokens
+                                    ));
+                                    Ok(output)
+                                }
+                            }
+                        }
+                        Err(e) => Err(format!("Chat failed: {}", e))
+                    }
+                }
+                Err(e) => Err(format!("Failed to initialize providers: {}", e))
+            }
+        }
+
+        ProviderAction::Default { provider_id } => {
+            let mut config = config;
+            if config.set_default_provider(&provider_id) {
+                let path = ProvidersConfig::config_path();
+                match config.save_to_file(&path) {
+                    Ok(()) => Ok(format!("Default provider set to: {}\nConfig saved to: {}", provider_id, path.display())),
+                    Err(e) => Err(format!("Failed to save config: {}", e))
+                }
+            } else {
+                Err(format!("Unknown provider: {}. Available: {:?}", provider_id, config.providers.keys().collect::<Vec<_>>()))
+            }
+        }
+
+        ProviderAction::Test { provider } => {
+            match ProviderRouter::from_config(&config) {
+                Ok(router) => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("PROVIDER TEST")).render());
+                    output.push('\n');
+
+                    let providers_to_test: Vec<_> = if provider == "all" {
+                        router.available_providers()
+                    } else {
+                        router.get_provider(&provider)
+                            .map(|p| vec![p])
+                            .unwrap_or_default()
+                    };
+
+                    if providers_to_test.is_empty() {
+                        return Err(format!("Provider not found: {}", provider));
+                    }
+
+                    for p in providers_to_test {
+                        let test_request = ChatRequest::new(vec![Message::user("Say 'OK' if you can hear me.")])
+                            .with_max_tokens(10);
+
+                        output.push_str(&format!("Testing {}... ", p.display_name()));
+
+                        match p.chat(test_request).await {
+                            Ok(response) => {
+                                output.push_str(&format!("✅ OK ({})\n", response.model));
+                            }
+                            Err(e) => {
+                                output.push_str(&format!("❌ Failed: {}\n", e));
+                            }
+                        }
+                    }
+
+                    Ok(output)
+                }
+                Err(e) => Err(format!("Failed to initialize providers: {}", e))
+            }
+        }
+    }
+}
+
+async fn execute_collab(action: CollabAction, format: OutputFormat) -> Result<String, String> {
+    use sena_providers::config::ProvidersConfig;
+    use sena_collab::{CollabOrchestrator, RequestPayload, RequestType};
+    use std::sync::Arc;
+
+    let config = ProvidersConfig::load_or_default();
+
+    let router = sena_providers::ProviderRouter::from_config(&config)
+        .map_err(|e| format!("Failed to initialize providers: {}", e))?;
+
+    let mut orchestrator = CollabOrchestrator::new(100);
+
+    for provider in router.available_providers() {
+        orchestrator.register_provider(Arc::clone(provider));
+    }
+
+    match action {
+        CollabAction::New { name, provider } => {
+            match orchestrator.create_session(&name, &provider).await {
+                Ok(session_id) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "status": "created",
+                                "session_id": session_id,
+                                "name": name,
+                                "host": provider,
+                            })).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI COLLABORATION")).render());
+                            output.push('\n');
+                            output.push_str(&format!("✅ Session created: {}\n", name));
+                            output.push_str(&format!("   ID: {}\n", session_id));
+                            output.push_str(&format!("   Host: {}\n\n", provider));
+                            output.push_str("Next steps:\n");
+                            output.push_str(&format!("  1. Add agents: sena collab join {} --provider openai\n", session_id));
+                            output.push_str(&format!("  2. Start session: sena collab start {}\n", session_id));
+                            output.push_str(&format!("  3. Broadcast: sena collab broadcast {} \"your message\"\n", session_id));
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Failed to create session: {}", e))
+            }
+        }
+
+        CollabAction::List => {
+            let sessions = orchestrator.list_active_sessions().await;
+
+            match format {
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&sessions).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("ACTIVE SESSIONS")).render());
+                    output.push('\n');
+
+                    if sessions.is_empty() {
+                        output.push_str("No active collaboration sessions.\n");
+                        output.push_str("\nCreate one with: sena collab new \"Session Name\" --provider claude\n");
+                    } else {
+                        for session in sessions {
+                            output.push_str(&format!(
+                                "📋 {} ({})\n   State: {:?}\n   Participants: {}\n   Messages: {}\n\n",
+                                session.name,
+                                session.session_id,
+                                session.state,
+                                session.participants.len(),
+                                session.message_count,
+                            ));
+                        }
+                    }
+                    Ok(output)
+                }
+            }
+        }
+
+        CollabAction::Join { session_id, provider } => {
+            match orchestrator.join_session(&session_id, &provider).await {
+                Ok(agent_id) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "status": "joined",
+                                "session_id": session_id,
+                                "agent_id": agent_id,
+                                "provider": provider,
+                            })).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            Ok(format!(
+                                "✅ Joined session {}\n   Agent ID: {}\n   Provider: {}",
+                                session_id, agent_id, provider
+                            ))
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Failed to join session: {}", e))
+            }
+        }
+
+        CollabAction::Start { session_id } => {
+            match orchestrator.start_session(&session_id).await {
+                Ok(()) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "status": "started",
+                                "session_id": session_id,
+                            })).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            Ok(format!("✅ Session {} started\n\nYou can now:\n  - Send messages: sena collab send {} \"message\"\n  - Broadcast to all: sena collab broadcast {} \"message\"", session_id, session_id, session_id))
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Failed to start session: {}", e))
+            }
+        }
+
+        CollabAction::Send { session_id, message, from } => {
+            let sender = from.unwrap_or_else(|| "user".to_string());
+            match orchestrator.send_message(&session_id, &sender, &message).await {
+                Ok(()) => {
+                    Ok(format!("✅ Message sent to session {}", session_id))
+                }
+                Err(e) => Err(format!("Failed to send message: {}", e))
+            }
+        }
+
+        CollabAction::Broadcast { session_id, message } => {
+            match orchestrator.broadcast_to_agents(&session_id, "user", &message).await {
+                Ok(responses) => {
+                    match format {
+                        OutputFormat::Json => {
+                            let json_responses: Vec<serde_json::Value> = responses.iter()
+                                .map(|r| {
+                                    if let sena_collab::MessageContent::Text(text) = &r.content {
+                                        serde_json::json!({
+                                            "agent_id": r.sender_id,
+                                            "content": text,
+                                        })
+                                    } else {
+                                        serde_json::json!({
+                                            "agent_id": r.sender_id,
+                                            "content": "non-text response",
+                                        })
+                                    }
+                                })
+                                .collect();
+                            serde_json::to_string_pretty(&json_responses).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("AI RESPONSES")).render());
+                            output.push('\n');
+
+                            if responses.is_empty() {
+                                output.push_str("No responses received. Make sure agents have joined the session.\n");
+                            } else {
+                                for response in responses {
+                                    output.push_str(&format!("─── {} ───\n", response.sender_id));
+                                    if let sena_collab::MessageContent::Text(text) = &response.content {
+                                        output.push_str(text);
+                                        output.push_str("\n\n");
+                                    }
+                                }
+                            }
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Broadcast failed: {}", e))
+            }
+        }
+
+        CollabAction::Analyze { session_id, provider, request } => {
+            let request_payload = RequestPayload {
+                request_type: RequestType::Analysis,
+                description: request.clone(),
+                parameters: serde_json::json!({}),
+            };
+
+            match orchestrator.request_analysis(&session_id, "user", &provider, request_payload).await {
+                Ok(response) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&serde_json::json!({
+                                "provider": provider,
+                                "response": response,
+                            })).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title(&format!("ANALYSIS FROM {}", provider.to_uppercase()))).render());
+                            output.push('\n');
+
+                            if let sena_collab::MessageContent::Response(resp) = &response.content {
+                                output.push_str(&resp.content);
+                            } else if let sena_collab::MessageContent::Text(text) = &response.content {
+                                output.push_str(text);
+                            }
+                            output.push('\n');
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Analysis failed: {}", e))
+            }
+        }
+
+        CollabAction::Info { session_id } => {
+            match orchestrator.get_session_summary(&session_id).await {
+                Ok(summary) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&summary).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut output = String::new();
+                            output.push_str(&FormatBox::new(&SenaConfig::brand_title("SESSION INFO")).render());
+                            output.push('\n');
+                            output.push_str(&format!("Session: {}\n", summary.name));
+                            output.push_str(&format!("ID: {}\n", summary.session_id));
+                            output.push_str(&format!("State: {:?}\n", summary.state));
+                            output.push_str(&format!("Messages: {}\n", summary.message_count));
+                            output.push_str(&format!("Created: {}\n\n", summary.created_at.format("%Y-%m-%d %H:%M:%S")));
+
+                            output.push_str("Participants:\n");
+                            for p in &summary.participants {
+                                let host = if p.is_host { " (host)" } else { "" };
+                                output.push_str(&format!(
+                                    "  {} {} - {} [{}]{}\n",
+                                    match p.status {
+                                        sena_collab::AgentStatus::Idle => "🟢",
+                                        sena_collab::AgentStatus::Thinking => "🟡",
+                                        sena_collab::AgentStatus::Processing => "🔵",
+                                        sena_collab::AgentStatus::Offline => "⚫",
+                                        _ => "⚪",
+                                    },
+                                    p.provider,
+                                    p.model,
+                                    p.message_count,
+                                    host
+                                ));
+                            }
+                            Ok(output)
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Failed to get session info: {}", e))
+            }
+        }
+
+        CollabAction::End { session_id } => {
+            Ok(format!("Session {} marked for termination.\n\nNote: Full session lifecycle management coming in next release.", session_id))
         }
     }
 }
