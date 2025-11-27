@@ -67,6 +67,8 @@ generate_slash_commands() {
     cat > "$HOME/.claude/commands/${CMD}-health.md" << EOF
 Run ${PREFIX} health check and display system status.
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Execute: \`${CMD} health --detailed\`
 
 Display the results in ${PREFIX} format with Unicode boxes.
@@ -75,11 +77,15 @@ EOF
     cat > "$HOME/.claude/commands/${CMD}-metrics.md" << EOF
 Get ${PREFIX} system metrics.
 
-Execute: \`${CMD} metrics all\`
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
+Execute: \`${CMD} metrics\`
 EOF
 
     cat > "$HOME/.claude/commands/${CMD}-status.md" << EOF
 Show ${PREFIX} session status.
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Execute: \`${CMD} session info\`
 EOF
@@ -87,9 +93,11 @@ EOF
     cat > "$HOME/.claude/commands/${CMD}-test.md" << EOF
 Run ${PREFIX} system test.
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Execute these commands in sequence:
 1. \`${CMD} health\`
-2. \`${CMD} metrics all\`
+2. \`${CMD} metrics\`
 3. \`${CMD} session info\`
 
 Report all results.
@@ -97,6 +105,8 @@ EOF
 
     cat > "$HOME/.claude/commands/${CMD}-analyze.md" << EOF
 Perform deep analysis using ${PREFIX} ${EMOJI} intelligence.
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Use the ${CMD} think command with extended analysis:
 \`${CMD} think "\$ARGUMENTS" --depth deep\`
@@ -106,6 +116,8 @@ EOF
 
     cat > "$HOME/.claude/commands/${CMD}-code.md" << EOF
 ${PREFIX} ${EMOJI} Code Analysis Mode
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Analyze the provided code using ${PREFIX}'s specialized agents:
 
@@ -119,6 +131,8 @@ EOF
 
     cat > "$HOME/.claude/commands/${CMD}-verify.md" << EOF
 ${PREFIX} ${EMOJI} Truth Verification Mode
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Use ${PREFIX}'s truth-embedded verification system:
 
@@ -136,6 +150,8 @@ EOF
     cat > "$HOME/.claude/commands/${CMD}-format-table.md" << EOF
 Format data as a ${PREFIX} ${EMOJI} styled table.
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Use: \`${CMD} format table --title "Title" '<json-data>'\`
 
 The table will use Unicode box-drawing characters in ${PREFIX} style.
@@ -143,6 +159,8 @@ EOF
 
     cat > "$HOME/.claude/commands/${CMD}-network.md" << EOF
 ${PREFIX} ${EMOJI} Network Collaboration
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Manage network collaboration:
 - Status: \`${CMD} network status\`
@@ -154,6 +172,8 @@ EOF
     cat > "$HOME/.claude/commands/${CMD}-peers.md" << EOF
 ${PREFIX} ${EMOJI} Peer Management
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Manage network peers:
 - List: \`${CMD} peer list\`
 - Add: \`${CMD} peer add <ip> --name "Peer Name"\`
@@ -164,6 +184,8 @@ EOF
     cat > "$HOME/.claude/commands/session-start.md" << EOF
 Start a new ${PREFIX} ${EMOJI} collaboration session.
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Execute: \`${CMD} join --role "\$ARGUMENTS" --name "${PREFIX}-Claude"\`
 
 This joins the ${PREFIX} collaboration hub for multi-session teamwork.
@@ -172,6 +194,8 @@ EOF
     cat > "$HOME/.claude/commands/session-name.md" << EOF
 Set session name for ${PREFIX} ${EMOJI} collaboration.
 
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
+
 Execute: \`${CMD} session start --name "\$ARGUMENTS"\`
 
 This names your session in the ${PREFIX} hub.
@@ -179,6 +203,8 @@ EOF
 
     cat > "$HOME/.claude/commands/deep-think.md" << EOF
 ${PREFIX} ${EMOJI} Extended Thinking Mode
+
+IMPORTANT: Use \`${CMD}\` from PATH, NOT ./target/release/${CMD}
 
 Engage deep analysis with maximum thinking depth:
 
