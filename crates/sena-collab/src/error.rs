@@ -37,6 +37,9 @@ pub enum CollabError {
 
     #[error("Serialization error: {0}")]
     SerializationError(String),
+
+    #[error("Config error: {0}")]
+    ConfigError(String),
 }
 
 pub type Result<T> = std::result::Result<T, CollabError>;

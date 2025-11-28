@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use uuid::Uuid;
 
 use crate::{
@@ -281,18 +283,76 @@ impl CollabSession {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SessionsData {
+    version: String,
+    sessions: HashMap<String, CollabSession>,
+}
+
+#[derive(Debug)]
 pub struct SessionManager {
     sessions: HashMap<String, CollabSession>,
     max_sessions: usize,
+    sessions_file: PathBuf,
+}
+
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self::new(100)
+    }
 }
 
 impl SessionManager {
     pub fn new(max_sessions: usize) -> Self {
-        Self {
+        let sessions_file = dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(".claude")
+            .join("collab")
+            .join("sessions.json");
+
+        let mut manager = Self {
             sessions: HashMap::new(),
             max_sessions,
+            sessions_file,
+        };
+
+        let _ = manager.load();
+        manager
+    }
+
+    pub fn load(&mut self) -> Result<()> {
+        if !self.sessions_file.exists() {
+            return Ok(());
         }
+
+        let content = fs::read_to_string(&self.sessions_file)
+            .map_err(|e| CollabError::ConfigError(format!("Cannot read sessions: {}", e)))?;
+
+        let data: SessionsData = serde_json::from_str(&content)
+            .map_err(|e| CollabError::ConfigError(format!("Cannot parse sessions: {}", e)))?;
+
+        self.sessions = data.sessions;
+        Ok(())
+    }
+
+    pub fn save(&self) -> Result<()> {
+        if let Some(parent) = self.sessions_file.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| CollabError::ConfigError(format!("Cannot create dir: {}", e)))?;
+        }
+
+        let data = SessionsData {
+            version: "12.0.4".to_string(),
+            sessions: self.sessions.clone(),
+        };
+
+        let json = serde_json::to_string_pretty(&data)
+            .map_err(|e| CollabError::ConfigError(format!("Cannot serialize: {}", e)))?;
+
+        fs::write(&self.sessions_file, json)
+            .map_err(|e| CollabError::ConfigError(format!("Cannot write sessions: {}", e)))?;
+
+        Ok(())
     }
 
     pub fn create_session(&mut self, name: &str, host: AgentInfo) -> Result<&CollabSession> {
@@ -303,6 +363,7 @@ impl SessionManager {
         let session = CollabSession::new(name, host);
         let session_id = session.id.clone();
         self.sessions.insert(session_id.clone(), session);
+        let _ = self.save();
         self.sessions
             .get(&session_id)
             .ok_or(CollabError::SessionNotFound(session_id))
@@ -317,7 +378,9 @@ impl SessionManager {
     }
 
     pub fn remove_session(&mut self, session_id: &str) -> Option<CollabSession> {
-        self.sessions.remove(session_id)
+        let session = self.sessions.remove(session_id);
+        let _ = self.save();
+        session
     }
 
     pub fn list_sessions(&self) -> Vec<&CollabSession> {
