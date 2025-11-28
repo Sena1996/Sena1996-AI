@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { Session, Participant } from '../types';
+import { useToast } from '../components/Toast';
 
 interface BackendSession {
   id: string;
@@ -65,28 +66,40 @@ export default function Sessions() {
   const [newSessionHost, setNewSessionHost] = useState('claude');
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const toast = useToast();
 
   const loadSessions = useCallback(async () => {
     try {
       const backendSessions = await invoke<BackendSession[]>('list_sessions');
       setSessions(backendSessions.map(mapBackendSession));
+      return backendSessions.length;
     } catch (error) {
       console.error('Failed to load sessions:', error);
+      toast.error(`Failed to load sessions: ${error}`);
+      return 0;
     }
-  }, []);
+  }, [toast]);
 
   const refreshSessions = useCallback(async () => {
     setIsRefreshing(true);
-    await loadSessions();
+    const count = await loadSessions();
     setIsRefreshing(false);
-  }, [loadSessions]);
+    if (count === 0) {
+      toast.info('No sessions found. Create one or start a CLI session.');
+    } else {
+      toast.success(`Found ${count} session(s)`);
+    }
+  }, [loadSessions, toast]);
 
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
 
   const handleCreateSession = async () => {
-    if (!newSessionName.trim()) return;
+    if (!newSessionName.trim()) {
+      toast.warning('Please enter a session name');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -97,8 +110,10 @@ export default function Sessions() {
       setSessions((prev) => [...prev, mapBackendSession(backendSession)]);
       setNewSessionName('');
       setShowNewSession(false);
+      toast.success(`Session "${backendSession.name}" created successfully`);
     } catch (error) {
       console.error('Failed to create session:', error);
+      toast.error(`Failed to create session: ${error}`);
     } finally {
       setIsLoading(false);
     }
