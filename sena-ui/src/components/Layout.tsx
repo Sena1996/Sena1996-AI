@@ -1,9 +1,12 @@
 import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   LayoutDashboard,
   Bot,
   MessageSquare,
   Users,
+  Globe,
   Settings,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -17,10 +20,17 @@ const navItems = [
   { path: '/providers', icon: Bot, label: 'Providers' },
   { path: '/chat', icon: MessageSquare, label: 'Chat' },
   { path: '/sessions', icon: Users, label: 'Sessions' },
+  { path: '/peers', icon: Globe, label: 'Peers' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Layout({ children }: LayoutProps) {
+  const [version, setVersion] = useState('12.0.5');
+
+  useEffect(() => {
+    invoke<string>('get_version').then(setVersion).catch(() => {});
+  }, []);
+
   return (
     <div className="flex h-screen bg-dark-950">
       <aside className="w-64 border-r border-dark-800 bg-dark-900 flex flex-col">
@@ -30,7 +40,9 @@ export default function Layout({ children }: LayoutProps) {
               <span className="text-2xl">🦁</span>
             </div>
             <div>
-              <h1 className="font-bold text-lg text-dark-100">SENA</h1>
+              <h1 className="font-bold text-lg text-dark-100">
+                SENA<span className="text-[0.6em] text-dark-300 ml-0.5">1996</span>
+              </h1>
               <p className="text-xs text-dark-400">AI Collaboration Hub</p>
             </div>
           </div>
@@ -62,7 +74,7 @@ export default function Layout({ children }: LayoutProps) {
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span>System Online</span>
             </div>
-            <p className="text-xs text-dark-500 mt-1">v11.0.2</p>
+            <p className="text-xs text-dark-500 mt-1">v{version}</p>
           </div>
         </div>
       </aside>

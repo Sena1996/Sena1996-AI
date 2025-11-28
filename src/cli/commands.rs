@@ -640,6 +640,225 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             config.ensure_dirs()?;
             Ok("Hub data cleared.".to_string())
         }
+        HubAction::Identity => {
+            use crate::hub::HubIdentity;
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                    HUB IDENTITY                              ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+            output.push_str(&format!("  Name:     {}\n", identity.name));
+            output.push_str(&format!("  Hostname: {}\n", identity.hostname));
+            output.push_str(&format!("  Hub ID:   {}\n", identity.short_id()));
+            output.push_str(&format!("  Full ID:  {}\n", identity.hub_id));
+            output.push_str(&format!("  Port:     {}\n", identity.port));
+            output.push_str(&format!("  Version:  {}\n", identity.version));
+            output.push_str("\nTo change hub name: sena hub set-name <new-name>");
+            Ok(output)
+        }
+        HubAction::SetName { name } => {
+            use crate::hub::HubIdentity;
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let mut identity = HubIdentity::load_or_create(&identity_file)?;
+            identity.set_name(&name);
+            identity.save(&identity_file)?;
+
+            Ok(format!("✅ Hub name changed to: {}", name))
+        }
+        HubAction::Peers => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            let connected = peer_manager.get_connected_hubs();
+
+            if connected.is_empty() {
+                return Ok("No connected hubs.\n\nTo connect to another hub:\n  sena hub connect <address:port>".to_string());
+            }
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                    CONNECTED HUBS                            ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+
+            for hub in &connected {
+                let status = if hub.is_online() { "🟢 Online" } else { "⚫ Offline" };
+                output.push_str(&format!(
+                    "  {} {}\n    ID: {}...\n    Address: {}:{}\n    Sessions: {}\n    Connected: {}\n\n",
+                    status,
+                    hub.name,
+                    &hub.hub_id[..8],
+                    hub.address,
+                    hub.port,
+                    hub.session_count,
+                    hub.connected_duration()
+                ));
+            }
+            output.push_str(&format!("Total: {} hub(s)\n", connected.len()));
+            Ok(output)
+        }
+        HubAction::Requests => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            let requests = peer_manager.get_pending_requests();
+
+            if requests.is_empty() {
+                return Ok("No pending connection requests.".to_string());
+            }
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                 PENDING CONNECTION REQUESTS                  ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+
+            for req in &requests {
+                output.push_str(&format!(
+                    "  📥 {} ({})\n    From: {}\n    ID: {}...\n    Message: {}\n\n",
+                    req.from_hub_name,
+                    req.from_address,
+                    req.from_hub_id,
+                    &req.request_id[..8],
+                    req.message.as_deref().unwrap_or("(no message)")
+                ));
+            }
+            output.push_str("\nTo approve: sena hub approve <request-id>\n");
+            output.push_str("To reject:  sena hub reject <request-id>");
+            Ok(output)
+        }
+        HubAction::Connect { address, message: _ } => {
+            Ok(format!(
+                "Connection request to {} would be sent.\n\
+                Note: Network connectivity requires the hub daemon to be running.\n\
+                Use 'sena network start' to start the network server.",
+                address
+            ))
+        }
+        HubAction::Approve { request_id } => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            let requests = peer_manager.get_pending_requests();
+            let matched_id = requests
+                .iter()
+                .find(|r| r.request_id.starts_with(&request_id))
+                .map(|r| r.request_id.clone());
+
+            match matched_id {
+                Some(req_id) => {
+                    let hub = peer_manager.approve_request(&req_id)?;
+                    Ok(format!("✅ Connection approved for: {}\n   Hub is now trusted.", hub.name))
+                }
+                None => Err(format!("Request not found: {}", request_id)),
+            }
+        }
+        HubAction::Reject { request_id } => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            let requests = peer_manager.get_pending_requests();
+            let matched_id = requests
+                .iter()
+                .find(|r| r.request_id.starts_with(&request_id))
+                .map(|r| r.request_id.clone());
+
+            match matched_id {
+                Some(req_id) => {
+                    peer_manager.reject_request(&req_id)?;
+                    Ok("❌ Connection request rejected.".to_string())
+                }
+                None => Err(format!("Request not found: {}", request_id)),
+            }
+        }
+        HubAction::Disconnect { hub } => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            if let Some(connected_hub) = peer_manager.get_hub_by_name(&hub) {
+                peer_manager.disconnect_hub(&connected_hub.hub_id.clone())?;
+                Ok(format!("✅ Disconnected from: {}", hub))
+            } else if let Some(connected_hub) = peer_manager.get_connected_hub(&hub) {
+                let name = connected_hub.name.clone();
+                peer_manager.disconnect_hub(&hub)?;
+                Ok(format!("✅ Disconnected from: {}", name))
+            } else {
+                Err(format!("Hub not found: {}", hub))
+            }
+        }
+        HubAction::Federation => {
+            use crate::hub::{HubIdentity, PeerManager};
+
+            let config = HubConfig::new();
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            let identity_file = config.hub_dir.join("identity.json");
+            let identity = HubIdentity::load_or_create(&identity_file)?;
+            let mut peer_manager = PeerManager::new(identity, &config.hub_dir);
+            let _ = peer_manager.load();
+
+            let local_sessions = hub.who();
+            let all_sessions = peer_manager.get_all_sessions(&local_sessions);
+
+            if all_sessions.is_empty() {
+                return Ok("No sessions found (local or remote).".to_string());
+            }
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                  FEDERATED SESSIONS                          ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+
+            for session in &all_sessions {
+                let location = if session.is_local { "🏠 Local" } else { "🌐 Remote" };
+                output.push_str(&format!(
+                    "  {} {}:{}\n    Role: {}\n    Status: {}\n    Working: {}\n\n",
+                    location,
+                    session.hub_name,
+                    session.session_name,
+                    session.role,
+                    session.status,
+                    session.working_on.as_deref().unwrap_or("idle")
+                ));
+            }
+
+            let local_count = all_sessions.iter().filter(|s| s.is_local).count();
+            let remote_count = all_sessions.len() - local_count;
+            output.push_str(&format!(
+                "Total: {} session(s) ({} local, {} remote)\n",
+                all_sessions.len(),
+                local_count,
+                remote_count
+            ));
+            output.push_str("\nUse 'sena hub tell HubName:SessionName <message>' to send cross-hub message.");
+            Ok(output)
+        }
     }
 }
 

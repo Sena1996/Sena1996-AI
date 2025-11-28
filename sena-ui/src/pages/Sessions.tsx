@@ -2,79 +2,69 @@ import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   Users,
-  Plus,
-  Play,
-  Pause,
-  XCircle,
-  MessageSquare,
-  Bot,
-  Clock,
   RefreshCw,
+  Terminal,
+  FolderOpen,
+  Clock,
+  Activity,
 } from 'lucide-react';
 import clsx from 'clsx';
-import type { Session, Participant } from '../types';
 import { useToast } from '../components/Toast';
 
-interface BackendSession {
+interface CliSession {
   id: string;
   name: string;
-  state: string;
-  created_at: string;
-  participants: BackendParticipant[];
-  message_count: number;
-}
-
-interface BackendParticipant {
-  agent_id: string;
-  provider: string;
-  model: string;
-  is_host: boolean;
+  role: string;
   status: string;
-  message_count: number;
+  working_on: string | null;
+  working_directory: string;
+  joined_at: number;
+  last_heartbeat: number;
 }
 
-const availableProviders = [
-  { id: 'claude', name: 'Claude' },
-  { id: 'openai', name: 'OpenAI' },
-  { id: 'gemini', name: 'Gemini' },
-  { id: 'ollama', name: 'Ollama' },
-  { id: 'mistral', name: 'Mistral' },
-];
+const roleColors: Record<string, string> = {
+  General: 'bg-blue-500/20 text-blue-400',
+  Backend: 'bg-purple-500/20 text-purple-400',
+  Web: 'bg-green-500/20 text-green-400',
+  Android: 'bg-emerald-500/20 text-emerald-400',
+  iOS: 'bg-pink-500/20 text-pink-400',
+  IoT: 'bg-orange-500/20 text-orange-400',
+};
 
-function mapBackendSession(backend: BackendSession): Session {
-  return {
-    id: backend.id,
-    name: backend.name,
-    state: backend.state.toLowerCase().replace(/"/g, '') as Session['state'],
-    createdAt: new Date(backend.created_at),
-    participants: backend.participants.map((p) => ({
-      agentId: p.agent_id,
-      provider: p.provider,
-      model: p.model,
-      isHost: p.is_host,
-      status: p.status.toLowerCase().replace(/"/g, '') as Participant['status'],
-      messageCount: p.message_count,
-    })),
-    messageCount: backend.message_count,
-  };
+const roleEmojis: Record<string, string> = {
+  General: '🔧',
+  Backend: '⚙️',
+  Web: '🌐',
+  Android: '🤖',
+  iOS: '🍎',
+  IoT: '📡',
+};
+
+function formatTime(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString();
+}
+
+function getIdleTime(lastHeartbeat: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = now - lastHeartbeat;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  return `${Math.floor(diff / 3600)}h ago`;
 }
 
 export default function Sessions() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [showNewSession, setShowNewSession] = useState(false);
-  const [newSessionName, setNewSessionName] = useState('');
-  const [newSessionHost, setNewSessionHost] = useState('claude');
-  const [isLoading, setIsLoading] = useState(false);
+  const [cliSessions, setCliSessions] = useState<CliSession[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const toast = useToast();
 
-  const loadSessions = useCallback(async () => {
+  const loadCliSessions = useCallback(async () => {
     try {
-      const backendSessions = await invoke<BackendSession[]>('list_sessions');
-      setSessions(backendSessions.map(mapBackendSession));
-      return backendSessions.length;
+      const sessions = await invoke<CliSession[]>('list_cli_sessions');
+      setCliSessions(sessions);
+      return sessions.length;
     } catch (error) {
-      console.error('Failed to load sessions:', error);
+      console.error('Failed to load CLI sessions:', error);
       toast.error(`Failed to load sessions: ${error}`);
       return 0;
     }
@@ -82,52 +72,30 @@ export default function Sessions() {
 
   const refreshSessions = useCallback(async () => {
     setIsRefreshing(true);
-    const count = await loadSessions();
+    const count = await loadCliSessions();
     setIsRefreshing(false);
     if (count === 0) {
-      toast.info('No sessions found. Create one or start a CLI session.');
+      toast.info('No CLI sessions found. Start one with: sena session start --name "Name" --role general');
     } else {
-      toast.success(`Found ${count} session(s)`);
+      toast.success(`Found ${count} CLI session(s)`);
     }
-  }, [loadSessions, toast]);
+  }, [loadCliSessions, toast]);
 
   useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
-
-  const handleCreateSession = async () => {
-    if (!newSessionName.trim()) {
-      toast.warning('Please enter a session name');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const backendSession = await invoke<BackendSession>('create_session', {
-        name: newSessionName,
-        hostProvider: newSessionHost,
-      });
-      setSessions((prev) => [...prev, mapBackendSession(backendSession)]);
-      setNewSessionName('');
-      setShowNewSession(false);
-      toast.success(`Session "${backendSession.name}" created successfully`);
-    } catch (error) {
-      console.error('Failed to create session:', error);
-      toast.error(`Failed to create session: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadCliSessions();
+    const interval = setInterval(loadCliSessions, 5000);
+    return () => clearInterval(interval);
+  }, [loadCliSessions]);
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-dark-100">
-            Collaboration Sessions
+            Active Sessions
           </h1>
           <p className="text-dark-400 mt-1">
-            Create multi-AI collaboration sessions where AIs talk to each other
+            View and manage CLI sessions running across terminals
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -139,76 +107,10 @@ export default function Sessions() {
           >
             <RefreshCw className={clsx('w-5 h-5', isRefreshing && 'animate-spin')} />
           </button>
-          <button
-            onClick={() => setShowNewSession(true)}
-            className="btn-primary"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Session
-          </button>
         </div>
       </div>
 
-      {showNewSession && (
-        <div className="card mb-6">
-          <h2 className="text-lg font-semibold text-dark-100 mb-4">
-            Create New Session
-          </h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-dark-300 mb-2">
-                Session Name
-              </label>
-              <input
-                type="text"
-                value={newSessionName}
-                onChange={(e) => setNewSessionName(e.target.value)}
-                placeholder="e.g., Code Review Session"
-                className="input"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-dark-300 mb-2">
-                Host Provider
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {availableProviders.map((provider) => (
-                  <button
-                    key={provider.id}
-                    onClick={() => setNewSessionHost(provider.id)}
-                    className={clsx(
-                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                      newSessionHost === provider.id
-                        ? 'bg-sena-500 text-dark-950'
-                        : 'bg-dark-700 text-dark-300 hover:bg-dark-600'
-                    )}
-                  >
-                    {provider.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleCreateSession}
-                className="btn-primary"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Creating...' : 'Create Session'}
-              </button>
-              <button
-                onClick={() => setShowNewSession(false)}
-                className="btn-secondary"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {sessions.length === 0 ? (
+      {cliSessions.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-16 text-center">
           <div className="w-16 h-16 rounded-2xl bg-sena-500/10 flex items-center justify-center mb-4">
             <Users className="w-8 h-8 text-sena-400" />
@@ -217,67 +119,19 @@ export default function Sessions() {
             No Active Sessions
           </h2>
           <p className="text-dark-400 mt-1 max-w-md">
-            Create a collaboration session to enable multiple AI providers to
-            work together on a task. AIs can share context, review each other's
-            work, and reach consensus.
+            Start a CLI session in your terminal to see it here.
           </p>
-          <button
-            onClick={() => setShowNewSession(true)}
-            className="btn-primary mt-6"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create Your First Session
-          </button>
+          <div className="mt-6 p-4 rounded-lg bg-dark-800 text-left">
+            <p className="text-xs text-dark-400 mb-2">Start a session with:</p>
+            <code className="text-sm text-sena-400">
+              sena session start --name "My Session" --role general
+            </code>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {sessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              onAddParticipant={(providerId) => {
-                setSessions((prev) =>
-                  prev.map((s) =>
-                    s.id === session.id
-                      ? {
-                          ...s,
-                          participants: [
-                            ...s.participants,
-                            {
-                              agentId: `${providerId}_${crypto.randomUUID().split('-')[0]}`,
-                              provider: providerId,
-                              model:
-                                availableProviders.find(
-                                  (p) => p.id === providerId
-                                )?.name || providerId,
-                              isHost: false,
-                              status: 'idle',
-                              messageCount: 0,
-                            },
-                          ],
-                        }
-                      : s
-                  )
-                );
-              }}
-              onStart={() => {
-                setSessions((prev) =>
-                  prev.map((s) =>
-                    s.id === session.id ? { ...s, state: 'active' } : s
-                  )
-                );
-              }}
-              onPause={() => {
-                setSessions((prev) =>
-                  prev.map((s) =>
-                    s.id === session.id ? { ...s, state: 'paused' } : s
-                  )
-                );
-              }}
-              onEnd={() => {
-                setSessions((prev) => prev.filter((s) => s.id !== session.id));
-              }}
-            />
+          {cliSessions.map((session) => (
+            <CliSessionCard key={session.id} session={session} />
           ))}
         </div>
       )}
@@ -285,147 +139,61 @@ export default function Sessions() {
   );
 }
 
-function SessionCard({
-  session,
-  onAddParticipant,
-  onStart,
-  onPause,
-  onEnd,
-}: {
-  session: Session;
-  onAddParticipant: (providerId: string) => void;
-  onStart: () => void;
-  onPause: () => void;
-  onEnd: () => void;
-}) {
-  const [showAddParticipant, setShowAddParticipant] = useState(false);
-
-  const stateColors = {
-    initializing: 'badge-info',
-    active: 'badge-success',
-    paused: 'badge-warning',
-    completed: 'badge bg-dark-600 text-dark-300',
-    terminated: 'badge-error',
-  };
-
-  const existingProviders = session.participants.map((p) => p.provider);
-  const availableToAdd = availableProviders.filter(
-    (p) => !existingProviders.includes(p.id)
-  );
+function CliSessionCard({ session }: { session: CliSession }) {
+  const roleColor = roleColors[session.role] || 'bg-gray-500/20 text-gray-400';
+  const roleEmoji = roleEmojis[session.role] || '📦';
 
   return (
     <div className="card">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
+            <span className="text-xl">{roleEmoji}</span>
             <h3 className="font-semibold text-dark-100">{session.name}</h3>
-            <span className={stateColors[session.state]}>{session.state}</span>
+            <span className={clsx('badge', roleColor)}>{session.role}</span>
           </div>
-          <p className="text-xs text-dark-400 mt-1">ID: {session.id}</p>
+          <p className="text-xs text-dark-500 mt-1">ID: {session.id}</p>
         </div>
-        <div className="flex items-center gap-1">
-          {session.state === 'initializing' && (
-            <button onClick={onStart} className="btn-ghost p-2 text-green-400">
-              <Play className="w-4 h-4" />
-            </button>
-          )}
-          {session.state === 'active' && (
-            <button onClick={onPause} className="btn-ghost p-2 text-yellow-400">
-              <Pause className="w-4 h-4" />
-            </button>
-          )}
-          {session.state === 'paused' && (
-            <button onClick={onStart} className="btn-ghost p-2 text-green-400">
-              <Play className="w-4 h-4" />
-            </button>
-          )}
-          <button onClick={onEnd} className="btn-ghost p-2 text-red-400">
-            <XCircle className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-2">
+          <span className={clsx(
+            'badge',
+            session.status === 'Active' ? 'badge-success' : 'badge-warning'
+          )}>
+            {session.status}
+          </span>
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
-        <p className="text-xs text-dark-400 uppercase tracking-wider">
-          Participants
-        </p>
-        {session.participants.map((participant) => (
-          <ParticipantRow key={participant.agentId} participant={participant} />
-        ))}
-      </div>
-
-      {showAddParticipant && availableToAdd.length > 0 && (
-        <div className="mb-4 p-3 rounded-lg bg-dark-800/50">
-          <p className="text-xs text-dark-400 mb-2">Add AI Participant:</p>
-          <div className="flex flex-wrap gap-2">
-            {availableToAdd.map((provider) => (
-              <button
-                key={provider.id}
-                onClick={() => {
-                  onAddParticipant(provider.id);
-                  setShowAddParticipant(false);
-                }}
-                className="px-3 py-1 rounded-lg text-xs font-medium bg-dark-700 text-dark-300 hover:bg-dark-600"
-              >
-                {provider.name}
-              </button>
-            ))}
-          </div>
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center gap-2 text-sm">
+          <FolderOpen className="w-4 h-4 text-dark-500" />
+          <span className="text-dark-300 truncate" title={session.working_directory}>
+            {session.working_directory}
+          </span>
         </div>
-      )}
+
+        {session.working_on && (
+          <div className="flex items-center gap-2 text-sm">
+            <Activity className="w-4 h-4 text-sena-500" />
+            <span className="text-sena-400">{session.working_on}</span>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-dark-700">
         <div className="flex items-center gap-4 text-xs text-dark-400">
           <span className="flex items-center gap-1">
-            <MessageSquare className="w-4 h-4" />
-            {session.messageCount} messages
+            <Terminal className="w-4 h-4" />
+            CLI Session
           </span>
           <span className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            {session.createdAt.toLocaleTimeString()}
+            Started {formatTime(session.joined_at)}
           </span>
         </div>
-        {availableToAdd.length > 0 && (
-          <button
-            onClick={() => setShowAddParticipant(!showAddParticipant)}
-            className="btn-ghost text-xs"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add AI
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ParticipantRow({ participant }: { participant: Participant }) {
-  const statusColors = {
-    idle: 'bg-green-500',
-    thinking: 'bg-yellow-500 animate-pulse',
-    processing: 'bg-blue-500 animate-pulse',
-    offline: 'bg-dark-600',
-    error: 'bg-red-500',
-  };
-
-  return (
-    <div className="flex items-center justify-between p-2 rounded-lg bg-dark-800/50">
-      <div className="flex items-center gap-2">
-        <Bot className="w-4 h-4 text-dark-400" />
-        <span className="text-sm text-dark-200">{participant.provider}</span>
-        {participant.isHost && (
-          <span className="badge bg-sena-500/20 text-sena-400 text-xs">
-            Host
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
         <span className="text-xs text-dark-500">
-          {participant.messageCount} msgs
+          {getIdleTime(session.last_heartbeat)}
         </span>
-        <div
-          className={`w-2 h-2 rounded-full ${statusColors[participant.status]}`}
-        />
       </div>
     </div>
   );

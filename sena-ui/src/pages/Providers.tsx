@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   Bot,
   CheckCircle2,
@@ -8,73 +9,97 @@ import {
   Settings,
   Zap,
 } from 'lucide-react';
-import type { Provider } from '../types';
+import { useToast } from '../components/Toast';
+import clsx from 'clsx';
 
-const mockProviders: Provider[] = [
-  {
-    id: 'claude',
-    name: 'Claude (Anthropic)',
-    status: 'connected',
-    defaultModel: 'claude-sonnet-4-5-20250929',
-    hasApiKey: true,
-    capabilities: { streaming: true, tools: true, vision: true },
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    status: 'disconnected',
-    defaultModel: 'gpt-4.1',
-    hasApiKey: false,
-    capabilities: { streaming: true, tools: true, vision: true },
-  },
-  {
-    id: 'gemini',
-    name: 'Google Gemini',
-    status: 'disconnected',
-    defaultModel: 'gemini-2.5-flash',
-    hasApiKey: false,
-    capabilities: { streaming: true, tools: true, vision: true },
-  },
-  {
-    id: 'ollama',
-    name: 'Ollama (Local)',
-    status: 'connected',
-    defaultModel: 'llama3.2',
-    hasApiKey: true,
-    capabilities: { streaming: true, tools: true, vision: false },
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral AI',
-    status: 'disconnected',
-    defaultModel: 'mistral-large-latest',
-    hasApiKey: false,
-    capabilities: { streaming: true, tools: true, vision: true },
-  },
-];
+interface ProviderInfo {
+  id: string;
+  name: string;
+  status: string;
+  default_model: string;
+  has_api_key: boolean;
+  capabilities: {
+    streaming: boolean;
+    tools: boolean;
+    vision: boolean;
+  };
+}
 
 export default function Providers() {
-  const [providers] = useState<Provider[]>(mockProviders);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
   const [defaultProvider, setDefaultProvider] = useState('claude');
+  const [isLoading, setIsLoading] = useState(true);
+  const toast = useToast();
+
+  const loadProviders = useCallback(async () => {
+    try {
+      const data = await invoke<ProviderInfo[]>('get_providers');
+      setProviders(data);
+    } catch (error) {
+      console.error('Failed to load providers:', error);
+      toast.error(`Failed to load providers: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const refreshProviders = useCallback(async () => {
+    setIsLoading(true);
+    await loadProviders();
+    toast.success('Providers refreshed');
+  }, [loadProviders, toast]);
+
+  useEffect(() => {
+    loadProviders();
+  }, [loadProviders]);
 
   const handleTest = async (providerId: string) => {
     setTesting(providerId);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setTesting(null);
+    try {
+      const result = await invoke<{ success: boolean; message: string }>('test_provider', {
+        providerId,
+      });
+      if (result.success) {
+        toast.success(`${providerId} connection successful`);
+      } else {
+        toast.error(`${providerId}: ${result.message}`);
+      }
+    } catch (error) {
+      toast.error(`Test failed: ${error}`);
+    } finally {
+      setTesting(null);
+      await loadProviders();
+    }
   };
 
-  const handleSetDefault = (providerId: string) => {
-    setDefaultProvider(providerId);
+  const handleSetDefault = async (providerId: string) => {
+    try {
+      await invoke('set_default_provider', { providerId });
+      setDefaultProvider(providerId);
+      toast.success(`${providerId} set as default provider`);
+    } catch (error) {
+      toast.error(`Failed to set default: ${error}`);
+    }
   };
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-dark-100">AI Providers</h1>
-        <p className="text-dark-400 mt-1">
-          Manage and configure your AI provider connections
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-dark-100">AI Providers</h1>
+          <p className="text-dark-400 mt-1">
+            Manage and configure your AI provider connections
+          </p>
+        </div>
+        <button
+          onClick={refreshProviders}
+          disabled={isLoading}
+          className="btn-secondary"
+          title="Refresh providers"
+        >
+          <RefreshCw className={clsx('w-5 h-5', isLoading && 'animate-spin')} />
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -129,32 +154,28 @@ function ProviderCard({
   onTest,
   onSetDefault,
 }: {
-  provider: Provider;
+  provider: ProviderInfo;
   isDefault: boolean;
   isTesting: boolean;
   onTest: () => void;
   onSetDefault: () => void;
 }) {
-  const StatusIcon =
-    provider.status === 'connected'
-      ? CheckCircle2
-      : provider.status === 'error'
-        ? AlertCircle
-        : XCircle;
+  const isConnected = provider.status === 'connected';
+  const isError = provider.status === 'error';
 
-  const statusColor =
-    provider.status === 'connected'
-      ? 'text-green-400'
-      : provider.status === 'error'
-        ? 'text-red-400'
-        : 'text-dark-500';
+  const StatusIcon = isConnected ? CheckCircle2 : isError ? AlertCircle : XCircle;
 
-  const statusBg =
-    provider.status === 'connected'
-      ? 'bg-green-500/10'
-      : provider.status === 'error'
-        ? 'bg-red-500/10'
-        : 'bg-dark-800';
+  const statusColor = isConnected
+    ? 'text-green-400'
+    : isError
+      ? 'text-red-400'
+      : 'text-dark-500';
+
+  const statusBg = isConnected
+    ? 'bg-green-500/10'
+    : isError
+      ? 'bg-red-500/10'
+      : 'bg-dark-800';
 
   return (
     <div className="card">
@@ -174,7 +195,7 @@ function ProviderCard({
                 </span>
               )}
             </div>
-            <p className="text-sm text-dark-400">{provider.defaultModel}</p>
+            <p className="text-sm text-dark-400">{provider.default_model}</p>
           </div>
         </div>
         <StatusIcon className={`w-5 h-5 ${statusColor}`} />
@@ -190,7 +211,7 @@ function ProviderCard({
         {provider.capabilities.vision && (
           <span className="badge badge-info">Vision</span>
         )}
-        {provider.hasApiKey ? (
+        {provider.has_api_key ? (
           <span className="badge badge-success">API Key Set</span>
         ) : (
           <span className="badge badge-warning">No API Key</span>
@@ -200,7 +221,7 @@ function ProviderCard({
       <div className="flex gap-2">
         <button
           onClick={onTest}
-          disabled={isTesting || !provider.hasApiKey}
+          disabled={isTesting || !provider.has_api_key}
           className="btn-secondary flex-1"
         >
           {isTesting ? (
@@ -215,7 +236,7 @@ function ProviderCard({
             </>
           )}
         </button>
-        {!isDefault && provider.status === 'connected' && (
+        {!isDefault && isConnected && (
           <button onClick={onSetDefault} className="btn-primary">
             <Settings className="w-4 h-4 mr-2" />
             Set Default

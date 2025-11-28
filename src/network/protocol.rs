@@ -71,6 +71,44 @@ pub enum NetworkCommand {
         code: u32,
         message: String,
     },
+
+    ConnectionRequest {
+        from_hub_id: String,
+        from_hub_name: String,
+        request_id: String,
+        message: Option<String>,
+    },
+    ConnectionApproved {
+        request_id: String,
+        auth_token: String,
+    },
+    ConnectionDenied {
+        request_id: String,
+        reason: String,
+    },
+
+    SessionListRequest,
+    SessionListResponse {
+        hub_id: String,
+        hub_name: String,
+        sessions: Vec<RemoteSession>,
+    },
+
+    CrossHubMessage {
+        from_hub_id: String,
+        from_hub_name: String,
+        from_session: String,
+        to_session: String,
+        content: String,
+        timestamp: i64,
+    },
+    CrossHubBroadcast {
+        from_hub_id: String,
+        from_hub_name: String,
+        from_session: String,
+        content: String,
+        timestamp: i64,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -189,6 +227,78 @@ impl NetworkMessage {
         Self::new(NetworkCommand::Disconnect)
     }
 
+    pub fn connection_request(
+        hub_id: &str,
+        hub_name: &str,
+        request_id: &str,
+        message: Option<String>,
+    ) -> Self {
+        Self::new(NetworkCommand::ConnectionRequest {
+            from_hub_id: hub_id.to_string(),
+            from_hub_name: hub_name.to_string(),
+            request_id: request_id.to_string(),
+            message,
+        })
+    }
+
+    pub fn connection_approved(request_id: &str, auth_token: &str) -> Self {
+        Self::new(NetworkCommand::ConnectionApproved {
+            request_id: request_id.to_string(),
+            auth_token: auth_token.to_string(),
+        })
+    }
+
+    pub fn connection_denied(request_id: &str, reason: &str) -> Self {
+        Self::new(NetworkCommand::ConnectionDenied {
+            request_id: request_id.to_string(),
+            reason: reason.to_string(),
+        })
+    }
+
+    pub fn session_list_request() -> Self {
+        Self::new(NetworkCommand::SessionListRequest)
+    }
+
+    pub fn session_list_response(hub_id: &str, hub_name: &str, sessions: Vec<RemoteSession>) -> Self {
+        Self::new(NetworkCommand::SessionListResponse {
+            hub_id: hub_id.to_string(),
+            hub_name: hub_name.to_string(),
+            sessions,
+        })
+    }
+
+    pub fn cross_hub_message(
+        from_hub_id: &str,
+        from_hub_name: &str,
+        from_session: &str,
+        to_session: &str,
+        content: &str,
+    ) -> Self {
+        Self::new(NetworkCommand::CrossHubMessage {
+            from_hub_id: from_hub_id.to_string(),
+            from_hub_name: from_hub_name.to_string(),
+            from_session: from_session.to_string(),
+            to_session: to_session.to_string(),
+            content: content.to_string(),
+            timestamp: chrono::Utc::now().timestamp(),
+        })
+    }
+
+    pub fn cross_hub_broadcast(
+        from_hub_id: &str,
+        from_hub_name: &str,
+        from_session: &str,
+        content: &str,
+    ) -> Self {
+        Self::new(NetworkCommand::CrossHubBroadcast {
+            from_hub_id: from_hub_id.to_string(),
+            from_hub_name: from_hub_name.to_string(),
+            from_session: from_session.to_string(),
+            content: content.to_string(),
+            timestamp: chrono::Utc::now().timestamp(),
+        })
+    }
+
     pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
         let json =
             serde_json::to_string(self).map_err(|e| format!("Serialization failed: {}", e))?;
@@ -213,7 +323,7 @@ impl NetworkMessage {
 
 pub const DEFAULT_PORT: u16 = 9876;
 pub const MDNS_SERVICE_TYPE: &str = "_sena._tcp.local.";
-pub const PROTOCOL_VERSION: &str = "1.0";
+pub const PROTOCOL_VERSION: &str = "2.0";
 
 #[cfg(test)]
 mod tests {

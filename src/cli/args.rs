@@ -355,7 +355,7 @@ pub enum HubAction {
     Sessions,
     #[command(about = "Send message from Hub to any session")]
     Tell {
-        #[arg(help = "Target session (name or ID)")]
+        #[arg(help = "Target session (name or ID, or HubName:SessionName for remote)")]
         target: String,
         #[arg(help = "Message content")]
         message: String,
@@ -374,6 +374,41 @@ pub enum HubAction {
     Conflicts,
     #[command(about = "Clear hub data")]
     Clear,
+    #[command(about = "Show this hub's identity")]
+    Identity,
+    #[command(about = "Set hub display name")]
+    SetName {
+        #[arg(help = "New hub name")]
+        name: String,
+    },
+    #[command(about = "List connected remote hubs")]
+    Peers,
+    #[command(about = "Show pending connection requests")]
+    Requests,
+    #[command(about = "Request connection to remote hub")]
+    Connect {
+        #[arg(help = "Hub address (IP:port or hostname:port)")]
+        address: String,
+        #[arg(short, long, help = "Optional connection message")]
+        message: Option<String>,
+    },
+    #[command(about = "Approve pending connection request")]
+    Approve {
+        #[arg(help = "Request ID (first 8 characters)")]
+        request_id: String,
+    },
+    #[command(about = "Reject pending connection request")]
+    Reject {
+        #[arg(help = "Request ID (first 8 characters)")]
+        request_id: String,
+    },
+    #[command(about = "Disconnect from remote hub")]
+    Disconnect {
+        #[arg(help = "Hub ID or name")]
+        hub: String,
+    },
+    #[command(about = "List all sessions (local + remote)")]
+    Federation,
 }
 
 #[derive(Subcommand, Debug, Clone)]

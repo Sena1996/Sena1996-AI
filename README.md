@@ -2,23 +2,26 @@
 
 ## Make Your AI Collaborative and Smarter™
 
-[![Version](https://img.shields.io/badge/Version-12.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/Version-13.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-280%20Passed-success)](https://github.com/Sena1996/Sena1996-AI)
+[![Tests](https://img.shields.io/badge/Tests-254%20Passed-success)](https://github.com/Sena1996/Sena1996-AI)
 
 ---
 
-## What's New in v12.0.0
+## What's New in v13.0.0
 
-- **Multi-AI Provider Integration** - Claude, OpenAI, Gemini, Ollama, Mistral support
-- **AI-to-AI Collaboration** - Multiple AI agents working together
-- **Consensus Voting System** - Unanimous, Majority, SuperMajority, Weighted voting
-- **Specialist Routing** - Task-based AI delegation with domain detection
-- **Tauri 2.0 Desktop App** - Cross-platform GUI application
-- **280 Tests Passing** - Comprehensive test coverage
+- **Cross-Hub Federation (Hub v2.0)** - Connect multiple SENA hubs across different machines
+- **Hub Identity System** - Persistent UUID-based hub identification
+- **Auth Passkey** - Secure authentication for hub-to-hub connections
+- **Federated Sessions** - View and message sessions across all connected hubs
+- **Peers Management UI** - New desktop page for managing hub connections
+- **Cross-Hub Messaging** - Use `@HubName:SessionName` syntax for remote messaging
+- **Settings Hub Credentials** - Manage hub identity and passkeys in Settings
+- **Protocol v2.0** - Updated network protocol for federation support
+- **254 Tests Passing** - Comprehensive test coverage
 - **Zero Clippy Warnings** - Elite code quality
 
 ---
@@ -451,7 +454,7 @@ copies or substantial portions of the Software.
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
-║                       v12.0.0                                ║
+║                       v13.0.0                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║

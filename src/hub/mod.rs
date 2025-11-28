@@ -1,6 +1,6 @@
-//! SENA Collaboration Hub v1.0
+//! SENA Collaboration Hub v2.0
 //!
-//! Multi-session collaboration system for SENA v10.0.0
+//! Multi-session collaboration system with Cross-Hub Federation
 //! Enables Android Claude, Web Claude, Backend Claude, IoT Claude to work together
 //!
 //! Features:
@@ -9,10 +9,16 @@
 //! - Live state synchronization via CRDT
 //! - Conflict detection and warnings
 //! - Lightning-fast Unix socket messaging
+//! - Cross-hub peer federation (v2.0)
+//! - Hub identity with persistent UUID
+//! - Auth passkey for secure hub connections
+//! - Federated sessions across multiple hubs
 
 pub mod conflicts;
 pub mod context;
+pub mod identity;
 pub mod messages;
+pub mod peers;
 pub mod session;
 #[cfg(unix)]
 pub mod socket;
@@ -21,7 +27,9 @@ pub mod tasks;
 
 pub use conflicts::{ConflictDetector, FileConflict};
 pub use context::{ContextManager, SessionContext};
+pub use identity::{ConnectedHub, ConnectionRequest, DiscoveredHub, HubIdentity};
 pub use messages::{Broadcast, Message, MessageQueue};
+pub use peers::{FederatedSession, PeerManager, RemoteSession, ResolvedTarget};
 pub use session::{Session, SessionRegistry, SessionRole, SessionStatus};
 #[cfg(unix)]
 pub use socket::{HubClient, HubServer};

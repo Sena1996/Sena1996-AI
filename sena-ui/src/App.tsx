@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Providers from './pages/Providers';
 import Chat from './pages/Chat';
 import Sessions from './pages/Sessions';
+import Peers from './pages/Peers';
 import Settings from './pages/Settings';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/providers" element={<Providers />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/sessions" element={<Sessions />} />
+          <Route path="/peers" element={<Peers />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>

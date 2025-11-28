@@ -7,7 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [13.0.0] - 2025-11-28
+
+### Added - Cross-Hub Federation (Hub v2.0)
+- **Hub Identity System** - Persistent UUID-based hub identification
+  - Each SENA installation gets a unique hub ID
+  - Customizable hub display name
+  - Hostname and port configuration
+- **Auth Passkey** - Secure authentication for hub-to-hub connections
+  - Generate/regenerate passkeys in Settings
+  - Share passkey with trusted hubs
+  - Passkey-based connection approval
+- **Cross-Hub Peer Management** - Connect SENA hubs across machines
+  - `sena hub peers` - List connected remote hubs
+  - `sena hub requests` - View pending connection requests
+  - `sena hub approve/reject` - Manage connection requests
+  - `sena hub connect` - Request connection to remote hub
+  - `sena hub disconnect` - Remove trusted hub
+- **Federated Sessions** - View all sessions across connected hubs
+  - `sena hub federation` - List local + remote sessions
+  - Combined session view in Desktop UI
+- **Cross-Hub Messaging** - Message sessions on remote hubs
+  - Syntax: `@HubName:SessionName message`
+  - Syntax: `tell HubName:SessionName message`
+- **Peers UI Page** - New desktop page for hub management
+  - View/edit hub identity
+  - Manage connected peers
+  - Approve/reject connection requests
+- **Settings Hub Credentials** - Hub management in Settings page
+  - View hub identity (name, ID, port)
+  - Edit hub display name
+  - Generate/copy auth passkeys
+
+### Added - Network Protocol v2.0
+- `ConnectionRequest` - Request connection to another hub
+- `ConnectionApproved/Denied` - Approval flow responses
+- `SessionListRequest/Response` - Query remote hub sessions
+- `CrossHubMessage` - Direct message to remote session
+- `CrossHubBroadcast` - Broadcast to all remote sessions
+
+### Changed
+- Hub module header updated to v2.0
+- Protocol version updated from 1.0 to 2.0
+- Chat page supports cross-hub addressing
+- Smart input parser handles `HubName:SessionName` syntax
+
+### Fixed
+- Session persistence across app restarts (from v12.0.x)
+- CLI session integration with Desktop UI (from v12.0.x)
+
+### Technical
+- 254 tests passing
+- Zero clippy warnings
+- New modules: `hub/identity.rs`, `hub/peers.rs`
+- Tauri commands: `get_hub_identity`, `set_hub_name`, `get_hub_passkey`, `generate_hub_passkey`, `get_connected_peers`, `get_pending_requests`, `approve_peer_request`, `reject_peer_request`, `disconnect_peer`, `get_federated_sessions`
+
+---
+
 ## [12.0.0] - 2025-11-27
+
+### Known Issues (Fixed in v13.0.0)
+- Session state not persisting properly across restarts
+- CLI sessions not syncing with Desktop UI in real-time
 
 ### Added
 - **Multi-AI Provider Integration** - Support for Claude, OpenAI, Gemini, Ollama, and Mistral
@@ -146,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
-║                       v12.0.0                                ║
+║                       v13.0.0                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║

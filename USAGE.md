@@ -2,7 +2,7 @@
 
 ## Make Your AI Collaborative and Smarter™
 
-**Version 12.0.0** - Complete guide to using Sena1996 AI Tool with Claude Code.
+**Version 13.0.0** - Complete guide to using Sena1996 AI Tool with Claude Code.
 
 ---
 
@@ -48,7 +48,7 @@ cp target/release/sena ~/.local/bin/sena
 
 ### Verify Installation
 ```bash
-sena --version    # Should show: sena 12.0.0
+sena --version    # Should show: sena 13.0.0
 sena health       # System health check
 ```
 
@@ -860,7 +860,8 @@ sena collab info <session-id>
 
 | Version | Highlights |
 |---------|------------|
-| **12.0.0** | Multi-AI providers, AI-to-AI collaboration, consensus voting, specialist routing, Tauri desktop app |
+| **13.0.0** | Cross-Hub Federation (Hub v2.0), Hub Identity, Auth Passkey, Federated Sessions, Peers UI |
+| 12.0.x | Multi-AI providers, AI-to-AI collaboration, consensus voting, specialist routing, Tauri desktop app |
 | 11.0.x | Network collaboration, peer discovery, TLS encryption |
 | 10.0.x | Session management, cross-session messaging |
 | 9.0.x | Domain agents, intelligence system |
@@ -878,7 +879,7 @@ sena collab info <session-id>
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
-║                       v12.0.0                                ║
+║                       v13.0.0                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║
