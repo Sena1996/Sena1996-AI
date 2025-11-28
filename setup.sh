@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="11.0.2"
+SENA_VERSION="13.0.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INSTALL_DIR="$HOME/.local/bin"
@@ -504,9 +504,43 @@ install_binary() {
         print_success "Created alias: $USER_COMMAND -> sena"
     fi
 
+    install_sena_latest_wrapper
+
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
         setup_shell_path
     fi
+}
+
+install_sena_latest_wrapper() {
+    print_info "Creating sena-latest wrapper (auto-selects newest version)..."
+
+    cat > "$INSTALL_DIR/sena-latest" << 'WRAPPER_EOF'
+#!/bin/bash
+SENA_DEV_PATHS=(
+    "$HOME/AI/Sena1996-AI/target/release/sena"
+    "$HOME/Projects/Sena1996-AI/target/release/sena"
+    "$HOME/Code/Sena1996-AI/target/release/sena"
+)
+SENA_INSTALLED="$HOME/.local/bin/sena"
+
+for dev_path in "${SENA_DEV_PATHS[@]}"; do
+    expanded_path="${dev_path/#\$HOME/$HOME}"
+    if [[ -x "$expanded_path" ]]; then
+        exec "$expanded_path" "$@"
+    fi
+done
+
+if [[ -x "$SENA_INSTALLED" ]]; then
+    exec "$SENA_INSTALLED" "$@"
+fi
+
+echo "Error: sena binary not found" >&2
+exit 1
+WRAPPER_EOF
+
+    chmod +x "$INSTALL_DIR/sena-latest"
+    print_success "Created: $INSTALL_DIR/sena-latest"
+    print_detail "This wrapper always uses the latest built version"
 }
 
 setup_shell_path() {
@@ -819,6 +853,7 @@ setup_claude_code_config() {
 
     mkdir -p "$CLAUDE_HOME"
 
+    local sena_latest_path="$INSTALL_DIR/sena-latest"
     local sena_path="$INSTALL_DIR/sena"
 
     cat > "$CLAUDE_HOME/settings.json" << EOF
@@ -831,13 +866,15 @@ setup_claude_code_config() {
       "Bash(sena *)",
       "Bash(sena who:*)",
       "Bash(sena peer list:*)",
-      "Bash(${sena_path} *)"
+      "Bash(${sena_latest_path} *)",
+      "Bash(${sena_path} *)",
+      "Bash(./target/release/sena *)"
     ]
   },
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "${sena_path} hook user-prompt-submit"
+        "command": "${sena_latest_path} hook user-prompt-submit"
       }
     ]
   }
@@ -845,8 +882,8 @@ setup_claude_code_config() {
 EOF
 
     print_success "Created $CLAUDE_HOME/settings.json"
-    print_detail "Auto-approved commands: $USER_COMMAND, sena"
-    print_detail "Hook: UserPromptSubmit"
+    print_detail "Auto-approved commands: $USER_COMMAND, sena, sena-latest"
+    print_detail "Hook: UserPromptSubmit (using sena-latest for auto-version)"
 }
 
 setup_claude_desktop_config() {
@@ -971,6 +1008,7 @@ import os
 
 settings_path = os.path.expanduser("$CLAUDE_HOME/settings.json")
 sena_path = "$INSTALL_DIR/sena"
+sena_latest_path = "$INSTALL_DIR/sena-latest"
 user_command = "$USER_COMMAND"
 
 with open(settings_path, 'r') as f:
@@ -988,7 +1026,9 @@ new_perms = [
     "Bash(sena *)",
     "Bash(sena who:*)",
     "Bash(sena peer list:*)",
-    f"Bash({sena_path} *)"
+    f"Bash({sena_latest_path} *)",
+    f"Bash({sena_path} *)",
+    "Bash(./target/release/sena *)"
 ]
 
 existing = set(settings['permissions']['allow'])
@@ -1001,13 +1041,12 @@ if 'hooks' not in settings:
 if 'UserPromptSubmit' not in settings['hooks']:
     settings['hooks']['UserPromptSubmit'] = []
 
-sena_hook = {"command": f"{sena_path} hook user-prompt-submit"}
-hook_exists = any(
-    h.get('command', '').endswith('hook user-prompt-submit')
-    for h in settings['hooks']['UserPromptSubmit']
-)
-if not hook_exists:
-    settings['hooks']['UserPromptSubmit'].append(sena_hook)
+settings['hooks']['UserPromptSubmit'] = [
+    h for h in settings['hooks']['UserPromptSubmit']
+    if 'sena' not in h.get('command', '').lower()
+]
+sena_hook = {"command": f"{sena_latest_path} hook user-prompt-submit"}
+settings['hooks']['UserPromptSubmit'].append(sena_hook)
 
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)

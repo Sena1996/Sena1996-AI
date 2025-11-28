@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::identity::{ConnectedHub, ConnectionRequest, DiscoveredHub, HubIdentity};
@@ -48,7 +48,7 @@ pub struct PeerManager {
 }
 
 impl PeerManager {
-    pub fn new(identity: HubIdentity, hub_dir: &PathBuf) -> Self {
+    pub fn new(identity: HubIdentity, hub_dir: &Path) -> Self {
         Self {
             identity,
             connected_hubs: HashMap::new(),
