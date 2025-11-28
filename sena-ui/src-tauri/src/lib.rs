@@ -343,7 +343,7 @@ async fn create_session(
 #[tauri::command]
 async fn list_sessions(state: State<'_, AppState>) -> Result<Vec<SessionDto>, String> {
     let orchestrator = state.orchestrator.read().await;
-    let summaries = orchestrator.list_active_sessions().await;
+    let summaries = orchestrator.list_all_sessions().await;
 
     let sessions: Vec<SessionDto> = summaries
         .iter()

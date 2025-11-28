@@ -546,12 +546,12 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
 
             for session in &sessions {
                 output.push_str(&format!(
-                    "{} {} ({})\n  ID: {}\n  Status: {}\n  Working: {}\n  Last active: {}\n\n",
+                    "{} {} ({})\n  ID: {}\n  Status: {:?}\n  Working: {}\n  Last active: {}\n\n",
                     session.role.emoji(),
                     session.name,
                     session.role.name(),
                     session.id,
-                    format!("{:?}", session.status),
+                    session.status,
                     session.working_on.as_deref().unwrap_or("idle"),
                     session.idle_display()
                 ));

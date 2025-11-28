@@ -342,7 +342,7 @@ impl SessionManager {
         }
 
         let data = SessionsData {
-            version: "12.0.4".to_string(),
+            version: "12.0.5".to_string(),
             sessions: self.sessions.clone(),
         };
 

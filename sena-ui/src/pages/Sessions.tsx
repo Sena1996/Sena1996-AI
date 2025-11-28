@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   Users,
   Plus,
@@ -8,11 +9,28 @@ import {
   MessageSquare,
   Bot,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { Session, Participant } from '../types';
 
-const mockSessions: Session[] = [];
+interface BackendSession {
+  id: string;
+  name: string;
+  state: string;
+  created_at: string;
+  participants: BackendParticipant[];
+  message_count: number;
+}
+
+interface BackendParticipant {
+  agent_id: string;
+  provider: string;
+  model: string;
+  is_host: boolean;
+  status: string;
+  message_count: number;
+}
 
 const availableProviders = [
   { id: 'claude', name: 'Claude' },
@@ -22,38 +40,68 @@ const availableProviders = [
   { id: 'mistral', name: 'Mistral' },
 ];
 
+function mapBackendSession(backend: BackendSession): Session {
+  return {
+    id: backend.id,
+    name: backend.name,
+    state: backend.state.toLowerCase().replace(/"/g, '') as Session['state'],
+    createdAt: new Date(backend.created_at),
+    participants: backend.participants.map((p) => ({
+      agentId: p.agent_id,
+      provider: p.provider,
+      model: p.model,
+      isHost: p.is_host,
+      status: p.status.toLowerCase().replace(/"/g, '') as Participant['status'],
+      messageCount: p.message_count,
+    })),
+    messageCount: backend.message_count,
+  };
+}
+
 export default function Sessions() {
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [showNewSession, setShowNewSession] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
   const [newSessionHost, setNewSessionHost] = useState('claude');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleCreateSession = () => {
+  const loadSessions = useCallback(async () => {
+    try {
+      const backendSessions = await invoke<BackendSession[]>('list_sessions');
+      setSessions(backendSessions.map(mapBackendSession));
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    }
+  }, []);
+
+  const refreshSessions = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadSessions();
+    setIsRefreshing(false);
+  }, [loadSessions]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  const handleCreateSession = async () => {
     if (!newSessionName.trim()) return;
 
-    const newSession: Session = {
-      id: `session_${crypto.randomUUID().split('-')[0]}`,
-      name: newSessionName,
-      state: 'initializing',
-      createdAt: new Date(),
-      participants: [
-        {
-          agentId: `${newSessionHost}_${crypto.randomUUID().split('-')[0]}`,
-          provider: newSessionHost,
-          model:
-            availableProviders.find((p) => p.id === newSessionHost)?.name ||
-            newSessionHost,
-          isHost: true,
-          status: 'idle',
-          messageCount: 0,
-        },
-      ],
-      messageCount: 0,
-    };
-
-    setSessions((prev) => [...prev, newSession]);
-    setNewSessionName('');
-    setShowNewSession(false);
+    setIsLoading(true);
+    try {
+      const backendSession = await invoke<BackendSession>('create_session', {
+        name: newSessionName,
+        hostProvider: newSessionHost,
+      });
+      setSessions((prev) => [...prev, mapBackendSession(backendSession)]);
+      setNewSessionName('');
+      setShowNewSession(false);
+    } catch (error) {
+      console.error('Failed to create session:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -67,13 +115,23 @@ export default function Sessions() {
             Create multi-AI collaboration sessions where AIs talk to each other
           </p>
         </div>
-        <button
-          onClick={() => setShowNewSession(true)}
-          className="btn-primary"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          New Session
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={refreshSessions}
+            disabled={isRefreshing}
+            className="btn-secondary"
+            title="Refresh sessions"
+          >
+            <RefreshCw className={clsx('w-5 h-5', isRefreshing && 'animate-spin')} />
+          </button>
+          <button
+            onClick={() => setShowNewSession(true)}
+            className="btn-primary"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            New Session
+          </button>
+        </div>
       </div>
 
       {showNewSession && (
@@ -116,12 +174,17 @@ export default function Sessions() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleCreateSession} className="btn-primary">
-                Create Session
+              <button
+                onClick={handleCreateSession}
+                className="btn-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Creating...' : 'Create Session'}
               </button>
               <button
                 onClick={() => setShowNewSession(false)}
                 className="btn-secondary"
+                disabled={isLoading}
               >
                 Cancel
               </button>

@@ -250,35 +250,43 @@ impl CollabOrchestrator {
         })
     }
 
+    pub async fn list_all_sessions(&self) -> Vec<SessionSummary> {
+        let manager = self.session_manager.read().await;
+        self.sessions_to_summaries(manager.list_sessions())
+    }
+
     pub async fn list_active_sessions(&self) -> Vec<SessionSummary> {
         let manager = self.session_manager.read().await;
-        let mut summaries = Vec::new();
+        self.sessions_to_summaries(manager.active_sessions())
+    }
 
-        for session in manager.active_sessions() {
-            let participant_summaries: Vec<ParticipantSummary> = session
-                .participants()
-                .iter()
-                .map(|p| ParticipantSummary {
-                    agent_id: p.agent.id.clone(),
-                    provider: p.agent.provider.clone(),
-                    model: p.agent.model.clone(),
-                    is_host: p.is_host,
-                    status: p.agent.status,
-                    message_count: session.messages_from(&p.agent.id).len(),
-                })
-                .collect();
+    fn sessions_to_summaries(&self, sessions: Vec<&CollabSession>) -> Vec<SessionSummary> {
+        sessions
+            .iter()
+            .map(|session| {
+                let participant_summaries: Vec<ParticipantSummary> = session
+                    .participants()
+                    .iter()
+                    .map(|p| ParticipantSummary {
+                        agent_id: p.agent.id.clone(),
+                        provider: p.agent.provider.clone(),
+                        model: p.agent.model.clone(),
+                        is_host: p.is_host,
+                        status: p.agent.status,
+                        message_count: session.messages_from(&p.agent.id).len(),
+                    })
+                    .collect();
 
-            summaries.push(SessionSummary {
-                session_id: session.id.clone(),
-                name: session.name.clone(),
-                state: session.state,
-                created_at: session.created_at,
-                message_count: session.messages().len(),
-                participants: participant_summaries,
-            });
-        }
-
-        summaries
+                SessionSummary {
+                    session_id: session.id.clone(),
+                    name: session.name.clone(),
+                    state: session.state,
+                    created_at: session.created_at,
+                    message_count: session.messages().len(),
+                    participants: participant_summaries,
+                }
+            })
+            .collect()
     }
 
     fn build_context(&self, session: &CollabSession, new_message: &str) -> String {
