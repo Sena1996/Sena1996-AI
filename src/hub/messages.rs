@@ -304,9 +304,7 @@ impl MessageQueue {
         Ok(())
     }
 
-    /// Load messages from disk
     pub fn load(&mut self) -> Result<(), String> {
-        // Load broadcasts
         let broadcast_file = self.messages_dir.join("broadcast.json");
         if broadcast_file.exists() {
             let content = fs::read_to_string(&broadcast_file)
@@ -315,6 +313,56 @@ impl MessageQueue {
             self.messages.extend(broadcasts);
         }
 
+        self.load_all_inbox_files()?;
+
+        Ok(())
+    }
+
+    fn load_all_inbox_files(&mut self) -> Result<(), String> {
+        if !self.messages_dir.exists() {
+            return Ok(());
+        }
+
+        let entries = fs::read_dir(&self.messages_dir)
+            .map_err(|e| format!("Cannot read messages directory: {}", e))?;
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                let filename = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+
+                if filename.ends_with(".json") && filename != "broadcast.json" {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        let inbox_messages: Vec<Message> =
+                            serde_json::from_str(&content).unwrap_or_default();
+                        for msg in inbox_messages {
+                            if !self.messages.iter().any(|m| m.id == msg.id) {
+                                self.messages.push(msg);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn load_inbox_for_session(&mut self, session_id: &str) -> Result<(), String> {
+        let inbox_file = self.messages_dir.join(format!("{}.json", session_id));
+        if inbox_file.exists() {
+            let content = fs::read_to_string(&inbox_file)
+                .map_err(|e| format!("Cannot read inbox for {}: {}", session_id, e))?;
+            let inbox_messages: Vec<Message> = serde_json::from_str(&content).unwrap_or_default();
+            for msg in inbox_messages {
+                if !self.messages.iter().any(|m| m.id == msg.id) {
+                    self.messages.push(msg);
+                }
+            }
+        }
         Ok(())
     }
 

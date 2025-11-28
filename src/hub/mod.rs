@@ -11,6 +11,7 @@
 //! - Lightning-fast Unix socket messaging
 
 pub mod conflicts;
+pub mod context;
 pub mod messages;
 pub mod session;
 #[cfg(unix)]
@@ -19,6 +20,7 @@ pub mod state;
 pub mod tasks;
 
 pub use conflicts::{ConflictDetector, FileConflict};
+pub use context::{ContextManager, SessionContext};
 pub use messages::{Broadcast, Message, MessageQueue};
 pub use session::{Session, SessionRegistry, SessionRole, SessionStatus};
 #[cfg(unix)]
@@ -76,10 +78,10 @@ pub struct Hub {
     pub tasks: TaskBoard,
     pub messages: MessageQueue,
     pub conflicts: ConflictDetector,
+    pub context: ContextManager,
 }
 
 impl Hub {
-    /// Create a new Hub instance
     pub fn new() -> Result<Self, String> {
         let config = HubConfig::new();
         config.ensure_dirs()?;
@@ -90,19 +92,40 @@ impl Hub {
             tasks: TaskBoard::new(&config),
             messages: MessageQueue::new(&config),
             conflicts: ConflictDetector::new(),
+            context: ContextManager::new(&config),
             config,
         })
     }
 
-    /// Join the hub as a specific role
     pub fn join(&mut self, role: SessionRole, name: Option<String>) -> Result<Session, String> {
-        let session = self.sessions.register(role, name)?;
+        let session = self.sessions.register(role, name.clone())?;
         self.state.set_session_active(&session.id, true);
+
+        let context = SessionContext::new(
+            &session.id,
+            &session.name,
+            role.name(),
+        );
+        self.context.save_context(&context)?;
+
         Ok(session)
     }
 
-    /// Leave the hub
+    pub fn get_current_session_id(&self) -> Option<String> {
+        self.context.get_current_session_id()
+    }
+
+    pub fn get_current_session(&self) -> Option<Session> {
+        self.get_current_session_id()
+            .and_then(|id| self.sessions.get(&id).cloned())
+    }
+
     pub fn leave(&mut self, session_id: &str) -> Result<(), String> {
+        if let Some(current_id) = self.get_current_session_id() {
+            if current_id == session_id {
+                let _ = self.context.clear_current_context();
+            }
+        }
         self.sessions.unregister(session_id)?;
         self.state.set_session_active(session_id, false);
         Ok(())
@@ -194,11 +217,11 @@ impl Hub {
         Ok(())
     }
 
-    /// Load state from disk
     pub fn load(&mut self) -> Result<(), String> {
         self.sessions.load()?;
         self.state.load()?;
         self.tasks.load()?;
+        self.messages.load()?;
         Ok(())
     }
 }
@@ -216,6 +239,7 @@ impl Default for Hub {
                     tasks: TaskBoard::new(&config),
                     messages: MessageQueue::new(&config),
                     conflicts: ConflictDetector::new(),
+                    context: ContextManager::new(&config),
                     config,
                 }
             }

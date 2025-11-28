@@ -294,69 +294,98 @@ fn execute_session(
     name: Option<String>,
     format: OutputFormat,
 ) -> Result<String, String> {
-    use crate::hub::{HubConfig, SessionRegistry, SessionRole};
+    use crate::hub::{Hub, SessionContext, SessionRole};
 
-    let config = HubConfig::default();
-    let mut registry = SessionRegistry::new(&config);
-    registry.load()?;
+    let mut hub = Hub::new()?;
+    hub.load()?;
 
     let result = match action {
-        SessionAction::Start => match registry.register(SessionRole::General, name.clone()) {
-            Ok(session) => {
-                let session_id = session.id.clone();
-                let final_name = if let Some(ref n) = name {
-                    if let Some(s) = registry.get_mut(&session_id) {
-                        s.name = n.clone();
-                    }
-                    if let Err(e) = registry.save() {
-                        return Err(format!("Failed to save session: {}", e));
-                    }
-                    n.clone()
-                } else {
-                    session.name.clone()
-                };
-                serde_json::json!({
-                    "action": "start",
-                    "session_id": session_id,
-                    "session_name": final_name,
-                    "started_at": session.joined_at,
-                })
-            }
-            Err(e) => serde_json::json!({"error": e}),
-        },
-        SessionAction::End => {
-            if let Some(session_id) = id.clone() {
-                if let Err(e) = registry.unregister(&session_id) {
-                    return Err(format!("Failed to unregister session: {}", e));
+        SessionAction::Start => {
+            if let Some(existing_id) = hub.get_current_session_id() {
+                if hub.sessions.get(&existing_id).is_some() {
+                    return Err(format!(
+                        "Already in session '{}'. End it first or use different terminal.",
+                        existing_id
+                    ));
                 }
             }
-            serde_json::json!({
-                "action": "end",
-                "status": "session ended",
-            })
+
+            match hub.sessions.register(SessionRole::General, name.clone()) {
+                Ok(session) => {
+                    let context = SessionContext::new(&session.id, &session.name, "general");
+                    hub.context.save_context(&context)?;
+                    hub.state.set_session_active(&session.id, true);
+                    hub.save()?;
+
+                    serde_json::json!({
+                        "action": "start",
+                        "session_id": session.id,
+                        "session_name": session.name,
+                        "started_at": session.joined_at,
+                    })
+                }
+                Err(e) => serde_json::json!({"error": e}),
+            }
         }
-        SessionAction::Info => match id.as_ref().and_then(|sid| registry.get(sid)) {
-            Some(session) => session.stats(),
-            None => {
-                let active = registry.get_active();
-                if active.is_empty() {
-                    serde_json::json!({"error": "no active session"})
-                } else {
-                    serde_json::to_value(&active).unwrap_or_default()
+        SessionAction::End => {
+            let session_id = id.or_else(|| hub.get_current_session_id());
+            if let Some(sid) = session_id {
+                hub.leave(&sid)?;
+                hub.save()?;
+                serde_json::json!({
+                    "action": "end",
+                    "session_id": sid,
+                    "status": "session ended",
+                })
+            } else {
+                serde_json::json!({"error": "No session ID provided and no current session"})
+            }
+        }
+        SessionAction::Info => {
+            let target_id = id.or_else(|| hub.get_current_session_id());
+            match target_id.and_then(|sid| hub.sessions.get(&sid).cloned()) {
+                Some(session) => session.stats(),
+                None => {
+                    let active = hub.sessions.get_active();
+                    if active.is_empty() {
+                        serde_json::json!({"error": "no active session"})
+                    } else {
+                        serde_json::to_value(&active).unwrap_or_default()
+                    }
                 }
             }
-        },
+        }
         SessionAction::List => {
-            let sessions = registry.get_active();
-            serde_json::to_value(&sessions).unwrap_or_default()
+            let sessions = hub.sessions.get_active();
+            let current_id = hub.get_current_session_id();
+            let sessions_with_current: Vec<serde_json::Value> = sessions
+                .iter()
+                .map(|s| {
+                    serde_json::json!({
+                        "id": s.id,
+                        "name": s.name,
+                        "role": s.role.name(),
+                        "status": format!("{:?}", s.status),
+                        "is_current": current_id.as_ref() == Some(&s.id),
+                    })
+                })
+                .collect();
+            serde_json::json!(sessions_with_current)
         }
         SessionAction::Restore => match id {
             Some(session_id) => {
-                serde_json::json!({
-                    "action": "restore",
-                    "session_id": session_id,
-                    "status": "restored",
-                })
+                if let Some(session) = hub.sessions.get(&session_id) {
+                    let context =
+                        SessionContext::new(&session.id, &session.name, session.role.name());
+                    hub.context.save_context(&context)?;
+                    serde_json::json!({
+                        "action": "restore",
+                        "session_id": session_id,
+                        "status": "restored",
+                    })
+                } else {
+                    serde_json::json!({"error": format!("Session {} not found", session_id)})
+                }
             }
             None => serde_json::json!({"error": "session ID required for restore"}),
         },
@@ -491,7 +520,8 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
         }
         HubAction::Stop => Ok("Hub stopped.".to_string()),
         HubAction::Status => {
-            let hub = Hub::new()?;
+            let mut hub = Hub::new()?;
+            hub.load()?;
             let status = hub.status();
             Ok(format!(
                 "Hub Status:\n  Sessions: {}\n  Tasks: {} ({} pending)\n  Conflicts: {}",
@@ -501,8 +531,93 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 status.active_conflicts
             ))
         }
+        HubAction::Sessions => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+            let sessions = hub.who();
+
+            if sessions.is_empty() {
+                return Ok("No sessions online. Use 'sena join --role=<role>' to create one.".to_string());
+            }
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                    HUB SESSIONS                              ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+
+            for session in &sessions {
+                output.push_str(&format!(
+                    "{} {} ({})\n  ID: {}\n  Status: {}\n  Working: {}\n  Last active: {}\n\n",
+                    session.role.emoji(),
+                    session.name,
+                    session.role.name(),
+                    session.id,
+                    format!("{:?}", session.status),
+                    session.working_on.as_deref().unwrap_or("idle"),
+                    session.idle_display()
+                ));
+            }
+
+            output.push_str(&format!("Total: {} session(s)\n", sessions.len()));
+            output.push_str("\nUse 'sena hub tell <name> <message>' to send a message.");
+            Ok(output)
+        }
+        HubAction::Tell { target, message } => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            let resolved_target = hub.sessions.resolve_session(&target).ok_or_else(|| {
+                format!("Session '{}' not found. Use 'sena hub sessions' to list.", target)
+            })?;
+
+            hub.tell("hub", &resolved_target, &message)?;
+            hub.save()?;
+
+            Ok(format!("📨 Hub → {}: {}", target, message))
+        }
+        HubAction::Broadcast { message } => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            hub.broadcast("hub", &message)?;
+            hub.save()?;
+
+            let session_count = hub.who().len();
+            Ok(format!("📢 Broadcast to {} session(s): {}", session_count, message))
+        }
+        HubAction::Messages { count } => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            let messages = hub.messages.get_recent(count);
+
+            if messages.is_empty() {
+                return Ok("No messages in Hub.".to_string());
+            }
+
+            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            output.push_str("║                    HUB MESSAGES                              ║\n");
+            output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
+
+            for msg in &messages {
+                let direction = if msg.to == "all" {
+                    format!("{} → ALL", msg.from)
+                } else {
+                    format!("{} → {}", msg.from, msg.to)
+                };
+                output.push_str(&format!(
+                    "{} [{}] {}\n   {}\n\n",
+                    msg.message_type.emoji(),
+                    msg.time_display(),
+                    direction,
+                    msg.content
+                ));
+            }
+
+            Ok(output)
+        }
         HubAction::Conflicts => {
-            let hub = Hub::new()?;
+            let mut hub = Hub::new()?;
+            hub.load()?;
             let conflicts = hub.get_conflicts();
             if conflicts.is_empty() {
                 Ok("No conflicts detected.".to_string())
@@ -538,6 +653,15 @@ async fn execute_join(
     let mut hub = Hub::new()?;
     hub.load()?;
 
+    if let Some(existing_id) = hub.get_current_session_id() {
+        if hub.sessions.get(&existing_id).is_some() {
+            return Err(format!(
+                "Already in session '{}'. Use 'sena session end --id={}' first, or use a different terminal.",
+                existing_id, existing_id
+            ));
+        }
+    }
+
     let session_role = SessionRole::parse(role);
     let session = hub.join(session_role, name)?;
     hub.save()?;
@@ -547,16 +671,17 @@ async fn execute_join(
         "session_id": session.id,
         "role": session.role.name(),
         "name": session.name,
+        "terminal": hub.context.load_current_context().map(|c| c.terminal_id),
     });
 
     match format {
         OutputFormat::Json => serde_json::to_string_pretty(&result).map_err(|e| e.to_string()),
         _ => Ok(format!(
-            "{} Joined as {} ({})\nSession ID: {}",
+            "{} Joined Hub!\n  Session: {}\n  Name: {}\n  Role: {}\n\nYou can now use 'sena tell <target> <message>' and 'sena inbox'",
             session.role.emoji(),
+            session.id,
             session.name,
-            session.role.name(),
-            session.id
+            session.role.name()
         )),
     }
 }
@@ -568,9 +693,10 @@ async fn execute_who(format: OutputFormat) -> Result<String, String> {
     hub.load()?;
 
     let sessions = hub.who();
+    let current_session_id = hub.get_current_session_id();
 
     if sessions.is_empty() {
-        return Ok("No sessions online.".to_string());
+        return Ok("No sessions online. Use 'sena join --role=<role>' to join.".to_string());
     }
 
     match format {
@@ -585,6 +711,7 @@ async fn execute_who(format: OutputFormat) -> Result<String, String> {
                         "status": format!("{:?}", s.status),
                         "working_on": s.working_on,
                         "idle": s.idle_display(),
+                        "is_current": current_session_id.as_ref() == Some(&s.id),
                     })
                 })
                 .collect();
@@ -593,13 +720,19 @@ async fn execute_who(format: OutputFormat) -> Result<String, String> {
         _ => {
             let mut output = String::from("Sessions Online:\n");
             for session in sessions {
+                let current_marker = if current_session_id.as_ref() == Some(&session.id) {
+                    " (you)"
+                } else {
+                    ""
+                };
                 output.push_str(&format!(
-                    "  {} {} │ {} │ {} │ {}\n",
+                    "  {} {} │ {} │ {} │ {}{}\n",
                     session.role.emoji(),
                     session.name,
                     session.status.indicator(),
                     session.working_on.as_deref().unwrap_or("-"),
-                    session.idle_display()
+                    session.idle_display(),
+                    current_marker
                 ));
             }
             Ok(output)
@@ -613,6 +746,10 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
     let mut hub = Hub::new()?;
     hub.load()?;
 
+    let sender_id = hub
+        .get_current_session_id()
+        .ok_or_else(|| "No active session. Use 'sena join --role=<role>' first.".to_string())?;
+
     let resolved_target = hub.sessions.resolve_session(target).ok_or_else(|| {
         format!(
             "Session '{}' not found. Use 'sena who' to see active sessions.",
@@ -620,18 +757,19 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
         )
     })?;
 
-    hub.tell("local", &resolved_target, message)?;
+    hub.tell(&sender_id, &resolved_target, message)?;
     hub.save()?;
 
     match format {
         OutputFormat::Json => Ok(serde_json::json!({
             "sent": true,
+            "from": sender_id,
             "to": resolved_target,
             "target_input": target,
             "message": message
         })
         .to_string()),
-        _ => Ok(format!("Message sent to {}", target)),
+        _ => Ok(format!("Message sent to {} from {}", target, sender_id)),
     }
 }
 
@@ -641,11 +779,14 @@ async fn execute_inbox(format: OutputFormat) -> Result<String, String> {
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    // For now, use "local" - in real implementation, would get from current session
-    let messages = hub.inbox("local");
+    let session_id = hub
+        .get_current_session_id()
+        .ok_or_else(|| "No active session. Use 'sena join --role=<role>' first.".to_string())?;
+
+    let messages = hub.inbox(&session_id);
 
     if messages.is_empty() {
-        return Ok("No messages.".to_string());
+        return Ok(format!("No messages for session {}.", session_id));
     }
 
     match format {
@@ -655,6 +796,7 @@ async fn execute_inbox(format: OutputFormat) -> Result<String, String> {
                 .map(|m| {
                     serde_json::json!({
                         "from": m.from,
+                        "to": m.to,
                         "content": m.content,
                         "time": m.time_display(),
                         "read": m.read,
@@ -664,7 +806,7 @@ async fn execute_inbox(format: OutputFormat) -> Result<String, String> {
             serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
         }
         _ => {
-            let mut output = String::from("Inbox:\n");
+            let mut output = format!("Inbox for {}:\n", session_id);
             for msg in messages {
                 output.push_str(&format!(
                     "  {} [{}] {}: {}\n",
@@ -759,14 +901,17 @@ async fn execute_task(action: TaskAction, format: OutputFormat) -> Result<String
             }
         }
         TaskAction::Mine => {
-            // For now, use "local" - in real implementation, would get from current session
-            let tasks = hub.get_my_tasks("local");
+            let session_id = hub.get_current_session_id().ok_or_else(|| {
+                "No active session. Use 'sena join --role=<role>' first.".to_string()
+            })?;
+
+            let tasks = hub.get_my_tasks(&session_id);
 
             if tasks.is_empty() {
-                return Ok("No tasks assigned to you.".to_string());
+                return Ok(format!("No tasks assigned to {}.", session_id));
             }
 
-            let mut output = String::from("My Tasks:\n");
+            let mut output = format!("Tasks for {}:\n", session_id);
             for task in tasks {
                 output.push_str(&format!(
                     "  #{} │ {} │ {} │ {}\n",
@@ -809,25 +954,31 @@ async fn execute_watch() -> Result<String, String> {
     let mut hub = Hub::new()?;
     hub.load()?;
 
-    let _status = hub.status();
+    let status = hub.status();
     let sessions = hub.who();
     let tasks = hub.get_tasks();
     let conflicts = hub.get_conflicts();
+    let recent_messages = hub.messages.get_recent(5);
 
     let mut output = String::new();
 
-    // Header
     output.push_str(&FormatBox::new(&SenaConfig::brand_title("COLLABORATION HUB")).render());
     output.push('\n');
 
-    // Sessions
-    output.push_str("\nSESSIONS ONLINE:\n");
+    output.push_str(&format!(
+        "Status: {} sessions │ {} tasks │ {} conflicts\n",
+        status.online_sessions, status.total_tasks, status.active_conflicts
+    ));
+
+    output.push_str("\n┌─────────────────────────────────────────────────────────────┐\n");
+    output.push_str("│ SESSIONS                                                    │\n");
+    output.push_str("├─────────────────────────────────────────────────────────────┤\n");
     if sessions.is_empty() {
-        output.push_str("  No sessions online. Use 'sena join --role=<role>' to join.\n");
+        output.push_str("│ No sessions. Use 'sena join --role=<role>' to join.        │\n");
     } else {
         for session in &sessions {
             output.push_str(&format!(
-                "  {} {} │ {} │ {} │ {}\n",
+                "│ {} {:<12} │ {} │ {:<20} │ {:<8} │\n",
                 session.role.emoji(),
                 session.name,
                 session.status.indicator(),
@@ -836,28 +987,54 @@ async fn execute_watch() -> Result<String, String> {
             ));
         }
     }
+    output.push_str("└─────────────────────────────────────────────────────────────┘\n");
 
-    // Tasks
-    output.push_str("\nACTIVE TASKS:\n");
+    output.push_str("\n┌─────────────────────────────────────────────────────────────┐\n");
+    output.push_str("│ RECENT MESSAGES                                             │\n");
+    output.push_str("├─────────────────────────────────────────────────────────────┤\n");
+    if recent_messages.is_empty() {
+        output.push_str("│ No messages yet.                                            │\n");
+    } else {
+        for msg in recent_messages.iter().take(5) {
+            let direction = if msg.to == "all" {
+                format!("{} → ALL", msg.from)
+            } else {
+                format!("{} → {}", msg.from, msg.to)
+            };
+            let truncated_content: String = msg.content.chars().take(35).collect();
+            output.push_str(&format!(
+                "│ {} [{}] {} : {}..│\n",
+                msg.message_type.emoji(),
+                msg.time_display(),
+                direction,
+                truncated_content
+            ));
+        }
+    }
+    output.push_str("└─────────────────────────────────────────────────────────────┘\n");
+
+    output.push_str("\n┌─────────────────────────────────────────────────────────────┐\n");
+    output.push_str("│ ACTIVE TASKS                                                │\n");
+    output.push_str("├─────────────────────────────────────────────────────────────┤\n");
     let active_tasks: Vec<_> = tasks.iter().filter(|t| !t.is_complete()).take(5).collect();
     if active_tasks.is_empty() {
-        output.push_str("  No active tasks.\n");
+        output.push_str("│ No active tasks.                                            │\n");
     } else {
         for task in active_tasks {
             output.push_str(&format!(
-                "  #{} │ {} │ {} │ {} │ {}\n",
+                "│ #{:<3} │ {} │ {:<12} │ {:<20} │ {:<10} │\n",
                 task.id,
                 task.priority.emoji(),
                 task.assignee,
-                task.title,
+                task.title.chars().take(20).collect::<String>(),
                 task.status.name()
             ));
         }
     }
+    output.push_str("└─────────────────────────────────────────────────────────────┘\n");
 
-    // Conflicts
     if !conflicts.is_empty() {
-        output.push_str("\n⚠️  CONFLICTS DETECTED:\n");
+        output.push_str("\n⚠️  CONFLICTS:\n");
         for conflict in &conflicts {
             output.push_str(&format!(
                 "  {} {} - {:?}\n",
@@ -867,6 +1044,8 @@ async fn execute_watch() -> Result<String, String> {
             ));
         }
     }
+
+    output.push_str("\nCommands: hub tell <name> <msg> │ hub broadcast <msg> │ hub messages\n");
 
     Ok(output)
 }

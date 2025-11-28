@@ -351,6 +351,25 @@ pub enum HubAction {
     Stop,
     #[command(about = "Check hub status")]
     Status,
+    #[command(about = "List all sessions with details")]
+    Sessions,
+    #[command(about = "Send message from Hub to any session")]
+    Tell {
+        #[arg(help = "Target session (name or ID)")]
+        target: String,
+        #[arg(help = "Message content")]
+        message: String,
+    },
+    #[command(about = "View all messages across sessions")]
+    Messages {
+        #[arg(short, long, default_value = "20", help = "Number of messages")]
+        count: usize,
+    },
+    #[command(about = "Broadcast message to all sessions")]
+    Broadcast {
+        #[arg(help = "Message to broadcast")]
+        message: String,
+    },
     #[command(about = "Show conflicts")]
     Conflicts,
     #[command(about = "Clear hub data")]

@@ -159,7 +159,6 @@ impl HubState {
             .collect()
     }
 
-    /// Check if any session is working on a specific file
     pub fn who_is_working_on(&self, file_path: &str) -> Vec<String> {
         self.session_states
             .iter()
@@ -174,6 +173,15 @@ impl HubState {
                 } else {
                     None
                 }
+            })
+            .collect()
+    }
+
+    pub fn get_all_working(&self) -> HashMap<String, String> {
+        self.session_states
+            .iter()
+            .filter_map(|(id, state)| {
+                state.working_on.as_ref().map(|file| (id.clone(), file.clone()))
             })
             .collect()
     }

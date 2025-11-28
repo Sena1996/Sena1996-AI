@@ -11,7 +11,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use super::HubConfig;
+use super::tasks::TaskPriority;
+use super::{Hub, HubConfig, SessionRole};
 
 /// Hub command types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -114,30 +115,36 @@ impl HubResponse {
 pub struct HubServer {
     socket_path: PathBuf,
     running: Arc<Mutex<bool>>,
+    hub: Arc<Mutex<Hub>>,
 }
 
 impl HubServer {
-    /// Create a new hub server
-    pub fn new(config: &HubConfig) -> Self {
+    pub fn new(config: &HubConfig) -> Result<Self, String> {
+        let hub = Hub::new()?;
+        Ok(Self {
+            socket_path: config.socket_path.clone(),
+            running: Arc::new(Mutex::new(false)),
+            hub: Arc::new(Mutex::new(hub)),
+        })
+    }
+
+    pub fn with_hub(config: &HubConfig, hub: Hub) -> Self {
         Self {
             socket_path: config.socket_path.clone(),
             running: Arc::new(Mutex::new(false)),
+            hub: Arc::new(Mutex::new(hub)),
         }
     }
 
-    /// Start the server
     pub fn start(&self) -> Result<(), String> {
-        // Remove old socket if exists
         if self.socket_path.exists() {
             fs::remove_file(&self.socket_path)
                 .map_err(|e| format!("Cannot remove old socket: {}", e))?;
         }
 
-        // Create listener
         let listener = UnixListener::bind(&self.socket_path)
             .map_err(|e| format!("Cannot bind socket: {}", e))?;
 
-        // Set non-blocking for graceful shutdown
         listener
             .set_nonblocking(true)
             .map_err(|e| format!("Cannot set non-blocking: {}", e))?;
@@ -146,18 +153,17 @@ impl HubServer {
 
         eprintln!("Hub server listening on {:?}", self.socket_path);
 
-        // Accept connections
         while *self.running.lock().expect("running lock poisoned") {
             match listener.accept() {
                 Ok((stream, _)) => {
+                    let hub_clone = Arc::clone(&self.hub);
                     thread::spawn(move || {
-                        if let Err(e) = Self::handle_client(stream) {
+                        if let Err(e) = Self::handle_client(stream, hub_clone) {
                             eprintln!("Client error: {}", e);
                         }
                     });
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No connection, sleep briefly
                     thread::sleep(Duration::from_millis(10));
                 }
                 Err(e) => {
@@ -166,32 +172,26 @@ impl HubServer {
             }
         }
 
-        // Cleanup
         let _ = fs::remove_file(&self.socket_path);
 
         Ok(())
     }
 
-    /// Stop the server
     pub fn stop(&self) {
         *self.running.lock().expect("running lock poisoned") = false;
     }
 
-    /// Handle a client connection
-    fn handle_client(mut stream: UnixStream) -> Result<(), String> {
+    fn handle_client(mut stream: UnixStream, hub: Arc<Mutex<Hub>>) -> Result<(), String> {
         let reader = BufReader::new(stream.try_clone().map_err(|e| e.to_string())?);
 
         for line in reader.lines() {
             let line = line.map_err(|e| e.to_string())?;
 
-            // Parse command
             let command: HubCommand =
                 serde_json::from_str(&line).map_err(|e| format!("Invalid command: {}", e))?;
 
-            // Process command
-            let response = Self::process_command(command);
+            let response = Self::process_command(command, &hub);
 
-            // Send response
             let response_json = serde_json::to_string(&response)
                 .map_err(|e| format!("Cannot serialize response: {}", e))?;
 
@@ -204,34 +204,192 @@ impl HubServer {
         Ok(())
     }
 
-    /// Process a command
-    fn process_command(command: HubCommand) -> HubResponse {
+    fn process_command(command: HubCommand, hub: &Arc<Mutex<Hub>>) -> HubResponse {
+        let mut hub_guard = match hub.lock() {
+            Ok(guard) => guard,
+            Err(_) => return HubResponse::error("Hub lock poisoned"),
+        };
+
         match command {
             HubCommand::Ping => HubResponse::pong(),
 
-            HubCommand::Status => HubResponse::ok_with_data(
-                "Hub status",
-                serde_json::json!({
-                    "running": true,
-                    "version": crate::VERSION
-                }),
-            ),
-
-            HubCommand::Who => {
-                // TODO: Get from actual hub state
+            HubCommand::Status => {
+                let status = hub_guard.status();
                 HubResponse::ok_with_data(
-                    "Active sessions",
+                    "Hub status",
                     serde_json::json!({
-                        "sessions": []
+                        "running": true,
+                        "version": crate::VERSION,
+                        "online_sessions": status.online_sessions,
+                        "total_tasks": status.total_tasks,
+                        "pending_tasks": status.pending_tasks,
+                        "active_conflicts": status.active_conflicts
                     }),
                 )
             }
 
-            HubCommand::Shutdown => HubResponse::ok("Shutting down"),
+            HubCommand::Who => {
+                let sessions = hub_guard.who();
+                let session_data: Vec<serde_json::Value> = sessions
+                    .iter()
+                    .map(|s| {
+                        serde_json::json!({
+                            "id": s.id,
+                            "role": format!("{:?}", s.role),
+                            "name": s.name,
+                            "status": format!("{:?}", s.status)
+                        })
+                    })
+                    .collect();
+                HubResponse::ok_with_data("Active sessions", serde_json::json!({ "sessions": session_data }))
+            }
 
-            _ => {
-                // For now, acknowledge other commands
-                HubResponse::ok("Command received")
+            HubCommand::Join { role, name } => {
+                let session_role = match role.to_lowercase().as_str() {
+                    "android" => SessionRole::Android,
+                    "web" => SessionRole::Web,
+                    "backend" => SessionRole::Backend,
+                    "iot" => SessionRole::IoT,
+                    _ => return HubResponse::error("Invalid role. Use: android, web, backend, iot"),
+                };
+                match hub_guard.join(session_role, name) {
+                    Ok(session) => HubResponse::ok_with_data(
+                        "Joined hub",
+                        serde_json::json!({ "session_id": session.id, "role": format!("{:?}", session.role) }),
+                    ),
+                    Err(e) => HubResponse::error(&e),
+                }
+            }
+
+            HubCommand::Leave { session_id } => match hub_guard.leave(&session_id) {
+                Ok(()) => HubResponse::ok("Left hub"),
+                Err(e) => HubResponse::error(&e),
+            },
+
+            HubCommand::Tell { from, to, message } => match hub_guard.tell(&from, &to, &message) {
+                Ok(()) => HubResponse::ok("Message sent"),
+                Err(e) => HubResponse::error(&e),
+            },
+
+            HubCommand::Broadcast { from, message } => match hub_guard.broadcast(&from, &message) {
+                Ok(()) => HubResponse::ok("Broadcast sent"),
+                Err(e) => HubResponse::error(&e),
+            },
+
+            HubCommand::GetInbox { session_id } => {
+                let messages = hub_guard.inbox(&session_id);
+                let message_data: Vec<serde_json::Value> = messages
+                    .iter()
+                    .map(|m| {
+                        serde_json::json!({
+                            "id": m.id,
+                            "from": m.from,
+                            "to": m.to,
+                            "content": m.content,
+                            "type": format!("{:?}", m.message_type),
+                            "timestamp": m.timestamp,
+                            "read": m.read
+                        })
+                    })
+                    .collect();
+                HubResponse::ok_with_data(
+                    &format!("Inbox for {}", session_id),
+                    serde_json::json!({ "messages": message_data, "count": message_data.len() }),
+                )
+            }
+
+            HubCommand::CreateTask {
+                title,
+                assignee,
+                priority,
+            } => {
+                let task_priority = match priority.to_lowercase().as_str() {
+                    "low" => TaskPriority::Low,
+                    "medium" => TaskPriority::Medium,
+                    "high" => TaskPriority::High,
+                    "critical" => TaskPriority::Critical,
+                    _ => TaskPriority::Medium,
+                };
+                match hub_guard.create_task(&title, &assignee, task_priority) {
+                    Ok(task) => HubResponse::ok_with_data(
+                        "Task created",
+                        serde_json::json!({ "task_id": task.id, "title": task.title }),
+                    ),
+                    Err(e) => HubResponse::error(&e),
+                }
+            }
+
+            HubCommand::ListTasks => {
+                let tasks = hub_guard.get_tasks();
+                let task_data: Vec<serde_json::Value> = tasks
+                    .iter()
+                    .map(|t| {
+                        serde_json::json!({
+                            "id": t.id,
+                            "title": t.title,
+                            "assignee": t.assignee,
+                            "status": format!("{:?}", t.status),
+                            "priority": format!("{:?}", t.priority)
+                        })
+                    })
+                    .collect();
+                HubResponse::ok_with_data("Tasks", serde_json::json!({ "tasks": task_data }))
+            }
+
+            HubCommand::UpdateTask { id, status } => {
+                let task_status = match status.to_lowercase().as_str() {
+                    "pending" => super::tasks::TaskStatus::Pending,
+                    "in_progress" | "inprogress" => super::tasks::TaskStatus::InProgress,
+                    "blocked" => super::tasks::TaskStatus::Blocked,
+                    "done" | "completed" => super::tasks::TaskStatus::Done,
+                    _ => return HubResponse::error("Invalid status"),
+                };
+                match hub_guard.update_task(id, task_status) {
+                    Ok(()) => HubResponse::ok("Task updated"),
+                    Err(e) => HubResponse::error(&e),
+                }
+            }
+
+            HubCommand::SetWorkingOn {
+                session_id,
+                file_path,
+            } => match hub_guard.set_working_on(&session_id, &file_path) {
+                Ok(()) => HubResponse::ok(&format!("Now working on {}", file_path)),
+                Err(e) => HubResponse::error(&e),
+            },
+
+            HubCommand::ClearWorkingOn { session_id } => {
+                hub_guard.state.clear_working_on(&session_id);
+                HubResponse::ok("Cleared working state")
+            }
+
+            HubCommand::GetState => {
+                let state_data = hub_guard.state.get_all_working();
+                HubResponse::ok_with_data("Current state", serde_json::json!({ "working_on": state_data }))
+            }
+
+            HubCommand::GetConflicts => {
+                let conflicts = hub_guard.get_conflicts();
+                let conflict_data: Vec<serde_json::Value> = conflicts
+                    .iter()
+                    .map(|c| {
+                        serde_json::json!({
+                            "file": c.file_path,
+                            "sessions": c.sessions
+                        })
+                    })
+                    .collect();
+                HubResponse::ok_with_data("Conflicts", serde_json::json!({ "conflicts": conflict_data }))
+            }
+
+            HubCommand::Heartbeat { session_id } => {
+                hub_guard.state.set_session_active(&session_id, true);
+                HubResponse::ok("Heartbeat received")
+            }
+
+            HubCommand::Shutdown => {
+                let _ = hub_guard.save();
+                HubResponse::ok("Shutting down")
             }
         }
     }
@@ -356,7 +514,12 @@ impl HubClient {
         })
     }
 
-    /// Check if hub is available
+    pub fn get_inbox(&self, session_id: &str) -> Result<HubResponse, String> {
+        self.send(HubCommand::GetInbox {
+            session_id: session_id.to_string(),
+        })
+    }
+
     pub fn is_available(&self) -> bool {
         self.socket_path.exists() && self.ping().unwrap_or(false)
     }
