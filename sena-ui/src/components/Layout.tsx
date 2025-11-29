@@ -25,7 +25,7 @@ const navItems = [
 ];
 
 export default function Layout({ children }: LayoutProps) {
-  const [version, setVersion] = useState('12.0.5');
+  const [version, setVersion] = useState('13.0.1');
 
   useEffect(() => {
     invoke<string>('get_version').then(setVersion).catch(() => {});
@@ -43,7 +43,7 @@ export default function Layout({ children }: LayoutProps) {
               <h1 className="font-bold text-lg text-dark-100">
                 SENA<span className="text-[0.6em] text-dark-300 ml-0.5">1996</span>
               </h1>
-              <p className="text-xs text-dark-400">AI Collaboration Hub</p>
+              <p className="text-xs text-dark-400">Collaboration Hub v2.0</p>
             </div>
           </div>
         </div>

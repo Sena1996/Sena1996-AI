@@ -192,6 +192,15 @@ impl MessageQueue {
         Ok(())
     }
 
+    /// Send a task update notification to all sessions
+    pub fn task_update(&mut self, task_id: u64, action: &str, details: &str) -> Result<(), String> {
+        let content = format!("[Task #{}] {}: {}", task_id, action, details);
+        let message = Message::new("hub", "all", &content, MessageType::TaskUpdate);
+        self.messages.push(message.clone());
+        self.save_broadcast(&message)?;
+        Ok(())
+    }
+
     /// Get inbox for a session
     pub fn get_inbox(&self, session_id: &str) -> Vec<Message> {
         // Get direct messages to this session + broadcasts

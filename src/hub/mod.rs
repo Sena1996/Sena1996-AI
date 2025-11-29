@@ -159,14 +159,29 @@ impl Hub {
         self.messages.get_inbox(session_id)
     }
 
-    /// Create a new task
+    /// Create a new task and broadcast to all sessions
     pub fn create_task(
         &mut self,
         title: &str,
         assignee: &str,
         priority: TaskPriority,
     ) -> Result<Task, String> {
-        self.tasks.create(title, assignee, priority)
+        let task = self.tasks.create(title, assignee, priority)?;
+        self.broadcast_task_update(&task, "created")?;
+        Ok(task)
+    }
+
+    /// Create task from specific session and broadcast
+    pub fn create_task_from(
+        &mut self,
+        title: &str,
+        assignee: &str,
+        creator: &str,
+        priority: TaskPriority,
+    ) -> Result<Task, String> {
+        let task = self.tasks.create_from(title, assignee, creator, priority)?;
+        self.broadcast_task_update(&task, "created")?;
+        Ok(task)
     }
 
     /// Get all tasks
@@ -179,9 +194,37 @@ impl Hub {
         self.tasks.get_for_session(session_id)
     }
 
-    /// Update task status
+    /// Update task status and broadcast to all sessions
     pub fn update_task(&mut self, task_id: u64, status: TaskStatus) -> Result<(), String> {
-        self.tasks.update_status(task_id, status)
+        self.tasks.update_status(task_id, status)?;
+        let task_info = self.tasks.get(task_id).cloned();
+        if let Some(task) = task_info {
+            self.broadcast_task_update(&task, "updated")?;
+        }
+        Ok(())
+    }
+
+    /// Reassign task and broadcast
+    pub fn reassign_task(&mut self, task_id: u64, new_assignee: &str) -> Result<(), String> {
+        self.tasks.reassign(task_id, new_assignee)?;
+        let task_info = self.tasks.get(task_id).cloned();
+        if let Some(task) = task_info {
+            self.broadcast_task_update(&task, "reassigned")?;
+        }
+        Ok(())
+    }
+
+    /// Broadcast task update to all collab sessions
+    fn broadcast_task_update(&mut self, task: &Task, action: &str) -> Result<(), String> {
+        let message = format!(
+            "[Task {}] #{} {} - {} ({})",
+            action,
+            task.id,
+            task.priority.emoji(),
+            task.title,
+            task.status.name()
+        );
+        self.messages.broadcast("hub", &message)
     }
 
     /// Set working state for a session
