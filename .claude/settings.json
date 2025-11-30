@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sena *)",
+      "Bash(sena who:*)",
+      "Bash(sena peer list:*)",
+      "Bash(sena think:*)",
+      "Bash(sena knowledge:*)",
+      "Bash(sena agent:*)",
+      "Bash(sena process:*)",
+      "Bash(sena health:*)",
+      "Bash(sena validate:*)",
+      "Bash(sena format:*)",
+      "Bash(sena backend:*)",
+      "Bash(sena web:*)",
+      "Bash(sena ios:*)",
+      "Bash(sena android:*)",
+      "Bash(sena iot:*)",
+      "Bash(sena hub:*)",
+      "Bash(sena task:*)",
+      "Bash(sena collab:*)",
+      "Bash(sena provider:*)",
+      "Bash(sena evolve:*)",
+      "Bash(./target/release/sena *)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "sena hook user-prompt-submit"
+      }
+    ]
+  }
+}
