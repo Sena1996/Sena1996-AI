@@ -2,7 +2,11 @@
 
 set -e
 
+<<<<<<< Updated upstream
 SENA_VERSION="13.0.2"
+=======
+SENA_VERSION="13.1.3"
+>>>>>>> Stashed changes
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INSTALL_DIR="$HOME/.local/bin"
@@ -648,15 +652,24 @@ EOF
 
     if [ -d "$SCRIPT_DIR/hooks" ]; then
         mkdir -p "$SENA_HOME/hooks"
+        mkdir -p "$CLAUDE_HOME/hooks"
         cp "$SCRIPT_DIR/hooks/"*.sh "$SENA_HOME/hooks/" 2>/dev/null || true
+        cp "$SCRIPT_DIR/hooks/"*.sh "$CLAUDE_HOME/hooks/" 2>/dev/null || true
         chmod +x "$SENA_HOME/hooks/"*.sh 2>/dev/null || true
-        print_success "Installed hook scripts"
+        chmod +x "$CLAUDE_HOME/hooks/"*.sh 2>/dev/null || true
+        print_success "Installed hook scripts to ~/.sena/hooks and ~/.claude/hooks"
     fi
 
     if [ -d "$SCRIPT_DIR/memory" ]; then
         mkdir -p "$CLAUDE_HOME/memory"
         cp "$SCRIPT_DIR/memory/"*.md "$CLAUDE_HOME/memory/" 2>/dev/null || true
         print_success "Installed memory patterns"
+    fi
+
+    if [ -d "$SCRIPT_DIR/.claude/commands" ]; then
+        mkdir -p "$CLAUDE_HOME/commands"
+        cp "$SCRIPT_DIR/.claude/commands/"*.md "$CLAUDE_HOME/commands/" 2>/dev/null || true
+        print_success "Installed advanced slash commands from repo"
     fi
 }
 
@@ -845,7 +858,111 @@ Note: Configure in ~/.claude/settings.json
 EOF
     ((commands_generated++))
 
-    print_success "Generated $commands_generated slash commands"
+    # v13.1.3 New Feature Commands
+    cat > "$CLAUDE_HOME/commands/${CMD}-tools.md" << EOF
+---
+description: Manage and execute ${PREFIX} AI tools
+allowed-tools: Bash(${CMD} tools:*), Bash(${CMD}:*)
+argument-hint: [list|execute <name>]
+---
+
+Manage ${PREFIX}'s extensible AI tool framework.
+
+## Available Commands
+
+### List all tools
+\`\`\`bash
+${CMD} tools list
+\`\`\`
+
+### Execute a specific tool
+\`\`\`bash
+${CMD} tools execute <tool-name>
+\`\`\`
+
+Run the appropriate command based on user's request.
+EOF
+    ((commands_generated++))
+
+    cat > "$CLAUDE_HOME/commands/${CMD}-memory.md" << EOF
+---
+description: Manage ${PREFIX} persistent memory system
+allowed-tools: Bash(${CMD} memory:*), Bash(${CMD}:*)
+argument-hint: [add|search|list|stats] [content/query]
+---
+
+Manage ${PREFIX}'s persistent memory for long-term knowledge storage.
+
+## Available Commands
+
+- Add memory: \`${CMD} memory add "<content>"\`
+- Search: \`${CMD} memory search <query>\`
+- List all: \`${CMD} memory list\`
+- Statistics: \`${CMD} memory stats\`
+
+Run the appropriate command based on user's request.
+EOF
+    ((commands_generated++))
+
+    cat > "$CLAUDE_HOME/commands/${CMD}-auto.md" << EOF
+---
+description: Execute autonomous multi-step tasks
+allowed-tools: Bash(${CMD} auto:*), Bash(${CMD}:*)
+argument-hint: "<task>" [--max-steps N] [--confirm]
+---
+
+Execute autonomous multi-step task automation with ${PREFIX}'s agent system.
+
+## Usage
+
+- Basic: \`${CMD} auto "<task description>"\`
+- Limited steps: \`${CMD} auto "<task>" --max-steps 10\`
+- With confirmation: \`${CMD} auto "<task>" --confirm\`
+
+Run the appropriate command based on user's request.
+EOF
+    ((commands_generated++))
+
+    cat > "$CLAUDE_HOME/commands/${CMD}-git.md" << EOF
+---
+description: Enhanced git operations with AI assistance
+allowed-tools: Bash(${CMD} git:*), Bash(${CMD}:*)
+argument-hint: [status|commit|log|diff]
+---
+
+Enhanced git operations with ${PREFIX}'s AI-powered formatting.
+
+## Commands
+
+- Status: \`${CMD} git status\`
+- AI Commit: \`${CMD} git commit\`
+- Log: \`${CMD} git log\`
+- Diff: \`${CMD} git diff\`
+
+Run the appropriate command based on user's request.
+EOF
+    ((commands_generated++))
+
+    cat > "$CLAUDE_HOME/commands/${CMD}-hub-messages.md" << EOF
+---
+description: Hub messaging and broadcasting
+allowed-tools: Bash(${CMD} hub:*), Bash(${CMD}:*)
+argument-hint: [messages|tell <name> <msg>|broadcast <msg>]
+---
+
+Manage ${PREFIX} Hub messaging for cross-session communication.
+
+## Commands
+
+- View messages: \`${CMD} hub messages\`
+- Send to session: \`${CMD} hub tell <name> "<message>"\`
+- Broadcast: \`${CMD} hub broadcast "<message>"\`
+
+Run the appropriate command based on user's request.
+EOF
+    ((commands_generated++))
+
+    print_success "Generated $commands_generated slash commands (including v13.1.3 features)"
 }
 
 setup_claude_code_config() {
@@ -866,6 +983,27 @@ setup_claude_code_config() {
       "Bash(sena *)",
       "Bash(sena who:*)",
       "Bash(sena peer list:*)",
+      "Bash(sena think:*)",
+      "Bash(sena knowledge:*)",
+      "Bash(sena agent:*)",
+      "Bash(sena process:*)",
+      "Bash(sena health:*)",
+      "Bash(sena validate:*)",
+      "Bash(sena format:*)",
+      "Bash(sena backend:*)",
+      "Bash(sena web:*)",
+      "Bash(sena ios:*)",
+      "Bash(sena android:*)",
+      "Bash(sena iot:*)",
+      "Bash(sena hub:*)",
+      "Bash(sena task:*)",
+      "Bash(sena collab:*)",
+      "Bash(sena provider:*)",
+      "Bash(sena evolve:*)",
+      "Bash(sena tools:*)",
+      "Bash(sena memory:*)",
+      "Bash(sena auto:*)",
+      "Bash(sena git:*)",
       "Bash(${sena_latest_path} *)",
       "Bash(${sena_path} *)",
       "Bash(./target/release/sena *)"
@@ -877,7 +1015,8 @@ setup_claude_code_config() {
         "command": "${sena_latest_path} hook user-prompt-submit"
       }
     ]
-  }
+  },
+  "alwaysThinkingEnabled": false
 }
 EOF
 

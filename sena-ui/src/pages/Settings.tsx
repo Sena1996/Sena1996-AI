@@ -49,7 +49,11 @@ export default function Settings() {
       const ver = await invoke<string>('get_version');
       setVersion(ver);
     } catch {
+<<<<<<< Updated upstream
       setVersion('13.0.2');
+=======
+      setVersion('13.1.3');
+>>>>>>> Stashed changes
     }
   }, []);
 

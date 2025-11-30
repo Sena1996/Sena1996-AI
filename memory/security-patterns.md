@@ -462,5 +462,5 @@ console.log('User login:', req.body);
 ---
 
 **Updated:** November 23, 2025
-**Version:** 3.3.1
+**Version:** 13.1.3
 **Part of:** SENA Multi-Level Memory System

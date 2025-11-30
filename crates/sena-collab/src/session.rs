@@ -342,7 +342,7 @@ impl SessionManager {
         }
 
         let data = SessionsData {
-            version: "12.0.5".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
             sessions: self.sessions.clone(),
         };
 

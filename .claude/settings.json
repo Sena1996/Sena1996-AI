@@ -21,6 +21,10 @@
       "Bash(sena collab:*)",
       "Bash(sena provider:*)",
       "Bash(sena evolve:*)",
+      "Bash(sena tools:*)",
+      "Bash(sena memory:*)",
+      "Bash(sena auto:*)",
+      "Bash(sena git:*)",
       "Bash(/Users/sena/.local/bin/sena-latest *)",
       "Bash(/Users/sena/.local/bin/sena *)",
       "Bash(./target/release/sena *)"

@@ -2,7 +2,7 @@
 
 ## Make Your AI Collaborative and Smarter™
 
-[![Version](https://img.shields.io/badge/Version-13.0.0-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
+[![Version](https://img.shields.io/badge/Version-13.1.3-brightgreen)](https://github.com/Sena1996/Sena1996-AI)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange)](https://www.rust-lang.org/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Hooks-green)](https://github.com/Sena1996/Sena1996-AI)
@@ -11,18 +11,18 @@
 
 ---
 
-## What's New in v13.0.0
+## What's New in v13.1.3
 
-- **Cross-Hub Federation (Hub v2.0)** - Connect multiple SENA hubs across different machines
-- **Hub Identity System** - Persistent UUID-based hub identification
-- **Auth Passkey** - Secure authentication for hub-to-hub connections
-- **Federated Sessions** - View and message sessions across all connected hubs
-- **Peers Management UI** - New desktop page for managing hub connections
-- **Cross-Hub Messaging** - Use `@HubName:SessionName` syntax for remote messaging
-- **Settings Hub Credentials** - Manage hub identity and passkeys in Settings
-- **Protocol v2.0** - Updated network protocol for federation support
+- **Tool System** - Extensible AI tool framework with `sena tools list/execute`
+- **Persistent Memory** - Long-term memory storage with `sena memory add/search/list/stats`
+- **Autonomous Agent** - Multi-step task automation with `sena auto "<task>"`
+- **Git Integration** - Enhanced git commands: `sena git status/commit/log/diff`
+- **Hub Messages** - Improved messaging: `sena hub messages/tell/broadcast`
 - **254 Tests Passing** - Comprehensive test coverage
 - **Zero Clippy Warnings** - Elite code quality
+
+### Previous: v13.0.0
+- Cross-Hub Federation (Hub v2.0), Hub Identity, Auth Passkey, Federated Sessions, Peers UI
 
 ---
 
@@ -454,7 +454,7 @@ copies or substantial portions of the Software.
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
-║                       v13.0.0                                ║
+║                       v13.1.3                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║

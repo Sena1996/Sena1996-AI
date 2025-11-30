@@ -2,7 +2,7 @@
 
 ## Make Your AI Collaborative and Smarter™
 
-**Version 13.0.0** - Complete guide to using Sena1996 AI Tool with Claude Code.
+**Version 13.1.3** - Complete guide to using Sena1996 AI Tool with Claude Code.
 
 ---
 
@@ -22,11 +22,16 @@
 12. [Knowledge System](#knowledge-system)
 13. [Evolution System](#evolution-system)
 14. [Health & Metrics](#health--metrics)
-15. [Desktop Application](#desktop-application)
-16. [Hooks & MCP](#hooks--mcp)
-17. [Configuration](#configuration)
-18. [Troubleshooting](#troubleshooting)
-19. [Quick Reference](#quick-reference)
+15. [Tool System (v13.1.3)](#tool-system-v1313)
+16. [Persistent Memory (v13.1.3)](#persistent-memory-v1313)
+17. [Autonomous Agent (v13.1.3)](#autonomous-agent-v1313)
+18. [Git Integration (v13.1.3)](#git-integration-v1313)
+19. [Hub Messages (v13.1.3)](#hub-messages-v1313)
+20. [Desktop Application](#desktop-application)
+21. [Hooks & MCP](#hooks--mcp)
+22. [Configuration](#configuration)
+23. [Troubleshooting](#troubleshooting)
+24. [Quick Reference](#quick-reference)
 
 ---
 
@@ -48,7 +53,7 @@ cp target/release/sena ~/.local/bin/sena
 
 ### Verify Installation
 ```bash
-sena --version    # Should show: sena 13.0.0
+sena --version    # Should show: sena 13.1.3
 sena health       # System health check
 ```
 
@@ -660,6 +665,122 @@ sena health
 
 ---
 
+## Tool System (v13.1.3)
+
+Extensible AI tool framework for automated operations.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena tools list` | List all available tools |
+| `sena tools execute <name>` | Execute a specific tool |
+
+### Available Tools
+
+| Tool | Category | Description |
+|------|----------|-------------|
+| `file_exists` | FileSystem | Check if file/directory exists |
+| `file_read` | FileSystem | Read file contents |
+| `file_list` | FileSystem | List directory contents |
+| `shell_exec` | Shell | Execute shell command |
+| `code_search` | Code | Search patterns in code |
+| `code_analyze` | Code | Analyze code structure |
+| `web_fetch` | Web | Fetch URL content |
+
+---
+
+## Persistent Memory (v13.1.3)
+
+Long-term knowledge storage system.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena memory add "<content>"` | Store new memory |
+| `sena memory search <query>` | Search memories |
+| `sena memory list` | List all memories |
+| `sena memory stats` | Memory statistics |
+
+### Memory Types
+
+| Type | Description |
+|------|-------------|
+| Fact | Verified information |
+| Context | Contextual knowledge |
+| Pattern | Recognized patterns |
+| Preference | User preferences |
+
+---
+
+## Autonomous Agent (v13.1.3)
+
+Multi-step task automation system.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena auto "<task>"` | Execute autonomous task |
+| `sena auto "<task>" --max-steps 10` | Limit execution steps |
+| `sena auto "<task>" --confirm` | Require step confirmation |
+
+### Example
+```bash
+sena auto "Find and fix all TypeScript errors in src/"
+sena auto "Generate unit tests for utils/" --max-steps 5
+sena auto "Refactor database models" --confirm
+```
+
+---
+
+## Git Integration (v13.1.3)
+
+Enhanced git operations with AI assistance.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena git status` | Beautiful formatted status |
+| `sena git commit` | AI-generated commit message |
+| `sena git log` | Formatted commit history |
+| `sena git diff` | Highlighted diff output |
+
+### Example Output
+```bash
+sena git status
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                      SENA 🦁 GIT STATUS                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+# On branch main
+# Changes not staged for commit:
+#     modified:   src/main.rs
+```
+
+---
+
+## Hub Messages (v13.1.3)
+
+Cross-session messaging system.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `sena hub messages` | View all messages |
+| `sena hub tell <name> "<msg>"` | Send to specific session |
+| `sena hub broadcast "<msg>"` | Broadcast to all sessions |
+
+### Cross-Hub Messaging
+```bash
+# Send to session on remote hub
+sena hub tell "@RemoteHub:Frontend" "Integration ready"
+```
+
+---
+
 ## Desktop Application
 
 SENA includes a cross-platform desktop application built with Tauri 2.0.
@@ -860,6 +981,7 @@ sena collab info <session-id>
 
 | Version | Highlights |
 |---------|------------|
+| **13.1.3** | Tool System, Persistent Memory, Autonomous Agent, Git Integration, Hub Messages |
 | **13.0.0** | Cross-Hub Federation (Hub v2.0), Hub Identity, Auth Passkey, Federated Sessions, Peers UI |
 | 12.0.x | Multi-AI providers, AI-to-AI collaboration, consensus voting, specialist routing, Tauri desktop app |
 | 11.0.x | Network collaboration, peer discovery, TLS encryption |
@@ -879,7 +1001,7 @@ sena collab info <session-id>
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
 ║                   Sena1996 AI Tool 🦁                        ║
-║                       v13.0.0                                ║
+║                       v13.1.3                                ║
 ║                                                              ║
 ║         Make Your AI Collaborative and Smarter™             ║
 ║                                                              ║
