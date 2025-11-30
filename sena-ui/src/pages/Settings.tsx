@@ -49,11 +49,7 @@ export default function Settings() {
       const ver = await invoke<string>('get_version');
       setVersion(ver);
     } catch {
-<<<<<<< Updated upstream
-      setVersion('13.0.2');
-=======
       setVersion('13.1.3');
->>>>>>> Stashed changes
     }
   }, []);
 
@@ -369,7 +365,7 @@ export default function Settings() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-dark-300">Author</span>
-              <span className="text-dark-100">Sena1996</span>
+              <span className="text-dark-100">Sena1996 🦁</span>
             </div>
             <div className="pt-4 border-t border-dark-700">
               <a
