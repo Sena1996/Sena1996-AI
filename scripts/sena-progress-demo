@@ -1,0 +1,23 @@
+#!/bin/bash
+# SENA Progress Demo - Shows all progress modes
+
+echo "╔══════════════════════════════════════════════════════════════════════╗"
+echo "║            SENA 🦁 PROGRESS SYSTEM DEMO                               ║"
+echo "╚══════════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "1. INLINE PROGRESS (5 seconds):"
+echo "   This shows on every conversation automatically!"
+echo ""
+
+python3 /Users/sena/.claude/sena_inline_progress.py 5
+
+echo ""
+echo "2. FULL TERMINAL PROGRESS:"
+echo "   Run 'sena-progress --interactive' in another terminal"
+echo ""
+echo "3. AUTO-UPDATE STATUS:"
+echo "   ✅ Inline progress: AUTO-STARTS for every conversation"
+echo "   ✅ Updates: Every 0.1 seconds automatically"
+echo "   ✅ Duration: 8 seconds per conversation"
+echo ""
+echo "The inline progress is now ACTIVE for all your Claude conversations!"

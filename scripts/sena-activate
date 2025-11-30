@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+"""SENA Controller v3.0 - Complete Activation"""
+import sys
+sys.path.insert(0, '/Users/sena/.claude/sena_controller_v3.0')
+from claude_sena_integration import sena
+sena.activate()

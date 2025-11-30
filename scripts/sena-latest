@@ -1,0 +1,12 @@
+#!/bin/bash
+SENA_DEV="/Users/sena/AI/Sena1996-AI/target/release/sena"
+SENA_INSTALLED="/Users/sena/.cargo/bin/sena"
+
+if [[ -x "$SENA_DEV" ]]; then
+    exec "$SENA_DEV" "$@"
+elif [[ -x "$SENA_INSTALLED" ]]; then
+    exec "$SENA_INSTALLED" "$@"
+else
+    echo "Error: sena binary not found" >&2
+    exit 1
+fi

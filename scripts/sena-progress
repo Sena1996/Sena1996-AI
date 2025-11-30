@@ -1,0 +1,8 @@
+#!/bin/bash
+# SENA Progress Display v3.3
+
+# Default to interactive mode
+MODE="${1:---interactive}"
+
+# Run the progress display
+python3 /Users/sena/.claude/sena_live_progress.py "$MODE"

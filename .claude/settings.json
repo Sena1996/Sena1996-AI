@@ -21,6 +21,8 @@
       "Bash(sena collab:*)",
       "Bash(sena provider:*)",
       "Bash(sena evolve:*)",
+      "Bash(/Users/sena/.local/bin/sena-latest *)",
+      "Bash(/Users/sena/.local/bin/sena *)",
       "Bash(./target/release/sena *)"
     ]
   },
@@ -30,5 +32,6 @@
         "command": "sena hook user-prompt-submit"
       }
     ]
-  }
+  },
+  "alwaysThinkingEnabled": false
 }

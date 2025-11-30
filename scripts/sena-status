@@ -1,0 +1,3 @@
+#!/bin/bash
+# SENA v3.3 Status - Developer Edition
+exec /Users/sena/.local/bin/sena-status-v3.3 "$@"
