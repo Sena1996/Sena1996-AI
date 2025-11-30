@@ -1,9 +1,11 @@
 mod agents;
+pub mod autonomous;
 mod routing;
 mod skills;
 mod thinking;
 
 pub use agents::{Agent, AgentPool, AgentResult, AgentType};
+pub use autonomous::{AgentExecution, AgentState, AgentStep, AutonomousAgent, AutonomousError};
 pub use routing::{ModelRouter, ModelType, RoutingDecision};
 pub use skills::{Skill, SkillExecution, SkillRegistry};
 pub use thinking::{ThinkingDepth, ThinkingEngine, ThinkingResult};

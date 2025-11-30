@@ -1,11 +1,22 @@
 #!/bin/bash
 SENA_DEV="/Users/sena/AI/Sena1996-AI/target/release/sena"
-SENA_INSTALLED="/Users/sena/.cargo/bin/sena"
+SENA_INSTALLED="/Users/sena/.local/bin/sena"
+SENA_CARGO="/Users/sena/.cargo/bin/sena"
 
 if [[ -x "$SENA_DEV" ]]; then
+    if [[ -x "$SENA_INSTALLED" ]]; then
+        DEV_VER=$("$SENA_DEV" --version 2>/dev/null | awk '{print $2}')
+        INST_VER=$("$SENA_INSTALLED" --version 2>/dev/null | awk '{print $2}')
+        if [[ "$DEV_VER" != "$INST_VER" ]]; then
+            echo "Warning: Version mismatch (dev=$DEV_VER, installed=$INST_VER)" >&2
+            echo "Run 'make install' in project directory to sync" >&2
+        fi
+    fi
     exec "$SENA_DEV" "$@"
 elif [[ -x "$SENA_INSTALLED" ]]; then
     exec "$SENA_INSTALLED" "$@"
+elif [[ -x "$SENA_CARGO" ]]; then
+    exec "$SENA_CARGO" "$@"
 else
     echo "Error: sena binary not found" >&2
     exit 1

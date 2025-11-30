@@ -2,7 +2,7 @@
 
 set -e
 
-SENA_VERSION="13.0.0"
+SENA_VERSION="13.0.2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INSTALL_DIR="$HOME/.local/bin"

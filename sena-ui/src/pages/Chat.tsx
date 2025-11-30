@@ -71,19 +71,25 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldScrollOnNextUpdate = useRef<boolean>(false);
   const toast = useToast();
 
   const scrollToBottom = useCallback(() => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
-      container.scrollTop = container.scrollHeight;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      });
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, []);
 
   useEffect(() => {
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
+    if (shouldScrollOnNextUpdate.current && messages.length > 0) {
+      const timeoutId = setTimeout(scrollToBottom, 100);
+      shouldScrollOnNextUpdate.current = false;
+      return () => clearTimeout(timeoutId);
+    }
   }, [messages, scrollToBottom]);
 
   const loadSessions = useCallback(async () => {
@@ -172,6 +178,7 @@ export default function Chat() {
 
     const trimmedInput = input.trim();
     setIsLoading(true);
+    shouldScrollOnNextUpdate.current = true;
 
     try {
       const parsed = parseSmartInput(trimmedInput);

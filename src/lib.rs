@@ -77,16 +77,19 @@ pub mod cli;
 pub mod config;
 pub mod daemon;
 pub mod evolution;
+pub mod git;
 pub mod hooks;
 pub mod hub;
 pub mod integration;
 pub mod intelligence;
 pub mod knowledge;
 pub mod mcp;
+pub mod memory;
 pub mod metrics;
 pub mod network;
 pub mod output;
 pub mod sync;
+pub mod tools;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -167,6 +170,15 @@ pub use agents::{
     AndroidAgent, BackendAgent, DomainAgentPool, DomainAgentType, DomainAnalysis, Finding,
     IOSAgent, IoTAgent, Severity, WebAgent,
 };
+
+// Re-export tools system
+pub use tools::{
+    BuiltinTools, ToolCall, ToolCategory, ToolDefinition, ToolError, ToolExecutor, ToolRegistry,
+    ToolResponse, ToolResult, ToolSystem,
+};
+
+// Re-export memory system
+pub use memory::{MemoryEntry, MemoryStore, MemoryType, PersistentMemory};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const CODENAME: &str = "Full Agent Suite";

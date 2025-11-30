@@ -144,7 +144,14 @@ impl NetworkDiscovery {
 
     pub fn stop(&mut self) {
         if let Some(daemon) = self.service_daemon.take() {
-            let _ = daemon.shutdown();
+            match daemon.shutdown() {
+                Ok(receiver) => {
+                    let _ = receiver.recv_timeout(Duration::from_millis(100));
+                }
+                Err(e) => {
+                    log::debug!("mDNS daemon shutdown: {}", e);
+                }
+            }
         }
         let running = self.running.clone();
         tokio::spawn(async move {
@@ -179,6 +186,16 @@ impl NetworkDiscovery {
 
     pub async fn peer_count(&self) -> usize {
         self.discovered_peers.read().await.len()
+    }
+}
+
+impl Drop for NetworkDiscovery {
+    fn drop(&mut self) {
+        if let Some(daemon) = self.service_daemon.take() {
+            if let Ok(receiver) = daemon.shutdown() {
+                let _ = receiver.recv_timeout(Duration::from_millis(100));
+            }
+        }
     }
 }
 
@@ -219,7 +236,9 @@ pub async fn discover_once(timeout_secs: u64) -> Result<Vec<DiscoveredPeer>, Str
         }
     }
 
-    let _ = daemon.shutdown();
+    if let Ok(receiver) = daemon.shutdown() {
+        let _ = receiver.recv_timeout(Duration::from_millis(100));
+    }
     Ok(peers.into_values().collect())
 }
 

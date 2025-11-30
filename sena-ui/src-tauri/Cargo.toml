@@ -2,7 +2,7 @@
 
 [package]
 name = "sena-ui"
-version = "1.0.0"
+version = "13.1.3"
 description = "SENA AI Collaboration Hub Desktop Application"
 authors = ["Sena1996"]
 license = "MIT"
@@ -27,6 +27,7 @@ uuid = { version = "1", features = ["v4"] }
 rand = "0.8"
 base64 = "0.22"
 hostname = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 
 sena-providers = { path = "../../crates/sena-providers" }
 sena-collab = { path = "../../crates/sena-collab" }

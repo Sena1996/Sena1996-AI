@@ -2,6 +2,10 @@
 //!
 //! Background daemon for services
 
+pub mod background;
+
+pub use background::{BackgroundAgentManager, BackgroundTask, TaskQueue, TaskStatus};
+
 use crate::config::SenaConfig;
 use std::fs;
 use std::io::Write;

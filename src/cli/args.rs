@@ -284,6 +284,39 @@ pub enum Commands {
         #[command(subcommand)]
         action: CollabAction,
     },
+
+    #[command(about = "Tool management and execution")]
+    Tools {
+        #[command(subcommand)]
+        action: ToolsAction,
+    },
+
+    #[command(about = "Persistent memory management")]
+    Memory {
+        #[command(subcommand)]
+        action: MemoryAction,
+    },
+
+    #[command(about = "Autonomous agent execution")]
+    Auto {
+        #[arg(help = "Task description")]
+        task: String,
+
+        #[arg(short, long, default_value_t = 10, help = "Maximum steps")]
+        max_steps: usize,
+
+        #[arg(short, long, help = "Working directory")]
+        cwd: Option<String>,
+
+        #[arg(short, long, default_value_t = false, help = "Require confirmation for actions")]
+        confirm: bool,
+    },
+
+    #[command(about = "Git operations with AI assistance")]
+    Git {
+        #[command(subcommand)]
+        action: GitAction,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -812,6 +845,129 @@ pub enum CollabAction {
     End {
         #[arg(help = "Session ID")]
         session_id: String,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum ToolsAction {
+    #[command(about = "List available tools")]
+    List {
+        #[arg(short, long, help = "Filter by category")]
+        category: Option<String>,
+    },
+
+    #[command(about = "Show tool details")]
+    Info {
+        #[arg(help = "Tool name")]
+        name: String,
+    },
+
+    #[command(about = "Execute a tool")]
+    Run {
+        #[arg(help = "Tool name")]
+        name: String,
+
+        #[arg(short, long, help = "Parameters as JSON")]
+        params: Option<String>,
+    },
+
+    #[command(about = "Search in code")]
+    Search {
+        #[arg(help = "Search pattern")]
+        pattern: String,
+
+        #[arg(short, long, default_value = ".", help = "Path to search")]
+        path: String,
+
+        #[arg(short, long, help = "File pattern (e.g., *.rs)")]
+        files: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum MemoryAction {
+    #[command(about = "Add a memory")]
+    Add {
+        #[arg(help = "Memory content")]
+        content: String,
+
+        #[arg(short = 't', long, default_value = "fact", help = "Memory type (preference, fact, project, context)")]
+        memory_type: String,
+
+        #[arg(short, long, help = "Tags (comma-separated)")]
+        tags: Option<String>,
+
+        #[arg(short, long, help = "Importance (0.0-1.0)")]
+        importance: Option<f64>,
+    },
+
+    #[command(about = "Search memories")]
+    Search {
+        #[arg(help = "Search query")]
+        query: String,
+
+        #[arg(short, long, default_value_t = 10, help = "Max results")]
+        limit: usize,
+    },
+
+    #[command(about = "List all memories")]
+    List {
+        #[arg(short = 't', long, help = "Filter by type")]
+        memory_type: Option<String>,
+
+        #[arg(short, long, default_value_t = 20, help = "Max results")]
+        limit: usize,
+    },
+
+    #[command(about = "Remove a memory")]
+    Remove {
+        #[arg(help = "Memory ID")]
+        id: String,
+    },
+
+    #[command(about = "Show memory statistics")]
+    Stats,
+
+    #[command(about = "Clear all memories")]
+    Clear {
+        #[arg(short, long, default_value_t = false, help = "Skip confirmation")]
+        yes: bool,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum GitAction {
+    #[command(about = "Show git status")]
+    Status,
+
+    #[command(about = "Create a commit with AI-generated message")]
+    Commit {
+        #[arg(short, long, help = "Custom message (optional)")]
+        message: Option<String>,
+
+        #[arg(short, long, default_value_t = false, help = "Stage all changes")]
+        all: bool,
+    },
+
+    #[command(about = "Create a pull request")]
+    Pr {
+        #[arg(short, long, help = "PR title")]
+        title: Option<String>,
+
+        #[arg(short, long, help = "Base branch")]
+        base: Option<String>,
+    },
+
+    #[command(about = "Show git diff")]
+    Diff {
+        #[arg(short, long, default_value_t = false, help = "Show staged changes")]
+        staged: bool,
+    },
+
+    #[command(about = "Show recent commits")]
+    Log {
+        #[arg(short, long, default_value_t = 10, help = "Number of commits")]
+        count: usize,
     },
 }
 

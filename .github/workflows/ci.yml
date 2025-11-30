@@ -11,6 +11,24 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  version-check:
+    name: Version Sync Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version sync
+        run: |
+          CARGO_VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          SETUP_VERSION=$(grep '^SENA_VERSION=' setup.sh | sed 's/.*"\(.*\)".*/\1/')
+          echo "Cargo.toml version: $CARGO_VERSION"
+          echo "setup.sh version: $SETUP_VERSION"
+          if [ "$CARGO_VERSION" != "$SETUP_VERSION" ]; then
+            echo "::error::Version mismatch! Cargo.toml=$CARGO_VERSION but setup.sh=$SETUP_VERSION"
+            echo "Please update setup.sh SENA_VERSION to match Cargo.toml"
+            exit 1
+          fi
+          echo "Versions are in sync!"
+
   check:
     name: Check
     runs-on: ubuntu-latest

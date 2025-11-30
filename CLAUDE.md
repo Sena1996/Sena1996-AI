@@ -164,6 +164,27 @@ Before EVERY commit:
 | Android analysis | `sena android <type> <input>` |
 | IoT analysis | `sena iot <type> <input>` |
 
+### New v13.1.3 Commands
+
+| Feature | Command | Description |
+|---------|---------|-------------|
+| Tool System | `sena tools list` | List available AI tools |
+| Tool Execution | `sena tools execute <name>` | Execute a tool |
+| Memory Add | `sena memory add "<content>"` | Store persistent memory |
+| Memory Search | `sena memory search <query>` | Search memories |
+| Memory List | `sena memory list` | List all memories |
+| Memory Stats | `sena memory stats` | Memory statistics |
+| Autonomous Agent | `sena auto "<task>"` | Multi-step task automation |
+| Autonomous (Limited) | `sena auto "<task>" --max-steps 10` | Limit execution steps |
+| Autonomous (Confirm) | `sena auto "<task>" --confirm` | Require confirmation |
+| Git Status | `sena git status` | Enhanced git status |
+| Git Commit | `sena git commit` | AI-generated commit message |
+| Git Log | `sena git log` | Formatted commit history |
+| Git Diff | `sena git diff` | Show changes |
+| Hub Messages | `sena hub messages` | View all hub messages |
+| Hub Tell | `sena hub tell <name> <msg>` | Send message to session |
+| Hub Broadcast | `sena hub broadcast <msg>` | Broadcast to all sessions |
+
 ### Available Slash Commands
 
 | Command | Purpose | Routes To |

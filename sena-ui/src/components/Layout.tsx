@@ -8,6 +8,9 @@ import {
   Users,
   Globe,
   Settings,
+  Wrench,
+  Brain,
+  Book,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -20,12 +23,15 @@ const navItems = [
   { path: '/providers', icon: Bot, label: 'Providers' },
   { path: '/chat', icon: MessageSquare, label: 'Chat' },
   { path: '/sessions', icon: Users, label: 'Sessions' },
+  { path: '/tools', icon: Wrench, label: 'Tools' },
+  { path: '/memory', icon: Brain, label: 'Memory' },
   { path: '/peers', icon: Globe, label: 'Peers' },
+  { path: '/features', icon: Book, label: 'Features' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function Layout({ children }: LayoutProps) {
-  const [version, setVersion] = useState('13.0.1');
+  const [version, setVersion] = useState('13.1.3');
 
   useEffect(() => {
     invoke<string>('get_version').then(setVersion).catch(() => {});

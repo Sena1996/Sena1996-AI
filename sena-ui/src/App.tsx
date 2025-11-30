@@ -7,6 +7,9 @@ import Chat from './pages/Chat';
 import Sessions from './pages/Sessions';
 import Peers from './pages/Peers';
 import Settings from './pages/Settings';
+import Tools from './pages/Tools';
+import Memory from './pages/Memory';
+import Features from './pages/Features';
 
 function App() {
   return (
@@ -17,7 +20,10 @@ function App() {
           <Route path="/providers" element={<Providers />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/sessions" element={<Sessions />} />
+          <Route path="/tools" element={<Tools />} />
+          <Route path="/memory" element={<Memory />} />
           <Route path="/peers" element={<Peers />} />
+          <Route path="/features" element={<Features />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>

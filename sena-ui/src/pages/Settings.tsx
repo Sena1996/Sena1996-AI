@@ -49,7 +49,7 @@ export default function Settings() {
       const ver = await invoke<string>('get_version');
       setVersion(ver);
     } catch {
-      setVersion('12.0.5');
+      setVersion('13.0.2');
     }
   }, []);
 

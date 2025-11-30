@@ -111,6 +111,19 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
         Some(Commands::Collab { action }) => execute_collab(action.clone(), cli.format).await,
 
+        Some(Commands::Tools { action }) => execute_tools(action.clone(), cli.format).await,
+
+        Some(Commands::Memory { action }) => execute_memory(action.clone(), cli.format).await,
+
+        Some(Commands::Auto {
+            task,
+            max_steps,
+            cwd,
+            confirm,
+        }) => execute_auto(task, *max_steps, cwd.clone(), *confirm, cli.format).await,
+
+        Some(Commands::Git { action }) => execute_git(action.clone(), cli.format).await,
+
         None => {
             // No command - show status
             execute_health(false, cli.format)
@@ -3352,6 +3365,638 @@ async fn execute_collab(action: CollabAction, format: OutputFormat) -> Result<St
 
         CollabAction::End { session_id } => {
             Ok(format!("Session {} marked for termination.\n\nNote: Full session lifecycle management coming in next release.", session_id))
+        }
+    }
+}
+
+async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<String, String> {
+    use crate::tools::{ToolCall, ToolCategory, ToolSystem};
+
+    let mut tool_system = ToolSystem::new();
+
+    match action {
+        ToolsAction::List { category } => {
+            let tools = tool_system.list_tools();
+
+            let filtered: Vec<_> = match &category {
+                Some(cat) => {
+                    let target_category = match cat.to_lowercase().as_str() {
+                        "filesystem" | "file" => ToolCategory::FileSystem,
+                        "shell" | "system" => ToolCategory::Shell,
+                        "web" | "network" => ToolCategory::Web,
+                        "code" => ToolCategory::Code,
+                        _ => ToolCategory::Custom,
+                    };
+                    tools
+                        .iter()
+                        .filter(|t| t.category == target_category)
+                        .cloned()
+                        .collect()
+                }
+                None => tools,
+            };
+
+            match format {
+                OutputFormat::Json => serde_json::to_string_pretty(&filtered).map_err(|e| e.to_string()),
+                OutputFormat::Pretty | OutputFormat::Text => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AVAILABLE TOOLS")).render());
+                    output.push('\n');
+
+                    let mut table = TableBuilder::new()
+                        .title("Tools")
+                        .row(vec!["Name".to_string(), "Category".to_string(), "Description".to_string()]);
+
+                    for tool in &filtered {
+                        table = table.row(vec![
+                            tool.name.clone(),
+                            format!("{:?}", tool.category),
+                            tool.description.chars().take(40).collect(),
+                        ]);
+                    }
+
+                    output.push_str(&table.build());
+                    output.push_str(&format!("\nTotal: {} tools\n", filtered.len()));
+                    Ok(output)
+                }
+            }
+        }
+
+        ToolsAction::Info { name } => {
+            let tools = tool_system.list_tools();
+            let tool = tools.iter().find(|t| t.name == name);
+
+            match tool {
+                Some(t) => match format {
+                    OutputFormat::Json => serde_json::to_string_pretty(t).map_err(|e| e.to_string()),
+                    _ => {
+                        let mut output = String::new();
+                        output.push_str(&FormatBox::new(&SenaConfig::brand_title("TOOL INFO")).render());
+                        output.push('\n');
+                        output.push_str(&format!("Name: {}\n", t.name));
+                        output.push_str(&format!("Category: {:?}\n", t.category));
+                        output.push_str(&format!("Description: {}\n", t.description));
+                        output.push_str(&format!("Returns: {}\n", t.returns));
+                        output.push_str(&format!("Requires Confirmation: {}\n", t.requires_confirmation));
+                        output.push_str(&format!("Timeout: {}s\n\n", t.timeout_seconds));
+
+                        output.push_str("Parameters:\n");
+                        for param in &t.parameters {
+                            let req = if param.required { " (required)" } else { "" };
+                            output.push_str(&format!("  {} ({:?}){}: {}\n",
+                                param.name,
+                                param.param_type,
+                                req,
+                                param.description
+                            ));
+                        }
+                        Ok(output)
+                    }
+                },
+                None => Err(format!("Tool '{}' not found", name)),
+            }
+        }
+
+        ToolsAction::Run { name, params } => {
+            let parameters: std::collections::HashMap<String, serde_json::Value> = match params {
+                Some(p) => serde_json::from_str(&p).map_err(|e| format!("Invalid JSON params: {}", e))?,
+                None => std::collections::HashMap::new(),
+            };
+
+            let call = ToolCall::new(&name, parameters);
+            let response = tool_system.execute(call).await;
+
+            match format {
+                OutputFormat::Json => serde_json::to_string_pretty(&response).map_err(|e| e.to_string()),
+                _ => {
+                    if response.success {
+                        let output_str = serde_json::to_string_pretty(&response.output)
+                            .unwrap_or_else(|_| "{}".to_string());
+                        Ok(format!("Tool '{}' executed successfully ({}ms)\n\nOutput:\n{}",
+                            name, response.execution_time_ms, output_str))
+                    } else {
+                        Err(format!("Tool '{}' failed: {}",
+                            name, response.error.unwrap_or_else(|| "Unknown error".to_string())))
+                    }
+                }
+            }
+        }
+
+        ToolsAction::Search { pattern, path, files } => {
+            let mut parameters = std::collections::HashMap::new();
+            parameters.insert("pattern".to_string(), serde_json::json!(pattern));
+            parameters.insert("path".to_string(), serde_json::json!(path));
+            if let Some(f) = files {
+                parameters.insert("file_pattern".to_string(), serde_json::json!(f));
+            }
+
+            let call = ToolCall::new("code_search", parameters);
+            let response = tool_system.execute(call).await;
+
+            match format {
+                OutputFormat::Json => serde_json::to_string_pretty(&response).map_err(|e| e.to_string()),
+                _ => {
+                    if response.success {
+                        let matches = response.output.get("matches")
+                            .and_then(|m| m.as_array())
+                            .map(|arr| arr.len())
+                            .unwrap_or(0);
+
+                        let output_str = serde_json::to_string_pretty(&response.output)
+                            .unwrap_or_else(|_| "{}".to_string());
+                        Ok(format!("Found {} matches ({}ms)\n\n{}",
+                            matches, response.execution_time_ms, output_str))
+                    } else {
+                        Err(format!("Search failed: {}",
+                            response.error.unwrap_or_else(|| "Unknown error".to_string())))
+                    }
+                }
+            }
+        }
+    }
+}
+
+async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<String, String> {
+    use crate::memory::{MemoryEntry, MemoryType, PersistentMemory};
+
+    let mut memory = PersistentMemory::new().map_err(|e| format!("Failed to initialize memory: {}", e))?;
+
+    match action {
+        MemoryAction::Add { content, memory_type, tags, importance } => {
+            let mt = match memory_type.to_lowercase().as_str() {
+                "preference" => MemoryType::Preference,
+                "fact" => MemoryType::Fact,
+                "project" => MemoryType::Project,
+                "context" => MemoryType::Context,
+                "conversation" => MemoryType::Conversation,
+                other => MemoryType::Custom(other.to_string()),
+            };
+
+            let mut entry = MemoryEntry::new(&content, mt);
+
+            if let Some(tag_str) = tags {
+                let tag_list: Vec<String> = tag_str.split(',').map(|s| s.trim().to_string()).collect();
+                entry = entry.with_tags(tag_list);
+            }
+
+            if let Some(imp) = importance {
+                entry = entry.with_importance(imp);
+            }
+
+            let id = memory.add(entry).map_err(|e| format!("Failed to add memory: {}", e))?;
+
+            match format {
+                OutputFormat::Json => Ok(serde_json::json!({"id": id, "success": true}).to_string()),
+                _ => Ok(format!("Memory added with ID: {}", id)),
+            }
+        }
+
+        MemoryAction::Search { query, limit } => {
+            let results = memory.search(&query);
+            let limited: Vec<_> = results.into_iter().take(limit).collect();
+
+            match format {
+                OutputFormat::Json => {
+                    let entries: Vec<_> = limited.iter().map(|e| serde_json::json!({
+                        "id": e.id,
+                        "content": e.content,
+                        "type": format!("{:?}", e.memory_type),
+                        "tags": e.tags,
+                        "importance": e.importance,
+                        "score": e.relevance_score(&query),
+                    })).collect();
+                    serde_json::to_string_pretty(&entries).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORY SEARCH")).render());
+                    output.push_str(&format!("\nQuery: '{}'\nResults: {}\n\n", query, limited.len()));
+
+                    for entry in &limited {
+                        output.push_str(&format!("[{}] {:?} (importance: {:.2})\n",
+                            entry.id, entry.memory_type, entry.importance));
+                        output.push_str(&format!("  {}\n", entry.content));
+                        if !entry.tags.is_empty() {
+                            output.push_str(&format!("  Tags: {}\n", entry.tags.join(", ")));
+                        }
+                        output.push('\n');
+                    }
+                    Ok(output)
+                }
+            }
+        }
+
+        MemoryAction::List { memory_type, limit } => {
+            let all = memory.all();
+
+            let filtered: Vec<_> = match memory_type {
+                Some(mt_str) => {
+                    let mt = match mt_str.to_lowercase().as_str() {
+                        "preference" => MemoryType::Preference,
+                        "fact" => MemoryType::Fact,
+                        "project" => MemoryType::Project,
+                        "context" => MemoryType::Context,
+                        "conversation" => MemoryType::Conversation,
+                        other => MemoryType::Custom(other.to_string()),
+                    };
+                    all.into_iter().filter(|e| e.memory_type == mt).take(limit).collect()
+                }
+                None => all.into_iter().take(limit).collect(),
+            };
+
+            match format {
+                OutputFormat::Json => {
+                    let entries: Vec<_> = filtered.iter().map(|e| serde_json::json!({
+                        "id": e.id,
+                        "content": e.content,
+                        "type": format!("{:?}", e.memory_type),
+                        "tags": e.tags,
+                        "importance": e.importance,
+                        "created_at": e.created_at.to_rfc3339(),
+                    })).collect();
+                    serde_json::to_string_pretty(&entries).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORIES")).render());
+                    output.push_str(&format!("\nShowing {} memories\n\n", filtered.len()));
+
+                    let mut table = TableBuilder::new()
+                        .title("Memories")
+                        .row(vec!["ID".to_string(), "Type".to_string(), "Content".to_string(), "Importance".to_string()]);
+
+                    for entry in &filtered {
+                        table = table.row(vec![
+                            entry.id.chars().take(12).collect(),
+                            format!("{:?}", entry.memory_type),
+                            entry.content.chars().take(40).collect(),
+                            format!("{:.2}", entry.importance),
+                        ]);
+                    }
+
+                    output.push_str(&table.build());
+                    Ok(output)
+                }
+            }
+        }
+
+        MemoryAction::Remove { id } => {
+            match memory.remove(&id).map_err(|e| format!("Failed to remove: {}", e))? {
+                Some(_) => {
+                    match format {
+                        OutputFormat::Json => Ok(serde_json::json!({"success": true, "id": id}).to_string()),
+                        _ => Ok(format!("Memory '{}' removed", id)),
+                    }
+                }
+                None => Err(format!("Memory '{}' not found", id)),
+            }
+        }
+
+        MemoryAction::Stats => {
+            let stats = memory.stats();
+
+            match format {
+                OutputFormat::Json => serde_json::to_string_pretty(&stats).map_err(|e| e.to_string()),
+                _ => {
+                    let mut output = String::new();
+                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORY STATS")).render());
+                    output.push('\n');
+                    output.push_str(&format!("Total Entries: {}\n", stats.total_entries));
+                    output.push_str(&format!("Total Access Count: {}\n", stats.total_access_count));
+                    output.push_str(&format!("Average Importance: {:.2}\n\n", stats.avg_importance));
+
+                    output.push_str("By Type:\n");
+                    for (type_name, count) in &stats.by_type {
+                        output.push_str(&format!("  {}: {}\n", type_name, count));
+                    }
+                    Ok(output)
+                }
+            }
+        }
+
+        MemoryAction::Clear { yes } => {
+            if !yes {
+                return Err("Use --yes to confirm clearing all memories".to_string());
+            }
+
+            memory.clear().map_err(|e| format!("Failed to clear: {}", e))?;
+
+            match format {
+                OutputFormat::Json => Ok(serde_json::json!({"success": true, "message": "All memories cleared"}).to_string()),
+                _ => Ok("All memories cleared".to_string()),
+            }
+        }
+    }
+}
+
+async fn execute_auto(
+    task: &str,
+    max_steps: usize,
+    cwd: Option<String>,
+    confirm: bool,
+    format: OutputFormat,
+) -> Result<String, String> {
+    use crate::intelligence::AutonomousAgent;
+
+    let working_dir = cwd.map(PathBuf::from).unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+
+    let mut agent = AutonomousAgent::new();
+    let execution = agent
+        .execute(task, working_dir.clone(), max_steps, confirm)
+        .await
+        .map_err(|e| format!("Agent error: {}", e))?;
+
+    match format {
+        OutputFormat::Json => serde_json::to_string_pretty(&execution).map_err(|e| e.to_string()),
+        _ => {
+            let mut output = String::new();
+            output.push_str(&FormatBox::new(&SenaConfig::brand_title("AUTONOMOUS AGENT")).render());
+            output.push('\n');
+            output.push_str(&format!("Execution ID: {}\n", execution.id));
+            output.push_str(&format!("Task: {}\n", execution.task));
+            output.push_str(&format!("State: {:?}\n", execution.state));
+            output.push_str(&format!("Working Directory: {}\n", execution.working_dir.display()));
+            output.push_str(&format!("Duration: {}ms\n\n", execution.elapsed_ms()));
+
+            if let Some(plan) = &execution.plan {
+                output.push_str("Plan:\n");
+                for (i, step) in plan.steps.iter().enumerate() {
+                    output.push_str(&format!("  {}. {} [{:?}]\n",
+                        i + 1, step.description, step.estimated_complexity));
+                }
+                output.push('\n');
+            }
+
+            output.push_str(&format!("Steps Executed: {} / {}\n", execution.steps_taken(), max_steps));
+            output.push_str(&format!("Successful: {}\n\n", execution.successful_steps()));
+
+            for step in &execution.steps {
+                let status = if step.success { "✓" } else { "✗" };
+                output.push_str(&format!("[{}] Step {}: {} ({}ms)\n",
+                    status, step.step_number, step.action, step.duration_ms));
+
+                if let Some(tool) = &step.tool_name {
+                    output.push_str(&format!("    Tool: {}\n", tool));
+                }
+
+                if let Some(result) = &step.result {
+                    let truncated: String = result.chars().take(200).collect();
+                    output.push_str(&format!("    Result: {}...\n", truncated));
+                }
+            }
+
+            if let Some(result) = &execution.final_result {
+                output.push_str(&format!("\nFinal Result: {}\n", result));
+            }
+
+            Ok(output)
+        }
+    }
+}
+
+async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, String> {
+    match action {
+        GitAction::Status => {
+            let output = std::process::Command::new("git")
+                .args(["status", "--porcelain", "-b"])
+                .output()
+                .map_err(|e| format!("Failed to run git: {}", e))?;
+
+            let status = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            if !output.status.success() {
+                return Err(format!("Git error: {}", stderr));
+            }
+
+            match format {
+                OutputFormat::Json => {
+                    let lines: Vec<&str> = status.lines().collect();
+                    let branch = lines.first()
+                        .map(|l| l.trim_start_matches("## "))
+                        .unwrap_or("unknown");
+
+                    let changes: Vec<_> = lines.iter()
+                        .skip(1)
+                        .map(|l| {
+                            let status_char = l.chars().take(2).collect::<String>();
+                            let file = l.chars().skip(3).collect::<String>();
+                            serde_json::json!({"status": status_char.trim(), "file": file})
+                        })
+                        .collect();
+
+                    let result = serde_json::json!({
+                        "branch": branch,
+                        "changes": changes,
+                        "clean": changes.is_empty(),
+                    });
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GIT STATUS")).render());
+                    out.push('\n');
+
+                    let full_output = std::process::Command::new("git")
+                        .args(["status"])
+                        .output()
+                        .map_err(|e| format!("Failed to run git: {}", e))?;
+
+                    out.push_str(&String::from_utf8_lossy(&full_output.stdout));
+                    Ok(out)
+                }
+            }
+        }
+
+        GitAction::Commit { message, all } => {
+            if all {
+                let add_output = std::process::Command::new("git")
+                    .args(["add", "-A"])
+                    .output()
+                    .map_err(|e| format!("Failed to stage: {}", e))?;
+
+                if !add_output.status.success() {
+                    return Err(format!("Failed to stage changes: {}",
+                        String::from_utf8_lossy(&add_output.stderr)));
+                }
+            }
+
+            let diff_output = std::process::Command::new("git")
+                .args(["diff", "--cached", "--stat"])
+                .output()
+                .map_err(|e| format!("Failed to get diff: {}", e))?;
+
+            let diff = String::from_utf8_lossy(&diff_output.stdout);
+
+            if diff.trim().is_empty() {
+                return Err("No staged changes to commit".to_string());
+            }
+
+            let commit_message = message.unwrap_or_else(|| {
+                let changes: Vec<&str> = diff.lines()
+                    .filter(|l| l.contains('|'))
+                    .take(3)
+                    .collect();
+
+                if changes.is_empty() {
+                    "Update files".to_string()
+                } else {
+                    format!("Update: {}", changes.join(", ").chars().take(50).collect::<String>())
+                }
+            });
+
+            let commit_output = std::process::Command::new("git")
+                .args(["commit", "-m", &commit_message])
+                .output()
+                .map_err(|e| format!("Failed to commit: {}", e))?;
+
+            if !commit_output.status.success() {
+                return Err(format!("Commit failed: {}",
+                    String::from_utf8_lossy(&commit_output.stderr)));
+            }
+
+            match format {
+                OutputFormat::Json => {
+                    let result = serde_json::json!({
+                        "success": true,
+                        "message": commit_message,
+                        "output": String::from_utf8_lossy(&commit_output.stdout).to_string(),
+                    });
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GIT COMMIT")).render());
+                    out.push('\n');
+                    out.push_str(&format!("Message: {}\n\n", commit_message));
+                    out.push_str(&String::from_utf8_lossy(&commit_output.stdout));
+                    Ok(out)
+                }
+            }
+        }
+
+        GitAction::Pr { title, base } => {
+            let base_branch = base.unwrap_or_else(|| "main".to_string());
+
+            let branch_output = std::process::Command::new("git")
+                .args(["rev-parse", "--abbrev-ref", "HEAD"])
+                .output()
+                .map_err(|e| format!("Failed to get branch: {}", e))?;
+
+            let current_branch = String::from_utf8_lossy(&branch_output.stdout).trim().to_string();
+
+            if current_branch == base_branch {
+                return Err(format!("Cannot create PR from {} to itself", base_branch));
+            }
+
+            let log_output = std::process::Command::new("git")
+                .args(["log", "--oneline", &format!("{}..HEAD", base_branch)])
+                .output()
+                .map_err(|e| format!("Failed to get commits: {}", e))?;
+
+            let commits = String::from_utf8_lossy(&log_output.stdout);
+            let commit_count = commits.lines().count();
+
+            let pr_title = title.unwrap_or_else(|| {
+                commits.lines().next()
+                    .map(|l| l.split_whitespace().skip(1).collect::<Vec<_>>().join(" "))
+                    .unwrap_or_else(|| format!("PR: {}", current_branch))
+            });
+
+            match format {
+                OutputFormat::Json => {
+                    let result = serde_json::json!({
+                        "branch": current_branch,
+                        "base": base_branch,
+                        "title": pr_title,
+                        "commits": commit_count,
+                        "note": "Use 'gh pr create' to create the actual PR",
+                    });
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GIT PR")).render());
+                    out.push('\n');
+                    out.push_str(&format!("Branch: {} -> {}\n", current_branch, base_branch));
+                    out.push_str(&format!("Title: {}\n", pr_title));
+                    out.push_str(&format!("Commits: {}\n\n", commit_count));
+                    out.push_str(&commits);
+                    out.push_str("\nTo create PR, run: gh pr create\n");
+                    Ok(out)
+                }
+            }
+        }
+
+        GitAction::Diff { staged } => {
+            let args = if staged {
+                vec!["diff", "--cached"]
+            } else {
+                vec!["diff"]
+            };
+
+            let output = std::process::Command::new("git")
+                .args(&args)
+                .output()
+                .map_err(|e| format!("Failed to run git diff: {}", e))?;
+
+            let diff = String::from_utf8_lossy(&output.stdout);
+
+            match format {
+                OutputFormat::Json => {
+                    let result = serde_json::json!({
+                        "staged": staged,
+                        "diff": diff.to_string(),
+                        "has_changes": !diff.is_empty(),
+                    });
+                    serde_json::to_string_pretty(&result).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    let title = if staged { "GIT DIFF (STAGED)" } else { "GIT DIFF" };
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title(title)).render());
+                    out.push('\n');
+
+                    if diff.is_empty() {
+                        out.push_str("No changes\n");
+                    } else {
+                        out.push_str(&diff);
+                    }
+                    Ok(out)
+                }
+            }
+        }
+
+        GitAction::Log { count } => {
+            let output = std::process::Command::new("git")
+                .args(["log", "--oneline", "-n", &count.to_string()])
+                .output()
+                .map_err(|e| format!("Failed to run git log: {}", e))?;
+
+            let log = String::from_utf8_lossy(&output.stdout);
+
+            match format {
+                OutputFormat::Json => {
+                    let commits: Vec<_> = log.lines()
+                        .map(|l| {
+                            let parts: Vec<&str> = l.splitn(2, ' ').collect();
+                            serde_json::json!({
+                                "hash": parts.first().unwrap_or(&""),
+                                "message": parts.get(1).unwrap_or(&""),
+                            })
+                        })
+                        .collect();
+
+                    serde_json::to_string_pretty(&commits).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GIT LOG")).render());
+                    out.push_str(&format!("\nLast {} commits:\n\n", count));
+                    out.push_str(&log);
+                    Ok(out)
+                }
+            }
         }
     }
 }

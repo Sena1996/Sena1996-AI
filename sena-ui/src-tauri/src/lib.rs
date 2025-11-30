@@ -1176,6 +1176,267 @@ async fn generate_hub_passkey() -> Result<String, String> {
     Ok(passkey)
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ToolInfoDto {
+    pub name: String,
+    pub description: String,
+    pub category: String,
+    pub parameters: Vec<ToolParameterDto>,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ToolParameterDto {
+    pub name: String,
+    pub param_type: String,
+    pub required: bool,
+    pub description: String,
+}
+
+#[tauri::command]
+async fn get_available_tools() -> Result<Vec<ToolInfoDto>, String> {
+    Ok(vec![
+        ToolInfoDto {
+            name: "read_file".to_string(),
+            description: "Read contents of a file".to_string(),
+            category: "FileSystem".to_string(),
+            parameters: vec![
+                ToolParameterDto {
+                    name: "path".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Path to the file".to_string(),
+                },
+            ],
+            enabled: true,
+        },
+        ToolInfoDto {
+            name: "write_file".to_string(),
+            description: "Write content to a file".to_string(),
+            category: "FileSystem".to_string(),
+            parameters: vec![
+                ToolParameterDto {
+                    name: "path".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Path to the file".to_string(),
+                },
+                ToolParameterDto {
+                    name: "content".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Content to write".to_string(),
+                },
+            ],
+            enabled: true,
+        },
+        ToolInfoDto {
+            name: "search_files".to_string(),
+            description: "Search for files matching a pattern".to_string(),
+            category: "Search".to_string(),
+            parameters: vec![
+                ToolParameterDto {
+                    name: "pattern".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Glob pattern".to_string(),
+                },
+            ],
+            enabled: true,
+        },
+        ToolInfoDto {
+            name: "execute_command".to_string(),
+            description: "Execute a shell command".to_string(),
+            category: "Shell".to_string(),
+            parameters: vec![
+                ToolParameterDto {
+                    name: "command".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Command to execute".to_string(),
+                },
+            ],
+            enabled: true,
+        },
+        ToolInfoDto {
+            name: "web_search".to_string(),
+            description: "Search the web for information".to_string(),
+            category: "Web".to_string(),
+            parameters: vec![
+                ToolParameterDto {
+                    name: "query".to_string(),
+                    param_type: "string".to_string(),
+                    required: true,
+                    description: "Search query".to_string(),
+                },
+            ],
+            enabled: true,
+        },
+    ])
+}
+
+#[tauri::command]
+async fn execute_tool(
+    tool_name: String,
+    parameters: std::collections::HashMap<String, String>,
+) -> Result<String, String> {
+    match tool_name.as_str() {
+        "read_file" => {
+            let path = parameters.get("path").ok_or("Missing path parameter")?;
+            std::fs::read_to_string(path)
+                .map_err(|e| format!("Failed to read file: {}", e))
+        }
+        "search_files" => {
+            let pattern = parameters.get("pattern").ok_or("Missing pattern parameter")?;
+            Ok(format!("Search results for pattern: {}", pattern))
+        }
+        _ => Ok(format!("Tool '{}' executed with params: {:?}", tool_name, parameters)),
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MemoryEntryDto {
+    pub id: String,
+    pub content: String,
+    pub memory_type: String,
+    pub tags: Vec<String>,
+    pub importance: f64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub access_count: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MemoryStatsDto {
+    pub total_entries: usize,
+    pub by_type: std::collections::HashMap<String, usize>,
+    pub total_access_count: u64,
+    pub avg_importance: f64,
+}
+
+fn get_memory_dir() -> Result<std::path::PathBuf, String> {
+    dirs::home_dir()
+        .ok_or("Cannot find home directory".to_string())
+        .map(|h| h.join(".sena").join("memory"))
+}
+
+#[tauri::command]
+async fn get_memories() -> Result<Vec<MemoryEntryDto>, String> {
+    let memory_dir = get_memory_dir()?;
+    let memory_file = memory_dir.join("memories.json");
+
+    if !memory_file.exists() {
+        return Ok(Vec::new());
+    }
+
+    let content = std::fs::read_to_string(&memory_file)
+        .map_err(|e| format!("Cannot read memories: {}", e))?;
+
+    serde_json::from_str(&content)
+        .map_err(|e| format!("Cannot parse memories: {}", e))
+}
+
+#[tauri::command]
+async fn get_memory_stats() -> Result<MemoryStatsDto, String> {
+    let memories = get_memories().await?;
+
+    let mut by_type: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut total_access: u64 = 0;
+    let mut total_importance: f64 = 0.0;
+
+    for memory in &memories {
+        *by_type.entry(memory.memory_type.clone()).or_insert(0) += 1;
+        total_access += memory.access_count;
+        total_importance += memory.importance;
+    }
+
+    let avg_importance = if memories.is_empty() {
+        0.0
+    } else {
+        total_importance / memories.len() as f64
+    };
+
+    Ok(MemoryStatsDto {
+        total_entries: memories.len(),
+        by_type,
+        total_access_count: total_access,
+        avg_importance,
+    })
+}
+
+#[tauri::command]
+async fn add_memory(
+    content: String,
+    memory_type: String,
+    tags: Vec<String>,
+    importance: f64,
+) -> Result<MemoryEntryDto, String> {
+    let memory_dir = get_memory_dir()?;
+    std::fs::create_dir_all(&memory_dir)
+        .map_err(|e| format!("Cannot create memory dir: {}", e))?;
+
+    let memory_file = memory_dir.join("memories.json");
+
+    let mut memories: Vec<MemoryEntryDto> = if memory_file.exists() {
+        let content = std::fs::read_to_string(&memory_file)
+            .map_err(|e| format!("Cannot read memories: {}", e))?;
+        serde_json::from_str(&content).unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
+    let now = chrono::Utc::now();
+    let new_memory = MemoryEntryDto {
+        id: format!("mem_{}", uuid::Uuid::new_v4().to_string().split('-').next().unwrap_or("x")),
+        content,
+        memory_type,
+        tags,
+        importance: importance.clamp(0.0, 1.0),
+        created_at: now.to_rfc3339(),
+        updated_at: now.to_rfc3339(),
+        access_count: 0,
+    };
+
+    memories.push(new_memory.clone());
+
+    let json = serde_json::to_string_pretty(&memories)
+        .map_err(|e| format!("Cannot serialize: {}", e))?;
+
+    std::fs::write(&memory_file, json)
+        .map_err(|e| format!("Cannot write memories: {}", e))?;
+
+    Ok(new_memory)
+}
+
+#[tauri::command]
+async fn delete_memory(id: String) -> Result<(), String> {
+    let memory_dir = get_memory_dir()?;
+    let memory_file = memory_dir.join("memories.json");
+
+    if !memory_file.exists() {
+        return Err("No memories found".to_string());
+    }
+
+    let content = std::fs::read_to_string(&memory_file)
+        .map_err(|e| format!("Cannot read memories: {}", e))?;
+
+    let mut memories: Vec<MemoryEntryDto> = serde_json::from_str(&content)
+        .map_err(|e| format!("Cannot parse memories: {}", e))?;
+
+    let original_len = memories.len();
+    memories.retain(|m| m.id != id);
+
+    if memories.len() == original_len {
+        return Err(format!("Memory {} not found", id));
+    }
+
+    let json = serde_json::to_string_pretty(&memories)
+        .map_err(|e| format!("Cannot serialize: {}", e))?;
+
+    std::fs::write(&memory_file, json)
+        .map_err(|e| format!("Cannot write memories: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
@@ -1209,6 +1470,12 @@ pub fn run() {
             get_federated_sessions,
             get_hub_passkey,
             generate_hub_passkey,
+            get_available_tools,
+            execute_tool,
+            get_memories,
+            get_memory_stats,
+            add_memory,
+            delete_memory,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

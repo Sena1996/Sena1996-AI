@@ -3194,9 +3194,10 @@ dependencies = [
 
 [[package]]
 name = "sena-ui"
-version = "1.0.0"
+version = "13.0.2"
 dependencies = [
  "base64 0.22.1",
+ "chrono",
  "dirs 5.0.1",
  "hostname",
  "rand 0.8.5",

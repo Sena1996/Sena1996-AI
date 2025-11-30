@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [13.1.3] - 2025-11-30
+
+### Added - Tool System & Automation
+- **Tool/Function Calling System** - Provider-agnostic tool execution
+  - `sena tools list` - List all available tools
+  - `sena tools execute <name>` - Execute tools with parameters
+  - Built-in tools: read_file, write_file, search_files, execute_command, web_search
+  - Tools UI page in Hub desktop app
+- **Persistent Memory System** - Cross-session AI memory
+  - `sena memory add "<content>" --type <type>` - Store memories
+  - `sena memory search <query>` - Search by content/tags
+  - `sena memory list` - List all memories
+  - `sena memory stats` - Memory statistics
+  - Memory types: Preference, Fact, Project, Context, Conversation
+  - Memory UI page with add/search/filter
+- **Autonomous Agent Loop** - Multi-step task automation
+  - `sena auto "<task>"` - Run autonomous task
+  - `sena auto "<task>" --max-steps N` - Limit execution steps
+  - `sena auto "<task>" --confirm` - Require step confirmation
+  - Planning and execution with tool integration
+- **Git Integration** - AI-powered git operations
+  - `sena git status` - Enhanced status with insights
+  - `sena git commit` - AI-generated commit messages
+  - `sena git log` - Formatted commit history
+  - `sena git diff` - Show changes
+- **Streaming Response System** - Real-time output
+  - StreamWriter/StreamReader for buffered streaming
+  - WebSocket broadcaster for UI updates
+  - Console and JSON renderers
+- **Semantic Memory Search** - Vector embeddings
+  - Cosine similarity for text matching
+  - Hybrid search (keyword + semantic)
+  - SimpleHashEmbedder for local embeddings
+- **Performance Benchmarks** - Criterion benchmarks
+  - Memory operations benchmarks
+  - Tool system benchmarks
+  - Scaling tests
+
+### Added - Hub UI Pages
+- **Tools Page** - Execute and manage AI tools visually
+- **Memory Page** - Add, search, filter memories with stats
+- **Features Page** - Complete documentation with 10 features, commands, examples
+
+### Changed
+- Updated CLAUDE.md with new v13.1.3 commands
+- Navigation updated with Tools, Memory, Features pages
+- Tauri backend commands for tools and memory
+
+---
+
 ## [13.0.0] - 2025-11-28
 
 ### Added - Cross-Hub Federation (Hub v2.0)
