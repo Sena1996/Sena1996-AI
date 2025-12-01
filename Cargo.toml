@@ -82,7 +82,7 @@ mdns-sd = "0.11"
 
 # Network - TLS
 tokio-rustls = "0.25"
-rustls = "0.22"
+rustls = "0.23"
 rustls-pemfile = "2.0"
 rcgen = "0.14"
 
