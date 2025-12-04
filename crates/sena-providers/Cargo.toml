@@ -1,6 +1,6 @@
 [package]
 name = "sena-providers"
-version = "13.1.3"
+version = "13.1.5"
 edition = "2021"
 authors = ["Sena1996 <sena1996@github.com>"]
 description = "Multi-AI provider integration for Sena1996 AI Tool"
