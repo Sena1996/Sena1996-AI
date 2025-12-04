@@ -3167,7 +3167,7 @@ dependencies = [
 
 [[package]]
 name = "sena-collab"
-version = "13.1.3"
+version = "13.1.5"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3183,7 +3183,7 @@ dependencies = [
 
 [[package]]
 name = "sena-providers"
-version = "13.1.3"
+version = "13.1.5"
 dependencies = [
  "async-trait",
  "bytes",
