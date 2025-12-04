@@ -308,7 +308,12 @@ pub enum Commands {
         #[arg(short, long, help = "Working directory")]
         cwd: Option<String>,
 
-        #[arg(short, long, default_value_t = false, help = "Require confirmation for actions")]
+        #[arg(
+            short,
+            long,
+            default_value_t = false,
+            help = "Require confirmation for actions"
+        )]
         confirm: bool,
     },
 
@@ -454,6 +459,18 @@ pub enum HubAction {
     },
     #[command(about = "List all sessions (local + remote)")]
     Federation,
+    #[command(about = "Remove a session completely from the hub")]
+    RemoveSession {
+        #[arg(help = "Session ID or name to remove")]
+        session: String,
+        #[arg(short, long, help = "Force removal without confirmation")]
+        force: bool,
+    },
+    #[command(about = "Remove all stale/inactive sessions")]
+    Cleanup {
+        #[arg(short, long, help = "Also remove associated messages")]
+        messages: bool,
+    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -903,7 +920,12 @@ pub enum MemoryAction {
         #[arg(help = "Memory content")]
         content: String,
 
-        #[arg(short = 't', long, default_value = "fact", help = "Memory type (preference, fact, project, context)")]
+        #[arg(
+            short = 't',
+            long,
+            default_value = "fact",
+            help = "Memory type (preference, fact, project, context)"
+        )]
         memory_type: String,
 
         #[arg(short, long, help = "Tags (comma-separated)")]

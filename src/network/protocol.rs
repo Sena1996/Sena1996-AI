@@ -259,7 +259,11 @@ impl NetworkMessage {
         Self::new(NetworkCommand::SessionListRequest)
     }
 
-    pub fn session_list_response(hub_id: &str, hub_name: &str, sessions: Vec<RemoteSession>) -> Self {
+    pub fn session_list_response(
+        hub_id: &str,
+        hub_name: &str,
+        sessions: Vec<RemoteSession>,
+    ) -> Self {
         Self::new(NetworkCommand::SessionListResponse {
             hub_id: hub_id.to_string(),
             hub_name: hub_name.to_string(),

@@ -58,7 +58,11 @@ impl AgentStep {
         }
     }
 
-    pub fn with_tool(mut self, tool_name: &str, params: HashMap<String, serde_json::Value>) -> Self {
+    pub fn with_tool(
+        mut self,
+        tool_name: &str,
+        params: HashMap<String, serde_json::Value>,
+    ) -> Self {
         self.tool_name = Some(tool_name.to_string());
         self.tool_params = Some(params);
         self
@@ -207,8 +211,11 @@ impl AutonomousAgent {
                     execution.steps.push(step);
                 }
                 Err(e) => {
-                    let failed_step = AgentStep::new(idx + 1, &planned_step.description)
-                        .complete(&format!("Error: {}", e), false, 0);
+                    let failed_step = AgentStep::new(idx + 1, &planned_step.description).complete(
+                        &format!("Error: {}", e),
+                        false,
+                        0,
+                    );
                     execution.steps.push(failed_step);
                 }
             }
@@ -274,7 +281,9 @@ impl AutonomousAgent {
             });
         }
 
-        if task_lower.contains("search") || task_lower.contains("find") || task_lower.contains("grep")
+        if task_lower.contains("search")
+            || task_lower.contains("find")
+            || task_lower.contains("grep")
         {
             let pattern = extract_search_pattern(&task_lower).unwrap_or("TODO".to_string());
             steps.push(PlannedStep {
@@ -300,7 +309,9 @@ impl AutonomousAgent {
             });
         }
 
-        if task_lower.contains("run") || task_lower.contains("execute") || task_lower.contains("command")
+        if task_lower.contains("run")
+            || task_lower.contains("execute")
+            || task_lower.contains("command")
         {
             steps.push(PlannedStep {
                 description: "Execute shell command".to_string(),
@@ -384,29 +395,51 @@ impl AutonomousAgent {
                 let file_path = extract_file_hint(&planned.description)
                     .map(|f| working_dir.join(f))
                     .unwrap_or_else(|| working_dir.join("README.md"));
-                params.insert("path".to_string(), serde_json::json!(file_path.to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(file_path.to_string_lossy()),
+                );
             }
             "file_list" => {
-                params.insert("path".to_string(), serde_json::json!(working_dir.to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(working_dir.to_string_lossy()),
+                );
             }
             "code_search" => {
-                let pattern = extract_search_pattern(&planned.description).unwrap_or_else(|| "TODO".to_string());
+                let pattern = extract_search_pattern(&planned.description)
+                    .unwrap_or_else(|| "TODO".to_string());
                 params.insert("pattern".to_string(), serde_json::json!(pattern));
-                params.insert("path".to_string(), serde_json::json!(working_dir.to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(working_dir.to_string_lossy()),
+                );
             }
             "code_analyze" => {
-                params.insert("path".to_string(), serde_json::json!(working_dir.to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(working_dir.to_string_lossy()),
+                );
                 params.insert("analysis_type".to_string(), serde_json::json!("structure"));
             }
             "file_write" => {
-                params.insert("path".to_string(), serde_json::json!(working_dir.join("output.txt").to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(working_dir.join("output.txt").to_string_lossy()),
+                );
                 params.insert("content".to_string(), serde_json::json!(""));
             }
             "shell_exec" => {
-                params.insert("command".to_string(), serde_json::json!("echo 'Shell execution disabled for safety'"));
+                params.insert(
+                    "command".to_string(),
+                    serde_json::json!("echo 'Shell execution disabled for safety'"),
+                );
             }
             _ => {
-                params.insert("path".to_string(), serde_json::json!(working_dir.to_string_lossy()));
+                params.insert(
+                    "path".to_string(),
+                    serde_json::json!(working_dir.to_string_lossy()),
+                );
             }
         }
 
@@ -430,8 +463,18 @@ impl Default for AutonomousAgent {
 
 fn extract_file_hint(text: &str) -> Option<String> {
     let file_patterns = [
-        "readme", "cargo.toml", "package.json", "config", "main.rs", "lib.rs", "mod.rs", "index.ts",
-        "index.js", ".env", "dockerfile", "makefile",
+        "readme",
+        "cargo.toml",
+        "package.json",
+        "config",
+        "main.rs",
+        "lib.rs",
+        "mod.rs",
+        "index.ts",
+        "index.js",
+        ".env",
+        "dockerfile",
+        "makefile",
     ];
 
     for pattern in &file_patterns {
@@ -499,15 +542,27 @@ mod tests {
 
     #[test]
     fn test_extract_file_hint() {
-        assert_eq!(extract_file_hint("read the readme"), Some("README.md".to_string()));
-        assert_eq!(extract_file_hint("show cargo.toml"), Some("Cargo.toml".to_string()));
+        assert_eq!(
+            extract_file_hint("read the readme"),
+            Some("README.md".to_string())
+        );
+        assert_eq!(
+            extract_file_hint("show cargo.toml"),
+            Some("Cargo.toml".to_string())
+        );
         assert_eq!(extract_file_hint("random text"), None);
     }
 
     #[test]
     fn test_extract_search_pattern() {
-        assert_eq!(extract_search_pattern("search for TODO"), Some("TODO".to_string()));
-        assert_eq!(extract_search_pattern("find error"), Some("error".to_string()));
+        assert_eq!(
+            extract_search_pattern("search for TODO"),
+            Some("TODO".to_string())
+        );
+        assert_eq!(
+            extract_search_pattern("find error"),
+            Some("error".to_string())
+        );
     }
 
     #[test]

@@ -181,7 +181,10 @@ impl HubState {
         self.session_states
             .iter()
             .filter_map(|(id, state)| {
-                state.working_on.as_ref().map(|file| (id.clone(), file.clone()))
+                state
+                    .working_on
+                    .as_ref()
+                    .map(|file| (id.clone(), file.clone()))
             })
             .collect()
     }

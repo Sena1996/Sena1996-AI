@@ -281,8 +281,10 @@ impl ConsoleStreamRenderer {
             }
             StreamEventType::ToolResult => {
                 if self.show_tools {
-                    print!("\x1b[32m[Result: {}...]\x1b[0m ",
-                        event.content.chars().take(50).collect::<String>());
+                    print!(
+                        "\x1b[32m[Result: {}...]\x1b[0m ",
+                        event.content.chars().take(50).collect::<String>()
+                    );
                     let _ = io::stdout().flush();
                 }
             }

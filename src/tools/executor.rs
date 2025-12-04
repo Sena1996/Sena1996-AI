@@ -312,7 +312,12 @@ impl ToolExecutor {
             "POST" => client.post(url),
             "PUT" => client.put(url),
             "DELETE" => client.delete(url),
-            _ => return Err(ToolError::InvalidParameters(format!("Invalid HTTP method: {}", method))),
+            _ => {
+                return Err(ToolError::InvalidParameters(format!(
+                    "Invalid HTTP method: {}",
+                    method
+                )))
+            }
         };
 
         let response = request
@@ -356,10 +361,7 @@ impl ToolExecutor {
             .and_then(|v| v.as_str())
             .ok_or_else(|| ToolError::InvalidParameters("pattern is required".to_string()))?;
 
-        let path = params
-            .get("path")
-            .and_then(|v| v.as_str())
-            .unwrap_or(".");
+        let path = params.get("path").and_then(|v| v.as_str()).unwrap_or(".");
 
         let file_pattern = params.get("file_pattern").and_then(|v| v.as_str());
 
@@ -433,7 +435,10 @@ impl ToolExecutor {
         let file_path = Path::new(path);
 
         if !file_path.exists() {
-            return Err(ToolError::ExecutionFailed(format!("Path not found: {}", path)));
+            return Err(ToolError::ExecutionFailed(format!(
+                "Path not found: {}",
+                path
+            )));
         }
 
         let content = if file_path.is_file() {
@@ -455,7 +460,10 @@ impl ToolExecutor {
     fn analyze_structure(&self, content: &str, path: &str) -> serde_json::Value {
         let lines: Vec<&str> = content.lines().collect();
         let total_lines = lines.len();
-        let code_lines = lines.iter().filter(|l| !l.trim().is_empty() && !l.trim().starts_with("//")).count();
+        let code_lines = lines
+            .iter()
+            .filter(|l| !l.trim().is_empty() && !l.trim().starts_with("//"))
+            .count();
         let comment_lines = lines.iter().filter(|l| l.trim().starts_with("//")).count();
         let blank_lines = lines.iter().filter(|l| l.trim().is_empty()).count();
 
@@ -493,7 +501,9 @@ impl ToolExecutor {
 
     fn analyze_complexity(&self, content: &str) -> serde_json::Value {
         let if_count = content.matches("if ").count();
-        let loop_count = content.matches("for ").count() + content.matches("while ").count() + content.matches("loop ").count();
+        let loop_count = content.matches("for ").count()
+            + content.matches("while ").count()
+            + content.matches("loop ").count();
         let match_count = content.matches("match ").count();
         let unwrap_count = content.matches(".unwrap()").count();
 
@@ -658,6 +668,11 @@ mod tests {
         "#;
 
         let result = executor.analyze_complexity(code);
-        assert!(result["metrics"]["cyclomatic_complexity_estimate"].as_i64().unwrap() > 1);
+        assert!(
+            result["metrics"]["cyclomatic_complexity_estimate"]
+                .as_i64()
+                .unwrap()
+                > 1
+        );
     }
 }

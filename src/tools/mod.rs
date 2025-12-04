@@ -8,7 +8,7 @@ pub mod executor;
 pub mod registry;
 
 pub use builtin::BuiltinTools;
-pub use executor::{ToolExecutor, ToolExecutionResult};
+pub use executor::{ToolExecutionResult, ToolExecutor};
 pub use registry::ToolRegistry;
 
 #[derive(Error, Debug)]
@@ -85,8 +85,18 @@ pub struct ToolCall {
 }
 
 impl ToolCall {
-    pub fn new(tool_name: impl Into<String>, parameters: HashMap<String, serde_json::Value>) -> Self {
-        let call_id = format!("call_{}", uuid::Uuid::new_v4().to_string().split('-').next().unwrap_or("unknown"));
+    pub fn new(
+        tool_name: impl Into<String>,
+        parameters: HashMap<String, serde_json::Value>,
+    ) -> Self {
+        let call_id = format!(
+            "call_{}",
+            uuid::Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("unknown")
+        );
         Self {
             tool_name: tool_name.into(),
             parameters,
@@ -94,7 +104,11 @@ impl ToolCall {
         }
     }
 
-    pub fn with_param(mut self, key: impl Into<String>, value: impl Into<serde_json::Value>) -> Self {
+    pub fn with_param(
+        mut self,
+        key: impl Into<String>,
+        value: impl Into<serde_json::Value>,
+    ) -> Self {
         self.parameters.insert(key.into(), value.into());
         self
     }
@@ -111,7 +125,12 @@ pub struct ToolResponse {
 }
 
 impl ToolResponse {
-    pub fn success(call_id: String, tool_name: String, output: serde_json::Value, time_ms: u64) -> Self {
+    pub fn success(
+        call_id: String,
+        tool_name: String,
+        output: serde_json::Value,
+        time_ms: u64,
+    ) -> Self {
         Self {
             call_id,
             tool_name,
@@ -247,8 +266,7 @@ mod tests {
 
     #[test]
     fn test_tool_call_creation() {
-        let call = ToolCall::new("file_read", HashMap::new())
-            .with_param("path", "/tmp/test.txt");
+        let call = ToolCall::new("file_read", HashMap::new()).with_param("path", "/tmp/test.txt");
 
         assert_eq!(call.tool_name, "file_read");
         assert!(call.parameters.contains_key("path"));

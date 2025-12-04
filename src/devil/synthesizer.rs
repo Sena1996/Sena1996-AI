@@ -143,7 +143,9 @@ impl ResponseSynthesizer {
             .collect();
 
         if contents.is_empty() {
-            return Err(DevilError::SynthesisError("No content to merge".to_string()));
+            return Err(DevilError::SynthesisError(
+                "No content to merge".to_string(),
+            ));
         }
 
         let all_sentences: Vec<HashSet<&str>> = contents
@@ -169,11 +171,7 @@ impl ResponseSynthesizer {
         let content = if common_sentences.is_empty() {
             contents.first().copied().unwrap_or("").to_string()
         } else {
-            common_sentences
-                .into_iter()
-                .collect::<Vec<_>>()
-                .join(". ")
-                + "."
+            common_sentences.into_iter().collect::<Vec<_>>().join(". ") + "."
         };
 
         Ok(SynthesizedResponse {
@@ -247,10 +245,7 @@ impl ResponseSynthesizer {
         }
 
         if verified_facts.is_empty() && !unique_facts.is_empty() {
-            verified_facts = unique_facts
-                .into_iter()
-                .take(self.max_facts / 2)
-                .collect();
+            verified_facts = unique_facts.into_iter().take(self.max_facts / 2).collect();
         }
 
         let content = if verified_facts.is_empty() {

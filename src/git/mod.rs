@@ -122,14 +122,8 @@ impl GitRepo {
             } else if line.starts_with("# branch.ab") {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 4 {
-                    ahead = parts[2]
-                        .trim_start_matches('+')
-                        .parse()
-                        .unwrap_or(0);
-                    behind = parts[3]
-                        .trim_start_matches('-')
-                        .parse()
-                        .unwrap_or(0);
+                    ahead = parts[2].trim_start_matches('+').parse().unwrap_or(0);
+                    behind = parts[3].trim_start_matches('-').parse().unwrap_or(0);
                 }
             } else if line.starts_with('1') || line.starts_with('2') {
                 let parts: Vec<&str> = line.split_whitespace().collect();

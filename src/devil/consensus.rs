@@ -266,8 +266,8 @@ impl ConsensusEngine {
             .max()
             .unwrap_or(0);
 
-        let avg_cluster_similarity: f64 = clusters.iter().map(|c| c.similarity_score).sum::<f64>()
-            / clusters.len() as f64;
+        let avg_cluster_similarity: f64 =
+            clusters.iter().map(|c| c.similarity_score).sum::<f64>() / clusters.len() as f64;
 
         let size_factor = largest_cluster_size as f64 / total as f64;
         let similarity_factor = avg_cluster_similarity;
@@ -298,10 +298,8 @@ mod tests {
         );
         assert!(sim > 0.5);
 
-        let diff_sim = engine.text_similarity(
-            "The Moon is Earth's satellite",
-            "Bananas are yellow fruits",
-        );
+        let diff_sim =
+            engine.text_similarity("The Moon is Earth's satellite", "Bananas are yellow fruits");
         assert!(diff_sim < 0.2);
     }
 

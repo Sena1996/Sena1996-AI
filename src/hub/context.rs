@@ -96,8 +96,7 @@ impl ContextManager {
         let file_path = self.context_file_for_terminal(&terminal_id);
 
         if file_path.exists() {
-            fs::remove_file(&file_path)
-                .map_err(|e| format!("Cannot remove context: {}", e))?;
+            fs::remove_file(&file_path).map_err(|e| format!("Cannot remove context: {}", e))?;
         }
         Ok(())
     }

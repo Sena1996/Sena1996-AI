@@ -197,7 +197,9 @@ fn handle_tools_list(request: &JsonRpcRequest) -> JsonRpcResponse {
         },
         Tool {
             name: "sena_devil_execute".to_string(),
-            description: "Execute prompt across all AI providers with consensus synthesis (Devil Mode)".to_string(),
+            description:
+                "Execute prompt across all AI providers with consensus synthesis (Devil Mode)"
+                    .to_string(),
             input_schema: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -547,10 +549,7 @@ fn call_devil_execute(args: &HashMap<String, serde_json::Value>) -> ToolCallResu
     use std::time::Duration;
 
     let prompt = args.get("prompt").and_then(|v| v.as_str()).unwrap_or("");
-    let timeout = args
-        .get("timeout")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(30);
+    let timeout = args.get("timeout").and_then(|v| v.as_u64()).unwrap_or(30);
     let synthesis_str = args
         .get("synthesis")
         .and_then(|v| v.as_str())

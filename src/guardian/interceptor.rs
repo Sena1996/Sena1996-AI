@@ -120,7 +120,8 @@ mod tests {
 
     #[test]
     fn test_blocked() {
-        let output = InterceptedOutput::blocked("bad content".to_string(), "Policy violation".to_string());
+        let output =
+            InterceptedOutput::blocked("bad content".to_string(), "Policy violation".to_string());
         assert!(output.was_blocked);
         assert!(!output.is_safe());
         assert!(output.has_warnings());

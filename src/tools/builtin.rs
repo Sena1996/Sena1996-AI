@@ -97,7 +97,10 @@ impl BuiltinTools {
     pub fn code_analyze(path: &str, analysis_type: &str) -> ToolCall {
         let mut params = HashMap::new();
         params.insert("path".to_string(), serde_json::json!(path));
-        params.insert("analysis_type".to_string(), serde_json::json!(analysis_type));
+        params.insert(
+            "analysis_type".to_string(),
+            serde_json::json!(analysis_type),
+        );
         ToolCall::new("code_analyze", params)
     }
 
@@ -182,7 +185,11 @@ pub fn format_tool_list(tools: &[&ToolDefinition]) -> String {
 }
 
 pub fn format_tool_response(response: &ToolResponse) -> String {
-    let status = if response.success { "SUCCESS" } else { "FAILED" };
+    let status = if response.success {
+        "SUCCESS"
+    } else {
+        "FAILED"
+    };
 
     let mut output = format!(
         "[{}] {} ({}ms)\n",

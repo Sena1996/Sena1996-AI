@@ -33,8 +33,7 @@ impl DirectExecutor {
     }
 
     pub fn register_command(&mut self, command: Box<dyn InlineExecutable>) {
-        self.inline_commands
-            .insert(command.command_name(), command);
+        self.inline_commands.insert(command.command_name(), command);
     }
 
     pub fn execute(&self, command: &str, args: &[&str]) -> GuardianResult<Output> {

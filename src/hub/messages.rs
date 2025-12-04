@@ -338,10 +338,7 @@ impl MessageQueue {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() {
-                let filename = path
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
+                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                 if filename.ends_with(".json") && filename != "broadcast.json" {
                     if let Ok(content) = fs::read_to_string(&path) {
@@ -383,6 +380,46 @@ impl MessageQueue {
     /// Get unread count for a session
     pub fn unread_count(&self, session_id: &str) -> usize {
         self.get_unread(session_id).len()
+    }
+
+    /// Remove all messages for a specific session
+    pub fn remove_session_messages(&mut self, session_id: &str) -> usize {
+        let before_count = self.messages.len();
+
+        self.messages
+            .retain(|m| m.from != session_id && m.to != session_id);
+
+        let inbox_file = self.messages_dir.join(format!("{}.json", session_id));
+        if inbox_file.exists() {
+            let _ = fs::remove_file(&inbox_file);
+        }
+
+        before_count - self.messages.len()
+    }
+
+    /// Clear all messages
+    pub fn clear_all(&mut self) -> Result<usize, String> {
+        let count = self.messages.len();
+        self.messages.clear();
+
+        if self.messages_dir.exists() {
+            let entries = fs::read_dir(&self.messages_dir)
+                .map_err(|e| format!("Cannot read messages directory: {}", e))?;
+
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
+                    let _ = fs::remove_file(&path);
+                }
+            }
+        }
+
+        Ok(count)
+    }
+
+    /// Get all messages (for debugging/admin)
+    pub fn get_all(&self) -> &Vec<Message> {
+        &self.messages
     }
 }
 

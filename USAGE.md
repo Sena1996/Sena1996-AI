@@ -8,30 +8,250 @@
 
 ## Table of Contents
 
-1. [Installation](#installation)
-2. [Multi-AI Provider Integration](#multi-ai-provider-integration)
-3. [AI-to-AI Collaboration](#ai-to-ai-collaboration)
-4. [Consensus Voting System](#consensus-voting-system)
-5. [Specialist Routing](#specialist-routing)
-6. [Network Collaboration](#network-collaboration)
-7. [Session Management](#session-management)
-8. [Cross-Session Messaging](#cross-session-messaging)
-9. [Task Management](#task-management)
-10. [Domain Agents](#domain-agents)
-11. [Intelligence System](#intelligence-system)
-12. [Knowledge System](#knowledge-system)
-13. [Evolution System](#evolution-system)
-14. [Health & Metrics](#health--metrics)
-15. [Tool System (v13.1.3)](#tool-system-v1313)
-16. [Persistent Memory (v13.1.3)](#persistent-memory-v1313)
-17. [Autonomous Agent (v13.1.3)](#autonomous-agent-v1313)
-18. [Git Integration (v13.1.3)](#git-integration-v1313)
-19. [Hub Messages (v13.1.3)](#hub-messages-v1313)
-20. [Desktop Application](#desktop-application)
-21. [Hooks & MCP](#hooks--mcp)
-22. [Configuration](#configuration)
-23. [Troubleshooting](#troubleshooting)
-24. [Quick Reference](#quick-reference)
+1. [Getting Started with Claude Code](#getting-started-with-claude-code)
+2. [Installation](#installation)
+3. [Multi-AI Provider Integration](#multi-ai-provider-integration)
+4. [AI-to-AI Collaboration](#ai-to-ai-collaboration)
+5. [Consensus Voting System](#consensus-voting-system)
+6. [Specialist Routing](#specialist-routing)
+7. [Network Collaboration](#network-collaboration)
+8. [Session Management](#session-management)
+9. [Cross-Session Messaging](#cross-session-messaging)
+10. [Task Management](#task-management)
+11. [Domain Agents](#domain-agents)
+12. [Intelligence System](#intelligence-system)
+13. [Knowledge System](#knowledge-system)
+14. [Evolution System](#evolution-system)
+15. [Health & Metrics](#health--metrics)
+16. [Tool System (v13.1.3)](#tool-system-v1313)
+17. [Persistent Memory (v13.1.3)](#persistent-memory-v1313)
+18. [Autonomous Agent (v13.1.3)](#autonomous-agent-v1313)
+19. [Git Integration (v13.1.3)](#git-integration-v1313)
+20. [Hub Messages (v13.1.3)](#hub-messages-v1313)
+21. [Desktop Application](#desktop-application)
+22. [Hooks & MCP](#hooks--mcp)
+23. [Configuration](#configuration)
+24. [Troubleshooting](#troubleshooting)
+25. [Quick Reference](#quick-reference)
+
+---
+
+## Getting Started with Claude Code
+
+This section shows how to use SENA tools effectively when you start a new Claude Code terminal session for research tasks.
+
+### Quick Start Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  NEW CLAUDE CODE SESSION → SENA RESEARCH WORKFLOW                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+    ┌─────────────────────────────────┼─────────────────────────────────┐
+    │                                 │                                 │
+    ▼                                 ▼                                 ▼
+┌───────────────┐           ┌─────────────────┐           ┌───────────────────┐
+│ 1. JOIN HUB   │           │ 2. USE TOOLS    │           │ 3. COLLABORATE    │
+│ (Optional)    │           │                 │           │                   │
+│               │           │ • sena think    │           │ • sena tell       │
+│ sena join     │           │ • sena knowledge│           │ • sena broadcast  │
+│ --role=...    │           │ • sena agent    │           │ • sena inbox      │
+│ --name=...    │           │ • sena memory   │           │ • sena who        │
+└───────────────┘           └─────────────────┘           └───────────────────┘
+```
+
+### Step 1: Join the Hub (Optional but Recommended)
+
+```bash
+# Join with a role and name for collaboration
+sena join --role=researcher --name="MyResearch"
+
+# Available roles:
+#   🔬 researcher  - Research and analysis tasks
+#   💻 developer   - Code development
+#   🎨 designer    - UI/UX design work
+#   📝 writer      - Documentation/content
+#   🧪 tester      - Testing and QA
+#   👁️ observer    - Watch and learn
+```
+
+### Step 2: Check Who's Online
+
+```bash
+sena who
+
+# Output:
+# Sessions Online:
+#   🔬 MyResearch (abc123) - 🟢 Active - idle - 0s ago (you)
+#   💻 Backend (def456)    - 🟢 Active - api.rs - 5m ago
+```
+
+### Step 3: Use Research Tools
+
+#### Thinking & Analysis
+```bash
+# Quick thinking
+sena think "How does the authentication system work?"
+
+# Deep analysis
+sena think "Should we use microservices?" --depth deep
+
+# Maximum depth (brilliant mode)
+sena think "Design scalable auth system" --depth maximum
+
+# Or use slash commands:
+/sena-think How does authentication work?
+/sena-brilliant Complex architectural decision
+```
+
+#### Knowledge Search
+```bash
+# Search knowledge base
+sena knowledge search "error handling patterns"
+
+# Or:
+/sena-search jwt vulnerabilities
+```
+
+#### Code Analysis
+```bash
+# Security analysis
+sena agent security "fn handle_input(data: &str) { ... }"
+
+# Performance analysis
+sena agent performance "loop code here"
+
+# Architecture analysis
+sena agent architecture "module structure"
+
+# Or:
+/sena-analyze security src/auth.rs
+/sena-analyze performance src/data.rs
+```
+
+#### Memory System (Persist Findings)
+```bash
+# Store findings
+sena memory add "Auth uses JWT tokens with 24h expiry"
+
+# Search memories
+sena memory search "authentication"
+
+# List all
+sena memory list
+
+# Statistics
+sena memory stats
+
+# Or:
+/sena-memory add "Important finding here"
+/sena-memory search jwt
+```
+
+#### Autonomous Agent (Multi-step Tasks)
+```bash
+# Execute autonomous task
+sena auto "Research all API endpoints and document them"
+
+# Limit steps
+sena auto "Find security vulnerabilities" --max-steps 10
+
+# Require confirmation per step
+sena auto "Analyze codebase structure" --confirm
+
+# Or:
+/sena-auto Research the authentication flow
+```
+
+### Step 4: Collaborate with Other Sessions
+
+```bash
+# Send direct message
+sena tell Backend "Found a bug in auth module"
+
+# Broadcast to all
+sena broadcast "Starting security audit"
+
+# Check your inbox
+sena inbox
+
+# Hub-level messaging
+sena hub tell Backend "Priority: API review needed"
+sena hub broadcast "Team meeting in 10 minutes"
+sena hub messages              # View all messages
+sena hub messages 20           # Last 20 messages
+
+# Or:
+/sena-hub-messages tell Backend Hello!
+/sena-hub-messages broadcast Team update
+```
+
+### Step 5: Utility Commands
+
+```bash
+# Git operations
+sena git status    # Enhanced status
+sena git diff      # Show changes
+sena git log       # Formatted history
+sena git commit    # AI-generated commit message
+
+# Tools & Health
+sena tools list              # Available AI tools
+sena tools execute <name>    # Execute a tool
+sena health                  # System health check
+sena health --detailed       # Detailed report
+
+# Session management
+sena hub sessions                    # List all sessions
+sena hub remove-session <name> -f    # Remove a session
+sena hub cleanup --messages          # Clean stale sessions
+sena leave                           # Leave the hub
+```
+
+### Complete Research Workflow Example
+
+```bash
+# 1. START SESSION
+sena join --role=researcher --name="AuthAudit"
+
+# 2. DEEP THINKING ON TOPIC
+sena think "What are the security implications of JWT?" --depth deep
+
+# 3. SEARCH KNOWLEDGE BASE
+sena knowledge search "JWT vulnerabilities"
+
+# 4. ANALYZE SPECIFIC CODE
+sena agent security "$(cat src/auth/jwt.rs)"
+
+# 5. STORE FINDINGS
+sena memory add "JWT tokens need rotation every 24h - CRITICAL"
+
+# 6. NOTIFY TEAM
+sena broadcast "Found JWT security concern - see memory"
+
+# 7. CHECK GIT STATUS
+sena git status
+
+# 8. LEAVE WHEN DONE
+sena leave
+```
+
+### Quick Reference Card
+
+| Category | Commands |
+|----------|----------|
+| 🧠 Thinking | `sena think`, `/sena-think`, `/sena-brilliant` |
+| 🔍 Search | `sena knowledge search`, `/sena-search` |
+| 📊 Analysis | `sena agent [security\|performance\|architecture]` |
+| 🗄️ Memory | `sena memory [add\|search\|list\|stats]` |
+| 🤖 Autonomous | `sena auto "<task>"` |
+| 💬 Messaging | `sena tell`, `sena broadcast`, `sena inbox` |
+| 👥 Collaboration | `sena join`, `sena who`, `sena leave` |
+| 🔧 Hub Admin | `sena hub [sessions\|remove-session\|cleanup]` |
+| 📦 Git | `sena git [status\|diff\|log\|commit]` |
+| ❤️ Health | `sena health [--detailed]` |
+
+> **TIP**: All commands support `--format json` for JSON output
 
 ---
 

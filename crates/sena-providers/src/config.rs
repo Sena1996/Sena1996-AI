@@ -157,8 +157,7 @@ impl ProvidersConfig {
         let mut config = Self::new();
 
         config.add_provider(
-            ProviderConfig::new("claude")
-                .with_default_model("claude-sonnet-4-5-20250929"),
+            ProviderConfig::new("claude").with_default_model("claude-sonnet-4-5-20250929"),
         );
 
         config.add_provider(
@@ -186,10 +185,7 @@ impl ProvidersConfig {
         );
 
         config.default_provider = Some("ollama".to_string());
-        config.fallback_chain = vec![
-            "openai".to_string(),
-            "gemini".to_string(),
-        ];
+        config.fallback_chain = vec!["openai".to_string(), "gemini".to_string()];
 
         config
     }

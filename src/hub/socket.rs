@@ -241,7 +241,10 @@ impl HubServer {
                         })
                     })
                     .collect();
-                HubResponse::ok_with_data("Active sessions", serde_json::json!({ "sessions": session_data }))
+                HubResponse::ok_with_data(
+                    "Active sessions",
+                    serde_json::json!({ "sessions": session_data }),
+                )
             }
 
             HubCommand::Join { role, name } => {
@@ -250,7 +253,9 @@ impl HubServer {
                     "web" => SessionRole::Web,
                     "backend" => SessionRole::Backend,
                     "iot" => SessionRole::IoT,
-                    _ => return HubResponse::error("Invalid role. Use: android, web, backend, iot"),
+                    _ => {
+                        return HubResponse::error("Invalid role. Use: android, web, backend, iot")
+                    }
                 };
                 match hub_guard.join(session_role, name) {
                     Ok(session) => HubResponse::ok_with_data(
@@ -365,7 +370,10 @@ impl HubServer {
 
             HubCommand::GetState => {
                 let state_data = hub_guard.state.get_all_working();
-                HubResponse::ok_with_data("Current state", serde_json::json!({ "working_on": state_data }))
+                HubResponse::ok_with_data(
+                    "Current state",
+                    serde_json::json!({ "working_on": state_data }),
+                )
             }
 
             HubCommand::GetConflicts => {
@@ -379,7 +387,10 @@ impl HubServer {
                         })
                     })
                     .collect();
-                HubResponse::ok_with_data("Conflicts", serde_json::json!({ "conflicts": conflict_data }))
+                HubResponse::ok_with_data(
+                    "Conflicts",
+                    serde_json::json!({ "conflicts": conflict_data }),
+                )
             }
 
             HubCommand::Heartbeat { session_id } => {

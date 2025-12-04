@@ -23,7 +23,11 @@ impl DevilExecutor {
         }
     }
 
-    pub fn execute_sync(&self, _prompt: &str, responses: Vec<ProviderResponse>) -> DevilResult<DevilResponse> {
+    pub fn execute_sync(
+        &self,
+        _prompt: &str,
+        responses: Vec<ProviderResponse>,
+    ) -> DevilResult<DevilResponse> {
         if responses.is_empty() {
             return Err(DevilError::NoProviders);
         }
@@ -53,7 +57,11 @@ impl DevilExecutor {
                 } else if r.error.as_deref() == Some("Timeout") {
                     ResponseStatus::Timeout
                 } else {
-                    ResponseStatus::Error(r.error.clone().unwrap_or_else(|| "Unknown error".to_string()))
+                    ResponseStatus::Error(
+                        r.error
+                            .clone()
+                            .unwrap_or_else(|| "Unknown error".to_string()),
+                    )
                 },
                 latency_ms: r.latency_ms,
                 content_preview: r.content.as_ref().map(|c| {
@@ -183,7 +191,9 @@ mod tests {
         let executor = DevilExecutor::default();
         let responses = create_mock_responses();
 
-        let result = executor.execute_sync("Tell me about the Moon", responses).unwrap();
+        let result = executor
+            .execute_sync("Tell me about the Moon", responses)
+            .unwrap();
 
         assert!(!result.content.is_empty());
         assert!(result.consensus_score > 0.0);
@@ -261,7 +271,9 @@ mod tests {
             let config = DevilConfig::default().with_synthesis(method);
             let executor = DevilExecutor::new(config);
 
-            let result = executor.execute_sync("Moon info", responses.clone()).unwrap();
+            let result = executor
+                .execute_sync("Moon info", responses.clone())
+                .unwrap();
             assert!(!result.content.is_empty(), "Failed for {:?}", method);
         }
     }

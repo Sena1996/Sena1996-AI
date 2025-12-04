@@ -128,9 +128,7 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
         Some(Commands::Devil { action }) => execute_devil(action.clone(), cli.format).await,
 
-        None => {
-            execute_health(false, cli.format)
-        }
+        None => execute_health(false, cli.format),
     }
 }
 
@@ -553,10 +551,13 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             let sessions = hub.who();
 
             if sessions.is_empty() {
-                return Ok("No sessions online. Use 'sena join --role=<role>' to create one.".to_string());
+                return Ok(
+                    "No sessions online. Use 'sena join --role=<role>' to create one.".to_string(),
+                );
             }
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                    HUB SESSIONS                              ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
@@ -581,8 +582,21 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             let mut hub = Hub::new()?;
             hub.load()?;
 
+            let available_sessions = hub.who();
             let resolved_target = hub.sessions.resolve_session(&target).ok_or_else(|| {
-                format!("Session '{}' not found. Use 'sena hub sessions' to list.", target)
+                if available_sessions.is_empty() {
+                    "No active sessions. Use 'sena join --role=<role>' to start a session.".to_string()
+                } else {
+                    format!(
+                        "Session '{}' not found.\n\nAvailable sessions:\n{}\n\nUse name or ID to send message.",
+                        target,
+                        available_sessions
+                            .iter()
+                            .map(|s| format!("  {} {} ({})", s.role.emoji(), s.name, s.id))
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    )
+                }
             })?;
 
             hub.tell("hub", &resolved_target, &message)?;
@@ -598,7 +612,10 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             hub.save()?;
 
             let session_count = hub.who().len();
-            Ok(format!("📢 Broadcast to {} session(s): {}", session_count, message))
+            Ok(format!(
+                "📢 Broadcast to {} session(s): {}",
+                session_count, message
+            ))
         }
         HubAction::Messages { count } => {
             let mut hub = Hub::new()?;
@@ -610,7 +627,8 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 return Ok("No messages in Hub.".to_string());
             }
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                    HUB MESSAGES                              ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
@@ -663,7 +681,8 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             let identity_file = config.hub_dir.join("identity.json");
             let identity = HubIdentity::load_or_create(&identity_file)?;
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                    HUB IDENTITY                              ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
             output.push_str(&format!("  Name:     {}\n", identity.name));
@@ -701,12 +720,17 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 return Ok("No connected hubs.\n\nTo connect to another hub:\n  sena hub connect <address:port>".to_string());
             }
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                    CONNECTED HUBS                            ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
             for hub in &connected {
-                let status = if hub.is_online() { "🟢 Online" } else { "⚫ Offline" };
+                let status = if hub.is_online() {
+                    "🟢 Online"
+                } else {
+                    "⚫ Offline"
+                };
                 output.push_str(&format!(
                     "  {} {}\n    ID: {}...\n    Address: {}:{}\n    Sessions: {}\n    Connected: {}\n\n",
                     status,
@@ -736,7 +760,8 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 return Ok("No pending connection requests.".to_string());
             }
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                 PENDING CONNECTION REQUESTS                  ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
@@ -754,14 +779,15 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             output.push_str("To reject:  sena hub reject <request-id>");
             Ok(output)
         }
-        HubAction::Connect { address, message: _ } => {
-            Ok(format!(
-                "Connection request to {} would be sent.\n\
+        HubAction::Connect {
+            address,
+            message: _,
+        } => Ok(format!(
+            "Connection request to {} would be sent.\n\
                 Note: Network connectivity requires the hub daemon to be running.\n\
                 Use 'sena network start' to start the network server.",
-                address
-            ))
-        }
+            address
+        )),
         HubAction::Approve { request_id } => {
             use crate::hub::{HubIdentity, PeerManager};
 
@@ -780,7 +806,10 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
             match matched_id {
                 Some(req_id) => {
                     let hub = peer_manager.approve_request(&req_id)?;
-                    Ok(format!("✅ Connection approved for: {}\n   Hub is now trusted.", hub.name))
+                    Ok(format!(
+                        "✅ Connection approved for: {}\n   Hub is now trusted.",
+                        hub.name
+                    ))
                 }
                 None => Err(format!("Request not found: {}", request_id)),
             }
@@ -847,12 +876,17 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 return Ok("No sessions found (local or remote).".to_string());
             }
 
-            let mut output = String::from("╔══════════════════════════════════════════════════════════════╗\n");
+            let mut output =
+                String::from("╔══════════════════════════════════════════════════════════════╗\n");
             output.push_str("║                  FEDERATED SESSIONS                          ║\n");
             output.push_str("╚══════════════════════════════════════════════════════════════╝\n\n");
 
             for session in &all_sessions {
-                let location = if session.is_local { "🏠 Local" } else { "🌐 Remote" };
+                let location = if session.is_local {
+                    "🏠 Local"
+                } else {
+                    "🌐 Remote"
+                };
                 output.push_str(&format!(
                     "  {} {}:{}\n    Role: {}\n    Status: {}\n    Working: {}\n\n",
                     location,
@@ -872,7 +906,75 @@ async fn execute_hub(action: HubAction) -> Result<String, String> {
                 local_count,
                 remote_count
             ));
-            output.push_str("\nUse 'sena hub tell HubName:SessionName <message>' to send cross-hub message.");
+            output.push_str(
+                "\nUse 'sena hub tell HubName:SessionName <message>' to send cross-hub message.",
+            );
+            Ok(output)
+        }
+        HubAction::RemoveSession { session, force } => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            if !hub.sessions.session_exists(&session) {
+                return Err(format!(
+                    "Session '{}' not found.\n\nAvailable sessions:\n{}",
+                    session,
+                    hub.who()
+                        .iter()
+                        .map(|s| format!("  - {} ({})", s.name, s.id))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                ));
+            }
+
+            if !force {
+                return Ok(format!(
+                    "Session '{}' will be removed. Use --force to confirm removal.\n\
+                     This will:\n  - Remove session from registry\n  - Delete session's message inbox",
+                    session
+                ));
+            }
+
+            let removed_session = hub.sessions.remove_session(&session)?;
+            let messages_removed = hub.messages.remove_session_messages(&removed_session.id);
+            hub.save()?;
+
+            Ok(format!(
+                "Session removed successfully:\n  ID: {}\n  Name: {}\n  Role: {}\n  Messages removed: {}",
+                removed_session.id,
+                removed_session.name,
+                removed_session.role.name(),
+                messages_removed
+            ))
+        }
+        HubAction::Cleanup { messages } => {
+            let mut hub = Hub::new()?;
+            hub.load()?;
+
+            let removed_sessions = hub.sessions.cleanup_stale();
+            let session_count = removed_sessions.len();
+
+            let mut messages_removed = 0;
+            if messages {
+                for session_id in &removed_sessions {
+                    messages_removed += hub.messages.remove_session_messages(session_id);
+                }
+            }
+
+            hub.save()?;
+
+            if session_count == 0 {
+                return Ok("No stale sessions found to clean up.".to_string());
+            }
+
+            let mut output = format!("Cleanup complete:\n  Sessions removed: {}\n", session_count);
+            if messages {
+                output.push_str(&format!("  Messages removed: {}\n", messages_removed));
+            }
+            output.push_str("\nRemoved sessions:\n");
+            for session_id in removed_sessions {
+                output.push_str(&format!("  - {}\n", session_id));
+            }
             Ok(output)
         }
     }
@@ -985,11 +1087,22 @@ async fn execute_tell(target: &str, message: &str, format: OutputFormat) -> Resu
         .get_current_session_id()
         .ok_or_else(|| "No active session. Use 'sena join --role=<role>' first.".to_string())?;
 
+    let available_sessions = hub.who();
     let resolved_target = hub.sessions.resolve_session(target).ok_or_else(|| {
-        format!(
-            "Session '{}' not found. Use 'sena who' to see active sessions.",
-            target
-        )
+        if available_sessions.is_empty() {
+            "No other sessions online. Others need to join with 'sena join --role=<role>'.".to_string()
+        } else {
+            format!(
+                "Session '{}' not found.\n\nOnline sessions:\n{}\n\nUse name or ID to send message.",
+                target,
+                available_sessions
+                    .iter()
+                    .filter(|s| s.id != sender_id)
+                    .map(|s| format!("  {} {} ({})", s.role.emoji(), s.name, s.id))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        }
     })?;
 
     hub.tell(&sender_id, &resolved_target, message)?;
@@ -3399,15 +3512,21 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
             };
 
             match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&filtered).map_err(|e| e.to_string()),
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&filtered).map_err(|e| e.to_string())
+                }
                 OutputFormat::Pretty | OutputFormat::Text => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("AVAILABLE TOOLS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("AVAILABLE TOOLS")).render(),
+                    );
                     output.push('\n');
 
-                    let mut table = TableBuilder::new()
-                        .title("Tools")
-                        .row(vec!["Name".to_string(), "Category".to_string(), "Description".to_string()]);
+                    let mut table = TableBuilder::new().title("Tools").row(vec![
+                        "Name".to_string(),
+                        "Category".to_string(),
+                        "Description".to_string(),
+                    ]);
 
                     for tool in &filtered {
                         table = table.row(vec![
@@ -3430,26 +3549,31 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
 
             match tool {
                 Some(t) => match format {
-                    OutputFormat::Json => serde_json::to_string_pretty(t).map_err(|e| e.to_string()),
+                    OutputFormat::Json => {
+                        serde_json::to_string_pretty(t).map_err(|e| e.to_string())
+                    }
                     _ => {
                         let mut output = String::new();
-                        output.push_str(&FormatBox::new(&SenaConfig::brand_title("TOOL INFO")).render());
+                        output.push_str(
+                            &FormatBox::new(&SenaConfig::brand_title("TOOL INFO")).render(),
+                        );
                         output.push('\n');
                         output.push_str(&format!("Name: {}\n", t.name));
                         output.push_str(&format!("Category: {:?}\n", t.category));
                         output.push_str(&format!("Description: {}\n", t.description));
                         output.push_str(&format!("Returns: {}\n", t.returns));
-                        output.push_str(&format!("Requires Confirmation: {}\n", t.requires_confirmation));
+                        output.push_str(&format!(
+                            "Requires Confirmation: {}\n",
+                            t.requires_confirmation
+                        ));
                         output.push_str(&format!("Timeout: {}s\n\n", t.timeout_seconds));
 
                         output.push_str("Parameters:\n");
                         for param in &t.parameters {
                             let req = if param.required { " (required)" } else { "" };
-                            output.push_str(&format!("  {} ({:?}){}: {}\n",
-                                param.name,
-                                param.param_type,
-                                req,
-                                param.description
+                            output.push_str(&format!(
+                                "  {} ({:?}){}: {}\n",
+                                param.name, param.param_type, req, param.description
                             ));
                         }
                         Ok(output)
@@ -3461,7 +3585,9 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
 
         ToolsAction::Run { name, params } => {
             let parameters: std::collections::HashMap<String, serde_json::Value> = match params {
-                Some(p) => serde_json::from_str(&p).map_err(|e| format!("Invalid JSON params: {}", e))?,
+                Some(p) => {
+                    serde_json::from_str(&p).map_err(|e| format!("Invalid JSON params: {}", e))?
+                }
                 None => std::collections::HashMap::new(),
             };
 
@@ -3469,22 +3595,35 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
             let response = tool_system.execute(call).await;
 
             match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&response).map_err(|e| e.to_string()),
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&response).map_err(|e| e.to_string())
+                }
                 _ => {
                     if response.success {
                         let output_str = serde_json::to_string_pretty(&response.output)
                             .unwrap_or_else(|_| "{}".to_string());
-                        Ok(format!("Tool '{}' executed successfully ({}ms)\n\nOutput:\n{}",
-                            name, response.execution_time_ms, output_str))
+                        Ok(format!(
+                            "Tool '{}' executed successfully ({}ms)\n\nOutput:\n{}",
+                            name, response.execution_time_ms, output_str
+                        ))
                     } else {
-                        Err(format!("Tool '{}' failed: {}",
-                            name, response.error.unwrap_or_else(|| "Unknown error".to_string())))
+                        Err(format!(
+                            "Tool '{}' failed: {}",
+                            name,
+                            response
+                                .error
+                                .unwrap_or_else(|| "Unknown error".to_string())
+                        ))
                     }
                 }
             }
         }
 
-        ToolsAction::Search { pattern, path, files } => {
+        ToolsAction::Search {
+            pattern,
+            path,
+            files,
+        } => {
             let mut parameters = std::collections::HashMap::new();
             parameters.insert("pattern".to_string(), serde_json::json!(pattern));
             parameters.insert("path".to_string(), serde_json::json!(path));
@@ -3496,21 +3635,31 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
             let response = tool_system.execute(call).await;
 
             match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&response).map_err(|e| e.to_string()),
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&response).map_err(|e| e.to_string())
+                }
                 _ => {
                     if response.success {
-                        let matches = response.output.get("matches")
+                        let matches = response
+                            .output
+                            .get("matches")
                             .and_then(|m| m.as_array())
                             .map(|arr| arr.len())
                             .unwrap_or(0);
 
                         let output_str = serde_json::to_string_pretty(&response.output)
                             .unwrap_or_else(|_| "{}".to_string());
-                        Ok(format!("Found {} matches ({}ms)\n\n{}",
-                            matches, response.execution_time_ms, output_str))
+                        Ok(format!(
+                            "Found {} matches ({}ms)\n\n{}",
+                            matches, response.execution_time_ms, output_str
+                        ))
                     } else {
-                        Err(format!("Search failed: {}",
-                            response.error.unwrap_or_else(|| "Unknown error".to_string())))
+                        Err(format!(
+                            "Search failed: {}",
+                            response
+                                .error
+                                .unwrap_or_else(|| "Unknown error".to_string())
+                        ))
                     }
                 }
             }
@@ -3521,10 +3670,16 @@ async fn execute_tools(action: ToolsAction, format: OutputFormat) -> Result<Stri
 async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<String, String> {
     use crate::memory::{MemoryEntry, MemoryType, PersistentMemory};
 
-    let mut memory = PersistentMemory::new().map_err(|e| format!("Failed to initialize memory: {}", e))?;
+    let mut memory =
+        PersistentMemory::new().map_err(|e| format!("Failed to initialize memory: {}", e))?;
 
     match action {
-        MemoryAction::Add { content, memory_type, tags, importance } => {
+        MemoryAction::Add {
+            content,
+            memory_type,
+            tags,
+            importance,
+        } => {
             let mt = match memory_type.to_lowercase().as_str() {
                 "preference" => MemoryType::Preference,
                 "fact" => MemoryType::Fact,
@@ -3537,7 +3692,8 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
             let mut entry = MemoryEntry::new(&content, mt);
 
             if let Some(tag_str) = tags {
-                let tag_list: Vec<String> = tag_str.split(',').map(|s| s.trim().to_string()).collect();
+                let tag_list: Vec<String> =
+                    tag_str.split(',').map(|s| s.trim().to_string()).collect();
                 entry = entry.with_tags(tag_list);
             }
 
@@ -3545,10 +3701,14 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
                 entry = entry.with_importance(imp);
             }
 
-            let id = memory.add(entry).map_err(|e| format!("Failed to add memory: {}", e))?;
+            let id = memory
+                .add(entry)
+                .map_err(|e| format!("Failed to add memory: {}", e))?;
 
             match format {
-                OutputFormat::Json => Ok(serde_json::json!({"id": id, "success": true}).to_string()),
+                OutputFormat::Json => {
+                    Ok(serde_json::json!({"id": id, "success": true}).to_string())
+                }
                 _ => Ok(format!("Memory added with ID: {}", id)),
             }
         }
@@ -3559,24 +3719,37 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
 
             match format {
                 OutputFormat::Json => {
-                    let entries: Vec<_> = limited.iter().map(|e| serde_json::json!({
-                        "id": e.id,
-                        "content": e.content,
-                        "type": format!("{:?}", e.memory_type),
-                        "tags": e.tags,
-                        "importance": e.importance,
-                        "score": e.relevance_score(&query),
-                    })).collect();
+                    let entries: Vec<_> = limited
+                        .iter()
+                        .map(|e| {
+                            serde_json::json!({
+                                "id": e.id,
+                                "content": e.content,
+                                "type": format!("{:?}", e.memory_type),
+                                "tags": e.tags,
+                                "importance": e.importance,
+                                "score": e.relevance_score(&query),
+                            })
+                        })
+                        .collect();
                     serde_json::to_string_pretty(&entries).map_err(|e| e.to_string())
                 }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORY SEARCH")).render());
-                    output.push_str(&format!("\nQuery: '{}'\nResults: {}\n\n", query, limited.len()));
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("MEMORY SEARCH")).render(),
+                    );
+                    output.push_str(&format!(
+                        "\nQuery: '{}'\nResults: {}\n\n",
+                        query,
+                        limited.len()
+                    ));
 
                     for entry in &limited {
-                        output.push_str(&format!("[{}] {:?} (importance: {:.2})\n",
-                            entry.id, entry.memory_type, entry.importance));
+                        output.push_str(&format!(
+                            "[{}] {:?} (importance: {:.2})\n",
+                            entry.id, entry.memory_type, entry.importance
+                        ));
                         output.push_str(&format!("  {}\n", entry.content));
                         if !entry.tags.is_empty() {
                             output.push_str(&format!("  Tags: {}\n", entry.tags.join(", ")));
@@ -3601,21 +3774,29 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
                         "conversation" => MemoryType::Conversation,
                         other => MemoryType::Custom(other.to_string()),
                     };
-                    all.into_iter().filter(|e| e.memory_type == mt).take(limit).collect()
+                    all.into_iter()
+                        .filter(|e| e.memory_type == mt)
+                        .take(limit)
+                        .collect()
                 }
                 None => all.into_iter().take(limit).collect(),
             };
 
             match format {
                 OutputFormat::Json => {
-                    let entries: Vec<_> = filtered.iter().map(|e| serde_json::json!({
-                        "id": e.id,
-                        "content": e.content,
-                        "type": format!("{:?}", e.memory_type),
-                        "tags": e.tags,
-                        "importance": e.importance,
-                        "created_at": e.created_at.to_rfc3339(),
-                    })).collect();
+                    let entries: Vec<_> = filtered
+                        .iter()
+                        .map(|e| {
+                            serde_json::json!({
+                                "id": e.id,
+                                "content": e.content,
+                                "type": format!("{:?}", e.memory_type),
+                                "tags": e.tags,
+                                "importance": e.importance,
+                                "created_at": e.created_at.to_rfc3339(),
+                            })
+                        })
+                        .collect();
                     serde_json::to_string_pretty(&entries).map_err(|e| e.to_string())
                 }
                 _ => {
@@ -3623,9 +3804,12 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
                     output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORIES")).render());
                     output.push_str(&format!("\nShowing {} memories\n\n", filtered.len()));
 
-                    let mut table = TableBuilder::new()
-                        .title("Memories")
-                        .row(vec!["ID".to_string(), "Type".to_string(), "Content".to_string(), "Importance".to_string()]);
+                    let mut table = TableBuilder::new().title("Memories").row(vec![
+                        "ID".to_string(),
+                        "Type".to_string(),
+                        "Content".to_string(),
+                        "Importance".to_string(),
+                    ]);
 
                     for entry in &filtered {
                         table = table.row(vec![
@@ -3643,13 +3827,16 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
         }
 
         MemoryAction::Remove { id } => {
-            match memory.remove(&id).map_err(|e| format!("Failed to remove: {}", e))? {
-                Some(_) => {
-                    match format {
-                        OutputFormat::Json => Ok(serde_json::json!({"success": true, "id": id}).to_string()),
-                        _ => Ok(format!("Memory '{}' removed", id)),
+            match memory
+                .remove(&id)
+                .map_err(|e| format!("Failed to remove: {}", e))?
+            {
+                Some(_) => match format {
+                    OutputFormat::Json => {
+                        Ok(serde_json::json!({"success": true, "id": id}).to_string())
                     }
-                }
+                    _ => Ok(format!("Memory '{}' removed", id)),
+                },
                 None => Err(format!("Memory '{}' not found", id)),
             }
         }
@@ -3658,14 +3845,24 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
             let stats = memory.stats();
 
             match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&stats).map_err(|e| e.to_string()),
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&stats).map_err(|e| e.to_string())
+                }
                 _ => {
                     let mut output = String::new();
-                    output.push_str(&FormatBox::new(&SenaConfig::brand_title("MEMORY STATS")).render());
+                    output.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("MEMORY STATS")).render(),
+                    );
                     output.push('\n');
                     output.push_str(&format!("Total Entries: {}\n", stats.total_entries));
-                    output.push_str(&format!("Total Access Count: {}\n", stats.total_access_count));
-                    output.push_str(&format!("Average Importance: {:.2}\n\n", stats.avg_importance));
+                    output.push_str(&format!(
+                        "Total Access Count: {}\n",
+                        stats.total_access_count
+                    ));
+                    output.push_str(&format!(
+                        "Average Importance: {:.2}\n\n",
+                        stats.avg_importance
+                    ));
 
                     output.push_str("By Type:\n");
                     for (type_name, count) in &stats.by_type {
@@ -3681,10 +3878,15 @@ async fn execute_memory(action: MemoryAction, format: OutputFormat) -> Result<St
                 return Err("Use --yes to confirm clearing all memories".to_string());
             }
 
-            memory.clear().map_err(|e| format!("Failed to clear: {}", e))?;
+            memory
+                .clear()
+                .map_err(|e| format!("Failed to clear: {}", e))?;
 
             match format {
-                OutputFormat::Json => Ok(serde_json::json!({"success": true, "message": "All memories cleared"}).to_string()),
+                OutputFormat::Json => Ok(
+                    serde_json::json!({"success": true, "message": "All memories cleared"})
+                        .to_string(),
+                ),
                 _ => Ok("All memories cleared".to_string()),
             }
         }
@@ -3700,7 +3902,9 @@ async fn execute_auto(
 ) -> Result<String, String> {
     use crate::intelligence::AutonomousAgent;
 
-    let working_dir = cwd.map(PathBuf::from).unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+    let working_dir = cwd
+        .map(PathBuf::from)
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
 
     let mut agent = AutonomousAgent::new();
     let execution = agent
@@ -3717,25 +3921,38 @@ async fn execute_auto(
             output.push_str(&format!("Execution ID: {}\n", execution.id));
             output.push_str(&format!("Task: {}\n", execution.task));
             output.push_str(&format!("State: {:?}\n", execution.state));
-            output.push_str(&format!("Working Directory: {}\n", execution.working_dir.display()));
+            output.push_str(&format!(
+                "Working Directory: {}\n",
+                execution.working_dir.display()
+            ));
             output.push_str(&format!("Duration: {}ms\n\n", execution.elapsed_ms()));
 
             if let Some(plan) = &execution.plan {
                 output.push_str("Plan:\n");
                 for (i, step) in plan.steps.iter().enumerate() {
-                    output.push_str(&format!("  {}. {} [{:?}]\n",
-                        i + 1, step.description, step.estimated_complexity));
+                    output.push_str(&format!(
+                        "  {}. {} [{:?}]\n",
+                        i + 1,
+                        step.description,
+                        step.estimated_complexity
+                    ));
                 }
                 output.push('\n');
             }
 
-            output.push_str(&format!("Steps Executed: {} / {}\n", execution.steps_taken(), max_steps));
+            output.push_str(&format!(
+                "Steps Executed: {} / {}\n",
+                execution.steps_taken(),
+                max_steps
+            ));
             output.push_str(&format!("Successful: {}\n\n", execution.successful_steps()));
 
             for step in &execution.steps {
                 let status = if step.success { "✓" } else { "✗" };
-                output.push_str(&format!("[{}] Step {}: {} ({}ms)\n",
-                    status, step.step_number, step.action, step.duration_ms));
+                output.push_str(&format!(
+                    "[{}] Step {}: {} ({}ms)\n",
+                    status, step.step_number, step.action, step.duration_ms
+                ));
 
                 if let Some(tool) = &step.tool_name {
                     output.push_str(&format!("    Tool: {}\n", tool));
@@ -3774,11 +3991,13 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
             match format {
                 OutputFormat::Json => {
                     let lines: Vec<&str> = status.lines().collect();
-                    let branch = lines.first()
+                    let branch = lines
+                        .first()
                         .map(|l| l.trim_start_matches("## "))
                         .unwrap_or("unknown");
 
-                    let changes: Vec<_> = lines.iter()
+                    let changes: Vec<_> = lines
+                        .iter()
                         .skip(1)
                         .map(|l| {
                             let status_char = l.chars().take(2).collect::<String>();
@@ -3818,8 +4037,10 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
                     .map_err(|e| format!("Failed to stage: {}", e))?;
 
                 if !add_output.status.success() {
-                    return Err(format!("Failed to stage changes: {}",
-                        String::from_utf8_lossy(&add_output.stderr)));
+                    return Err(format!(
+                        "Failed to stage changes: {}",
+                        String::from_utf8_lossy(&add_output.stderr)
+                    ));
                 }
             }
 
@@ -3835,15 +4056,15 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
             }
 
             let commit_message = message.unwrap_or_else(|| {
-                let changes: Vec<&str> = diff.lines()
-                    .filter(|l| l.contains('|'))
-                    .take(3)
-                    .collect();
+                let changes: Vec<&str> = diff.lines().filter(|l| l.contains('|')).take(3).collect();
 
                 if changes.is_empty() {
                     "Update files".to_string()
                 } else {
-                    format!("Update: {}", changes.join(", ").chars().take(50).collect::<String>())
+                    format!(
+                        "Update: {}",
+                        changes.join(", ").chars().take(50).collect::<String>()
+                    )
                 }
             });
 
@@ -3853,8 +4074,10 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
                 .map_err(|e| format!("Failed to commit: {}", e))?;
 
             if !commit_output.status.success() {
-                return Err(format!("Commit failed: {}",
-                    String::from_utf8_lossy(&commit_output.stderr)));
+                return Err(format!(
+                    "Commit failed: {}",
+                    String::from_utf8_lossy(&commit_output.stderr)
+                ));
             }
 
             match format {
@@ -3885,7 +4108,9 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
                 .output()
                 .map_err(|e| format!("Failed to get branch: {}", e))?;
 
-            let current_branch = String::from_utf8_lossy(&branch_output.stdout).trim().to_string();
+            let current_branch = String::from_utf8_lossy(&branch_output.stdout)
+                .trim()
+                .to_string();
 
             if current_branch == base_branch {
                 return Err(format!("Cannot create PR from {} to itself", base_branch));
@@ -3900,7 +4125,9 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
             let commit_count = commits.lines().count();
 
             let pr_title = title.unwrap_or_else(|| {
-                commits.lines().next()
+                commits
+                    .lines()
+                    .next()
                     .map(|l| l.split_whitespace().skip(1).collect::<Vec<_>>().join(" "))
                     .unwrap_or_else(|| format!("PR: {}", current_branch))
             });
@@ -3955,7 +4182,11 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
                 }
                 _ => {
                     let mut out = String::new();
-                    let title = if staged { "GIT DIFF (STAGED)" } else { "GIT DIFF" };
+                    let title = if staged {
+                        "GIT DIFF (STAGED)"
+                    } else {
+                        "GIT DIFF"
+                    };
                     out.push_str(&FormatBox::new(&SenaConfig::brand_title(title)).render());
                     out.push('\n');
 
@@ -3979,7 +4210,8 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
 
             match format {
                 OutputFormat::Json => {
-                    let commits: Vec<_> = log.lines()
+                    let commits: Vec<_> = log
+                        .lines()
                         .map(|l| {
                             let parts: Vec<&str> = l.splitn(2, ' ').collect();
                             serde_json::json!({
@@ -4020,26 +4252,32 @@ async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Resul
             });
 
             match format {
-                OutputFormat::Json => serde_json::to_string_pretty(&status).map_err(|e| e.to_string()),
+                OutputFormat::Json => {
+                    serde_json::to_string_pretty(&status).map_err(|e| e.to_string())
+                }
                 _ => {
                     let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN STATUS")).render());
+                    out.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("GUARDIAN STATUS")).render(),
+                    );
                     out.push_str(&format!("\nEnabled: {}\n", guardian.is_enabled()));
                     out.push_str(&format!("Sandbox: {:?}\n", guardian.config().sandbox_level));
-                    out.push_str(&format!("Hallucination Mode: {:?}\n", guardian.config().hallucination_mode));
-                    out.push_str(&format!("Threshold: {:.2}\n", guardian.config().hallucination_threshold));
+                    out.push_str(&format!(
+                        "Hallucination Mode: {:?}\n",
+                        guardian.config().hallucination_mode
+                    ));
+                    out.push_str(&format!(
+                        "Threshold: {:.2}\n",
+                        guardian.config().hallucination_threshold
+                    ));
                     Ok(out)
                 }
             }
         }
 
-        GuardianAction::Enable => {
-            Ok("Guardian middleware enabled.".to_string())
-        }
+        GuardianAction::Enable => Ok("Guardian middleware enabled.".to_string()),
 
-        GuardianAction::Disable => {
-            Ok("Guardian middleware disabled.".to_string())
-        }
+        GuardianAction::Disable => Ok("Guardian middleware disabled.".to_string()),
 
         GuardianAction::Validate { command } => {
             let result = guardian.validate_command(&command);
@@ -4057,9 +4295,14 @@ async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Resul
                 }
                 _ => {
                     let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("COMMAND VALIDATION")).render());
+                    out.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("COMMAND VALIDATION")).render(),
+                    );
                     out.push_str(&format!("\nCommand: {}\n", command));
-                    out.push_str(&format!("Allowed: {}\n", if result.allowed { "YES" } else { "NO" }));
+                    out.push_str(&format!(
+                        "Allowed: {}\n",
+                        if result.allowed { "YES" } else { "NO" }
+                    ));
                     out.push_str(&format!("Risk Score: {:.2}\n", result.risk_score));
                     if let Some(reason) = &result.reason {
                         out.push_str(&format!("Reason: {}\n", reason));
@@ -4096,8 +4339,13 @@ async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Resul
                 }
                 _ => {
                     let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("HALLUCINATION CHECK")).render());
-                    out.push_str(&format!("\nIs Hallucination: {}\n", result.is_hallucination));
+                    out.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("HALLUCINATION CHECK")).render(),
+                    );
+                    out.push_str(&format!(
+                        "\nIs Hallucination: {}\n",
+                        result.is_hallucination
+                    ));
                     out.push_str(&format!("Risk Score: {:.2}\n", result.risk_score));
                     out.push_str(&format!("Response: {:?}\n", result.response));
                     out.push_str(&format!("Harmony Status: {:?}\n", result.harmony_status));
@@ -4131,7 +4379,10 @@ async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Resul
                         }
                         _ => {
                             let mut out = String::new();
-                            out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN EXECUTE")).render());
+                            out.push_str(
+                                &FormatBox::new(&SenaConfig::brand_title("GUARDIAN EXECUTE"))
+                                    .render(),
+                            );
                             out.push_str(&format!("\nCommand: {} {}\n", command, args.join(" ")));
                             out.push_str(&format!("Success: {}\n\n", output.status.success()));
                             if !stdout.is_empty() {
@@ -4148,34 +4399,36 @@ async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Resul
             }
         }
 
-        GuardianAction::Audit { count } => {
-            match format {
-                OutputFormat::Json => {
-                    let json = serde_json::json!({
-                        "audit_entries": [],
-                        "message": format!("Audit log (last {} entries) - not yet implemented", count),
-                    });
-                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
-                }
-                _ => {
-                    let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN AUDIT")).render());
-                    out.push_str(&format!("\nLast {} audit entries:\n", count));
-                    out.push_str("\n(Audit logging not yet implemented)\n");
-                    Ok(out)
-                }
+        GuardianAction::Audit { count } => match format {
+            OutputFormat::Json => {
+                let json = serde_json::json!({
+                    "audit_entries": [],
+                    "message": format!("Audit log (last {} entries) - not yet implemented", count),
+                });
+                serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
             }
-        }
+            _ => {
+                let mut out = String::new();
+                out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN AUDIT")).render());
+                out.push_str(&format!("\nLast {} audit entries:\n", count));
+                out.push_str("\n(Audit logging not yet implemented)\n");
+                Ok(out)
+            }
+        },
     }
 }
 
 async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<String, String> {
     use crate::devil::{DevilConfig, DevilExecutor, ProviderResponse, SynthesisMethod};
-    use sena_providers::{ChatRequest, Message, ProvidersConfig, ProviderRouter};
+    use sena_providers::{ChatRequest, Message, ProviderRouter, ProvidersConfig};
     use std::time::{Duration, Instant};
 
     match action {
-        DevilAction::Execute { prompt, timeout, synthesis } => {
+        DevilAction::Execute {
+            prompt,
+            timeout,
+            synthesis,
+        } => {
             let synthesis_method = match synthesis {
                 SynthesisMethodArg::MajorityVoting => SynthesisMethod::MajorityVoting,
                 SynthesisMethodArg::WeightedMerge => SynthesisMethod::WeightedMerge,
@@ -4197,11 +4450,12 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
             let available_providers = router.available_providers();
 
             if available_providers.is_empty() {
-                return Err("No providers available. Check your API keys and configuration.".to_string());
+                return Err(
+                    "No providers available. Check your API keys and configuration.".to_string(),
+                );
             }
 
-            let request = ChatRequest::new(vec![Message::user(&prompt)])
-                .with_max_tokens(1024);
+            let request = ChatRequest::new(vec![Message::user(&prompt)]).with_max_tokens(1024);
 
             let timeout_duration = Duration::from_secs(timeout);
             let mut handles = Vec::new();
@@ -4214,34 +4468,27 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
 
                 let handle = tokio::spawn(async move {
                     let start = Instant::now();
-                    match tokio::time::timeout(
-                        timeout_duration,
-                        provider_clone.chat(request_clone)
-                    ).await {
-                        Ok(Ok(response)) => {
-                            ProviderResponse::success(
-                                provider_id,
-                                response.model,
-                                response.content,
-                                start.elapsed(),
-                            )
-                        }
-                        Ok(Err(e)) => {
-                            ProviderResponse::failure(
-                                provider_id,
-                                model,
-                                e.to_string(),
-                                start.elapsed(),
-                            )
-                        }
-                        Err(_) => {
-                            ProviderResponse::failure(
-                                provider_id,
-                                model,
-                                "Timeout".to_string(),
-                                timeout_duration,
-                            )
-                        }
+                    match tokio::time::timeout(timeout_duration, provider_clone.chat(request_clone))
+                        .await
+                    {
+                        Ok(Ok(response)) => ProviderResponse::success(
+                            provider_id,
+                            response.model,
+                            response.content,
+                            start.elapsed(),
+                        ),
+                        Ok(Err(e)) => ProviderResponse::failure(
+                            provider_id,
+                            model,
+                            e.to_string(),
+                            start.elapsed(),
+                        ),
+                        Err(_) => ProviderResponse::failure(
+                            provider_id,
+                            model,
+                            "Timeout".to_string(),
+                            timeout_duration,
+                        ),
                     }
                 });
                 handles.push(handle);
@@ -4259,20 +4506,18 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
             }
 
             match executor.execute_sync(&prompt, responses) {
-                Ok(response) => {
-                    match format {
-                        OutputFormat::Json => {
-                            serde_json::to_string_pretty(&response).map_err(|e| e.to_string())
-                        }
-                        _ => Ok(response.format_summary())
+                Ok(response) => match format {
+                    OutputFormat::Json => {
+                        serde_json::to_string_pretty(&response).map_err(|e| e.to_string())
                     }
-                }
+                    _ => Ok(response.format_summary()),
+                },
                 Err(e) => Err(format!("Devil mode execution failed: {}", e)),
             }
         }
 
         DevilAction::Status => {
-            use sena_providers::{ProvidersConfig, ProviderRouter};
+            use sena_providers::{ProviderRouter, ProvidersConfig};
 
             let config = DevilConfig::default();
             let providers_config = ProvidersConfig::load_or_default();
@@ -4280,12 +4525,22 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
 
             let available_providers: Vec<String> = router
                 .as_ref()
-                .map(|r| r.available_providers().iter().map(|p| p.provider_id().to_string()).collect())
+                .map(|r| {
+                    r.available_providers()
+                        .iter()
+                        .map(|p| p.provider_id().to_string())
+                        .collect()
+                })
                 .unwrap_or_default();
 
             let provider_statuses: Vec<(String, String)> = router
                 .as_ref()
-                .map(|r| r.provider_status().into_iter().map(|(id, s)| (id, format!("{:?}", s))).collect())
+                .map(|r| {
+                    r.provider_status()
+                        .into_iter()
+                        .map(|(id, s)| (id, format!("{:?}", s)))
+                        .collect()
+                })
                 .unwrap_or_default();
 
             match format {
@@ -4304,14 +4559,22 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
                 }
                 _ => {
                     let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("DEVIL MODE STATUS")).render());
+                    out.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("DEVIL MODE STATUS")).render(),
+                    );
                     out.push_str(&format!("\nEnabled: {}\n", config.enabled));
                     out.push_str(&format!("Timeout: {}s\n", config.timeout_secs));
                     out.push_str(&format!("Min Providers: {}\n", config.min_providers));
                     out.push_str(&format!("Synthesis: {:?}\n", config.synthesis_method));
-                    out.push_str(&format!("Consensus Threshold: {:.0}%\n", config.consensus_threshold * 100.0));
+                    out.push_str(&format!(
+                        "Consensus Threshold: {:.0}%\n",
+                        config.consensus_threshold * 100.0
+                    ));
                     out.push_str(&format!("Wait Mode: {:?}\n", config.wait_mode));
-                    out.push_str(&format!("\nAvailable Providers ({}):\n", available_providers.len()));
+                    out.push_str(&format!(
+                        "\nAvailable Providers ({}):\n",
+                        available_providers.len()
+                    ));
                     for (id, status) in &provider_statuses {
                         out.push_str(&format!("  - {}: {}\n", id, status));
                     }
@@ -4320,7 +4583,11 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
             }
         }
 
-        DevilAction::Config { timeout, consensus, synthesis } => {
+        DevilAction::Config {
+            timeout,
+            consensus,
+            synthesis,
+        } => {
             let mut config = DevilConfig::default();
 
             if let Some(t) = timeout {
@@ -4376,7 +4643,9 @@ async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<Stri
             match executor.execute_sync(&prompt, mock_responses) {
                 Ok(response) => {
                     let mut out = String::new();
-                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("DEVIL MODE TEST")).render());
+                    out.push_str(
+                        &FormatBox::new(&SenaConfig::brand_title("DEVIL MODE TEST")).render(),
+                    );
                     out.push_str(&format!("\nPrompt: {}\n\n", prompt));
                     out.push_str(&response.format_summary());
                     Ok(out)

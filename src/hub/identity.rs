@@ -53,8 +53,7 @@ impl HubIdentity {
         let content = fs::read_to_string(file_path)
             .map_err(|e| format!("Cannot read identity file: {}", e))?;
 
-        serde_json::from_str(&content)
-            .map_err(|e| format!("Cannot parse identity file: {}", e))
+        serde_json::from_str(&content).map_err(|e| format!("Cannot parse identity file: {}", e))
     }
 
     pub fn save(&self, file_path: &PathBuf) -> Result<(), String> {
@@ -66,8 +65,7 @@ impl HubIdentity {
         let json = serde_json::to_string_pretty(self)
             .map_err(|e| format!("Cannot serialize identity: {}", e))?;
 
-        fs::write(file_path, json)
-            .map_err(|e| format!("Cannot write identity file: {}", e))
+        fs::write(file_path, json).map_err(|e| format!("Cannot write identity file: {}", e))
     }
 
     pub fn set_name(&mut self, name: &str) {

@@ -971,14 +971,17 @@ setup_claude_code_config() {
 
     cat > "$CLAUDE_HOME/settings.json" << EOF
 {
+  "mcpServers": {
+    "sena": {
+      "command": "sena",
+      "args": ["mcp"]
+    }
+  },
   "permissions": {
     "allow": [
-      "Bash(${USER_COMMAND} *)",
-      "Bash(${USER_COMMAND} who:*)",
-      "Bash(${USER_COMMAND} peer list:*)",
-      "Bash(sena *)",
+      "Bash(sena:*)",
       "Bash(sena who:*)",
-      "Bash(sena peer list:*)",
+      "Bash(sena peer:*)",
       "Bash(sena think:*)",
       "Bash(sena knowledge:*)",
       "Bash(sena agent:*)",
@@ -1000,15 +1003,43 @@ setup_claude_code_config() {
       "Bash(sena memory:*)",
       "Bash(sena auto:*)",
       "Bash(sena git:*)",
-      "Bash(${sena_latest_path} *)",
-      "Bash(${sena_path} *)",
-      "Bash(./target/release/sena *)"
-    ]
+      "Bash(sena guardian:*)",
+      "Bash(sena devil:*)",
+      "Bash(sena mcp:*)",
+      "Bash(sena hook:*)",
+      "Bash(sena daemon:*)",
+      "Bash(sena session:*)",
+      "Bash(sena network:*)",
+      "Bash(sena discover:*)",
+      "Bash(sena setup:*)",
+      "Bash(sena detect:*)",
+      "Bash(sena metrics:*)",
+      "Bash(sena feedback:*)",
+      "Bash(sena join:*)",
+      "Bash(sena leave:*)",
+      "Bash(sena tell:*)",
+      "Bash(sena broadcast:*)",
+      "Bash(sena inbox:*)",
+      "Bash(./target/release/sena:*)",
+      "SlashCommand(/sena-think:*)",
+      "SlashCommand(/sena-brilliant:*)",
+      "SlashCommand(/sena-search:*)",
+      "SlashCommand(/sena-analyze:*)",
+      "SlashCommand(/sena-ancient:*)",
+      "SlashCommand(/sena-git:*)",
+      "SlashCommand(/sena-tools:*)",
+      "SlashCommand(/sena-memory:*)",
+      "SlashCommand(/sena-auto:*)",
+      "SlashCommand(/sena-hub-messages:*)"
+    ],
+    "deny": [],
+    "ask": [],
+    "defaultMode": "default"
   },
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "${sena_latest_path} hook user-prompt-submit"
+        "command": "sena hook user-prompt-submit"
       }
     ]
   },
@@ -1017,8 +1048,9 @@ setup_claude_code_config() {
 EOF
 
     print_success "Created $CLAUDE_HOME/settings.json"
-    print_detail "Auto-approved commands: $USER_COMMAND, sena, sena-latest"
-    print_detail "Hook: UserPromptSubmit (using sena-latest for auto-version)"
+    print_detail "Auto-approved: All SENA commands and slash commands"
+    print_detail "MCP Server: sena (for Claude Desktop integration)"
+    print_detail "Hook: UserPromptSubmit"
 }
 
 setup_claude_desktop_config() {
@@ -1306,28 +1338,76 @@ import json
 import os
 
 settings_path = os.path.expanduser("$CLAUDE_HOME/settings.json")
-sena_path = "$INSTALL_DIR/sena"
-sena_latest_path = "$INSTALL_DIR/sena-latest"
-user_command = "$USER_COMMAND"
 
 with open(settings_path, 'r') as f:
     settings = json.load(f)
 
+if 'mcpServers' not in settings:
+    settings['mcpServers'] = {}
+
+settings['mcpServers']['sena'] = {
+    "command": "sena",
+    "args": ["mcp"]
+}
+
 if 'permissions' not in settings:
-    settings['permissions'] = {'allow': []}
+    settings['permissions'] = {'allow': [], 'deny': [], 'ask': [], 'defaultMode': 'default'}
 if 'allow' not in settings['permissions']:
     settings['permissions']['allow'] = []
 
 new_perms = [
-    f"Bash({user_command} *)",
-    f"Bash({user_command} who:*)",
-    f"Bash({user_command} peer list:*)",
-    "Bash(sena *)",
+    "Bash(sena:*)",
     "Bash(sena who:*)",
-    "Bash(sena peer list:*)",
-    f"Bash({sena_latest_path} *)",
-    f"Bash({sena_path} *)",
-    "Bash(./target/release/sena *)"
+    "Bash(sena peer:*)",
+    "Bash(sena think:*)",
+    "Bash(sena knowledge:*)",
+    "Bash(sena agent:*)",
+    "Bash(sena process:*)",
+    "Bash(sena health:*)",
+    "Bash(sena validate:*)",
+    "Bash(sena format:*)",
+    "Bash(sena backend:*)",
+    "Bash(sena web:*)",
+    "Bash(sena ios:*)",
+    "Bash(sena android:*)",
+    "Bash(sena iot:*)",
+    "Bash(sena hub:*)",
+    "Bash(sena task:*)",
+    "Bash(sena collab:*)",
+    "Bash(sena provider:*)",
+    "Bash(sena evolve:*)",
+    "Bash(sena tools:*)",
+    "Bash(sena memory:*)",
+    "Bash(sena auto:*)",
+    "Bash(sena git:*)",
+    "Bash(sena guardian:*)",
+    "Bash(sena devil:*)",
+    "Bash(sena mcp:*)",
+    "Bash(sena hook:*)",
+    "Bash(sena daemon:*)",
+    "Bash(sena session:*)",
+    "Bash(sena network:*)",
+    "Bash(sena discover:*)",
+    "Bash(sena setup:*)",
+    "Bash(sena detect:*)",
+    "Bash(sena metrics:*)",
+    "Bash(sena feedback:*)",
+    "Bash(sena join:*)",
+    "Bash(sena leave:*)",
+    "Bash(sena tell:*)",
+    "Bash(sena broadcast:*)",
+    "Bash(sena inbox:*)",
+    "Bash(./target/release/sena:*)",
+    "SlashCommand(/sena-think:*)",
+    "SlashCommand(/sena-brilliant:*)",
+    "SlashCommand(/sena-search:*)",
+    "SlashCommand(/sena-analyze:*)",
+    "SlashCommand(/sena-ancient:*)",
+    "SlashCommand(/sena-git:*)",
+    "SlashCommand(/sena-tools:*)",
+    "SlashCommand(/sena-memory:*)",
+    "SlashCommand(/sena-auto:*)",
+    "SlashCommand(/sena-hub-messages:*)"
 ]
 
 existing = set(settings['permissions']['allow'])
@@ -1344,7 +1424,7 @@ settings['hooks']['UserPromptSubmit'] = [
     h for h in settings['hooks']['UserPromptSubmit']
     if 'sena' not in h.get('command', '').lower()
 ]
-sena_hook = {"command": f"{sena_latest_path} hook user-prompt-submit"}
+sena_hook = {"command": "sena hook user-prompt-submit"}
 settings['hooks']['UserPromptSubmit'].append(sena_hook)
 
 with open(settings_path, 'w') as f:

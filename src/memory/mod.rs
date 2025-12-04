@@ -101,7 +101,10 @@ impl MemoryEntry {
     pub fn matches_query(&self, query: &str) -> bool {
         let query_lower = query.to_lowercase();
         self.content.to_lowercase().contains(&query_lower)
-            || self.tags.iter().any(|t| t.to_lowercase().contains(&query_lower))
+            || self
+                .tags
+                .iter()
+                .any(|t| t.to_lowercase().contains(&query_lower))
     }
 
     pub fn relevance_score(&self, query: &str) -> f64 {

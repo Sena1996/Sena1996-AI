@@ -1,7 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use sena1996_ai::memory::{MemoryEntry, MemoryType, MemoryStore};
-use sena1996_ai::tools::{ToolCall, ToolSystem};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use sena1996_ai::intelligence::autonomous::AutonomousAgent;
+use sena1996_ai::memory::{MemoryEntry, MemoryStore, MemoryType};
+use sena1996_ai::tools::{ToolCall, ToolSystem};
 use std::collections::HashMap;
 
 fn benchmark_memory_operations(c: &mut Criterion) {
@@ -61,15 +61,11 @@ fn benchmark_tool_system(c: &mut Criterion) {
         })
     });
 
-    group.bench_function("create_tool_system", |b| {
-        b.iter(|| ToolSystem::new())
-    });
+    group.bench_function("create_tool_system", |b| b.iter(|| ToolSystem::new()));
 
     let tool_system = ToolSystem::new();
 
-    group.bench_function("list_tools", |b| {
-        b.iter(|| tool_system.list_tools())
-    });
+    group.bench_function("list_tools", |b| b.iter(|| tool_system.list_tools()));
 
     group.bench_function("get_tool", |b| {
         b.iter(|| tool_system.get_tool(black_box("file_read")))
@@ -91,23 +87,17 @@ fn benchmark_memory_scaling(c: &mut Criterion) {
             );
         }
 
-        group.bench_with_input(
-            BenchmarkId::new("search", size),
-            size,
-            |b, _| b.iter(|| store.search(black_box("entry"))),
-        );
+        group.bench_with_input(BenchmarkId::new("search", size), size, |b, _| {
+            b.iter(|| store.search(black_box("entry")))
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("search_by_type", size),
-            size,
-            |b, _| b.iter(|| store.search_by_type(black_box(&MemoryType::Fact))),
-        );
+        group.bench_with_input(BenchmarkId::new("search_by_type", size), size, |b, _| {
+            b.iter(|| store.search_by_type(black_box(&MemoryType::Fact)))
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("search_by_tag", size),
-            size,
-            |b, _| b.iter(|| store.search_by_tag(black_box("scaling"))),
-        );
+        group.bench_with_input(BenchmarkId::new("search_by_tag", size), size, |b, _| {
+            b.iter(|| store.search_by_tag(black_box("scaling")))
+        });
     }
 
     group.finish();
@@ -116,9 +106,7 @@ fn benchmark_memory_scaling(c: &mut Criterion) {
 fn benchmark_autonomous_agent(c: &mut Criterion) {
     let mut group = c.benchmark_group("Autonomous");
 
-    group.bench_function("create_agent", |b| {
-        b.iter(|| AutonomousAgent::new())
-    });
+    group.bench_function("create_agent", |b| b.iter(|| AutonomousAgent::new()));
 
     group.finish();
 }

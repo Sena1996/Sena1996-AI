@@ -165,7 +165,9 @@ impl AuthField {
 
 pub fn claude_metadata() -> ProviderMetadata {
     ProviderMetadata::new("claude", "Claude (Orchestrator)")
-        .with_description("Use Claude Desktop/Code as orchestrator via SENA MCP - no API key needed")
+        .with_description(
+            "Use Claude Desktop/Code as orchestrator via SENA MCP - no API key needed",
+        )
         .with_website("https://claude.ai")
         .with_docs_url("https://docs.anthropic.com")
         .with_icon("anthropic")
@@ -178,12 +180,12 @@ pub fn openai_metadata() -> ProviderMetadata {
         .with_website("https://openai.com")
         .with_docs_url("https://platform.openai.com/docs")
         .with_icon("openai")
-        .with_auth_schema(AuthSchema::api_key(vec![
-            AuthField::api_key("OPENAI_API_KEY")
-                .with_placeholder("sk-...")
-                .with_help_text("Get your API key from platform.openai.com/api-keys")
-                .with_validation(r"^sk-"),
-        ]))
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "OPENAI_API_KEY",
+        )
+        .with_placeholder("sk-...")
+        .with_help_text("Get your API key from platform.openai.com/api-keys")
+        .with_validation(r"^sk-")]))
 }
 
 pub fn gemini_metadata() -> ProviderMetadata {
@@ -192,12 +194,12 @@ pub fn gemini_metadata() -> ProviderMetadata {
         .with_website("https://ai.google.dev")
         .with_docs_url("https://ai.google.dev/docs")
         .with_icon("google")
-        .with_auth_schema(AuthSchema::api_key(vec![
-            AuthField::api_key("GOOGLE_API_KEY")
-                .with_placeholder("AI...")
-                .with_help_text("Get your API key from aistudio.google.com/apikey")
-                .with_validation(r"^AI"),
-        ]))
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "GOOGLE_API_KEY",
+        )
+        .with_placeholder("AI...")
+        .with_help_text("Get your API key from aistudio.google.com/apikey")
+        .with_validation(r"^AI")]))
 }
 
 pub fn ollama_metadata() -> ProviderMetadata {
@@ -206,11 +208,13 @@ pub fn ollama_metadata() -> ProviderMetadata {
         .with_website("https://ollama.com")
         .with_docs_url("https://github.com/ollama/ollama")
         .with_icon("ollama")
-        .with_auth_schema(AuthSchema::local(vec![
-            AuthField::url("base_url", "Server URL", Some("http://localhost:11434"))
-                .with_placeholder("http://localhost:11434")
-                .with_help_text("URL where Ollama server is running"),
-        ]))
+        .with_auth_schema(AuthSchema::local(vec![AuthField::url(
+            "base_url",
+            "Server URL",
+            Some("http://localhost:11434"),
+        )
+        .with_placeholder("http://localhost:11434")
+        .with_help_text("URL where Ollama server is running")]))
 }
 
 pub fn mistral_metadata() -> ProviderMetadata {
@@ -219,11 +223,11 @@ pub fn mistral_metadata() -> ProviderMetadata {
         .with_website("https://mistral.ai")
         .with_docs_url("https://docs.mistral.ai")
         .with_icon("mistral")
-        .with_auth_schema(AuthSchema::api_key(vec![
-            AuthField::api_key("MISTRAL_API_KEY")
-                .with_placeholder("...")
-                .with_help_text("Get your API key from console.mistral.ai"),
-        ]))
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "MISTRAL_API_KEY",
+        )
+        .with_placeholder("...")
+        .with_help_text("Get your API key from console.mistral.ai")]))
 }
 
 pub fn get_all_provider_metadata() -> Vec<ProviderMetadata> {
@@ -246,7 +250,10 @@ mod tests {
         assert_eq!(meta.id, "claude");
         assert_eq!(meta.auth_schema.auth_type, AuthType::ApiKey);
         assert_eq!(meta.auth_schema.fields.len(), 1);
-        assert_eq!(meta.auth_schema.fields[0].env_var_name, Some("ANTHROPIC_API_KEY".to_string()));
+        assert_eq!(
+            meta.auth_schema.fields[0].env_var_name,
+            Some("ANTHROPIC_API_KEY".to_string())
+        );
     }
 
     #[test]

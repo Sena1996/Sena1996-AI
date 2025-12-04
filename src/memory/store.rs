@@ -29,8 +29,8 @@ impl MemoryStore {
         }
 
         let content = fs::read_to_string(&file_path)?;
-        let entries: Vec<MemoryEntry> =
-            serde_json::from_str(&content).map_err(|e| MemoryError::SerializationError(e.to_string()))?;
+        let entries: Vec<MemoryEntry> = serde_json::from_str(&content)
+            .map_err(|e| MemoryError::SerializationError(e.to_string()))?;
 
         let mut store = Self::new();
         for entry in entries {
@@ -43,8 +43,8 @@ impl MemoryStore {
     pub fn save(&self, dir: &Path) -> MemoryResult<()> {
         let file_path = dir.join("memories.json");
         let entries: Vec<&MemoryEntry> = self.entries.values().collect();
-        let content =
-            serde_json::to_string_pretty(&entries).map_err(|e| MemoryError::SerializationError(e.to_string()))?;
+        let content = serde_json::to_string_pretty(&entries)
+            .map_err(|e| MemoryError::SerializationError(e.to_string()))?;
         fs::write(&file_path, content)?;
         Ok(())
     }

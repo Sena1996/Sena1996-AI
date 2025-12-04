@@ -159,8 +159,12 @@ mod tests {
     #[test]
     fn test_search_with_tags() {
         let mut store = MemoryStore::new();
-        store.add(MemoryEntry::new("Item 1", MemoryType::Fact).with_tags(vec!["important".to_string()]));
-        store.add(MemoryEntry::new("Item 2", MemoryType::Fact).with_tags(vec!["trivial".to_string()]));
+        store.add(
+            MemoryEntry::new("Item 1", MemoryType::Fact).with_tags(vec!["important".to_string()]),
+        );
+        store.add(
+            MemoryEntry::new("Item 2", MemoryType::Fact).with_tags(vec!["trivial".to_string()]),
+        );
 
         let search = MemorySearch::new(&store).with_tag("important");
         let results = search.execute();

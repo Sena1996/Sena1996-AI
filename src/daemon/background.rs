@@ -34,7 +34,12 @@ pub enum TaskStatus {
 impl BackgroundTask {
     pub fn new(name: &str, task_description: &str, working_dir: PathBuf, max_steps: usize) -> Self {
         Self {
-            id: Uuid::new_v4().to_string().split('-').next().unwrap_or("task").to_string(),
+            id: Uuid::new_v4()
+                .to_string()
+                .split('-')
+                .next()
+                .unwrap_or("task")
+                .to_string(),
             name: name.to_string(),
             task_description: task_description.to_string(),
             working_dir,
@@ -361,8 +366,18 @@ mod tests {
     fn test_task_queue() {
         let mut queue = TaskQueue::new(2);
 
-        queue.enqueue(BackgroundTask::new("task1", "Test 1", PathBuf::from("/tmp"), 5));
-        queue.enqueue(BackgroundTask::new("task2", "Test 2", PathBuf::from("/tmp"), 5));
+        queue.enqueue(BackgroundTask::new(
+            "task1",
+            "Test 1",
+            PathBuf::from("/tmp"),
+            5,
+        ));
+        queue.enqueue(BackgroundTask::new(
+            "task2",
+            "Test 2",
+            PathBuf::from("/tmp"),
+            5,
+        ));
 
         assert_eq!(queue.pending_count(), 2);
 

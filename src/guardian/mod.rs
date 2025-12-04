@@ -8,7 +8,7 @@ mod validator;
 pub use config::{GuardianConfig, HallucinationMode, SandboxLevel};
 pub use error::{GuardianError, GuardianResult};
 pub use executor::{DirectExecutor, InlineExecutable};
-pub use hallucination::{HallucinationDetector, HallucinationResult, HallucinationResponse};
+pub use hallucination::{HallucinationDetector, HallucinationResponse, HallucinationResult};
 pub use interceptor::{InterceptedOutput, StreamInterceptor};
 pub use validator::{CommandValidator, ValidationResult};
 
@@ -75,7 +75,9 @@ impl GuardianMiddleware {
         let validation = self.validate_command(command);
         if !validation.allowed {
             return Err(GuardianError::ExecutionBlocked(
-                validation.reason.unwrap_or_else(|| "Blocked by policy".to_string()),
+                validation
+                    .reason
+                    .unwrap_or_else(|| "Blocked by policy".to_string()),
             ));
         }
 

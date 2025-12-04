@@ -109,11 +109,7 @@ impl Hub {
         let session = self.sessions.register(role, name.clone())?;
         self.state.set_session_active(&session.id, true);
 
-        let context = SessionContext::new(
-            &session.id,
-            &session.name,
-            role.name(),
-        );
+        let context = SessionContext::new(&session.id, &session.name, role.name());
         self.context.save_context(&context)?;
 
         Ok(session)

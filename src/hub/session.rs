@@ -411,7 +411,7 @@ impl SessionRegistry {
     }
 
     /// Clean up stale sessions
-    pub fn cleanup_stale(&mut self) {
+    pub fn cleanup_stale(&mut self) -> Vec<String> {
         let stale_ids: Vec<String> = self
             .sessions
             .iter()
@@ -419,9 +419,37 @@ impl SessionRegistry {
             .map(|(id, _)| id.clone())
             .collect();
 
-        for id in stale_ids {
-            self.sessions.remove(&id);
+        for id in &stale_ids {
+            self.sessions.remove(id);
         }
+
+        stale_ids
+    }
+
+    /// Remove a specific session by ID or name
+    pub fn remove_session(&mut self, identifier: &str) -> Result<Session, String> {
+        let session_id = self.resolve_session(identifier).ok_or_else(|| {
+            format!(
+                "Session '{}' not found. Use 'sena hub sessions' to list active sessions.",
+                identifier
+            )
+        })?;
+
+        self.sessions
+            .remove(&session_id)
+            .ok_or_else(|| format!("Failed to remove session '{}'", session_id))
+    }
+
+    /// Remove all sessions (clear registry)
+    pub fn remove_all_sessions(&mut self) -> usize {
+        let count = self.sessions.len();
+        self.sessions.clear();
+        count
+    }
+
+    /// Check if a session exists (by ID or name)
+    pub fn session_exists(&self, identifier: &str) -> bool {
+        self.resolve_session(identifier).is_some()
     }
 
     /// Save sessions to disk

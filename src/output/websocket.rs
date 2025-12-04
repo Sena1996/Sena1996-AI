@@ -111,9 +111,7 @@ impl WebSocketBroadcaster {
 
     pub fn subscribe(&self, client_id: ClientId, channel: &str) {
         if let Ok(mut subs) = self.subscriptions.write() {
-            subs.entry(channel.to_string())
-                .or_default()
-                .push(client_id);
+            subs.entry(channel.to_string()).or_default().push(client_id);
         }
     }
 
@@ -224,7 +222,10 @@ mod tests {
 
     #[test]
     fn test_websocket_message_creation() {
-        let msg = WebSocketMessage::new(MessageType::StreamText, serde_json::json!({"text": "hello"}));
+        let msg = WebSocketMessage::new(
+            MessageType::StreamText,
+            serde_json::json!({"text": "hello"}),
+        );
         assert_eq!(msg.message_type, MessageType::StreamText);
     }
 
