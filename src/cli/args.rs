@@ -317,6 +317,18 @@ pub enum Commands {
         #[command(subcommand)]
         action: GitAction,
     },
+
+    #[command(about = "Guardian middleware for AI safety")]
+    Guardian {
+        #[command(subcommand)]
+        action: GuardianAction,
+    },
+
+    #[command(about = "Devil mode - parallel AI execution")]
+    Devil {
+        #[command(subcommand)]
+        action: DevilAction,
+    },
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
@@ -969,6 +981,91 @@ pub enum GitAction {
         #[arg(short, long, default_value_t = 10, help = "Number of commits")]
         count: usize,
     },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum GuardianAction {
+    #[command(about = "Show guardian status")]
+    Status,
+
+    #[command(about = "Enable guardian middleware")]
+    Enable,
+
+    #[command(about = "Disable guardian middleware")]
+    Disable,
+
+    #[command(about = "Validate a command")]
+    Validate {
+        #[arg(help = "Command to validate")]
+        command: String,
+    },
+
+    #[command(about = "Check content for hallucination")]
+    Check {
+        #[arg(help = "Content to check")]
+        content: String,
+    },
+
+    #[command(about = "Execute command through guardian")]
+    Execute {
+        #[arg(help = "Command to execute")]
+        command: String,
+
+        #[arg(help = "Arguments")]
+        args: Vec<String>,
+    },
+
+    #[command(about = "Show audit log")]
+    Audit {
+        #[arg(short, long, default_value_t = 20, help = "Number of entries")]
+        count: usize,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum DevilAction {
+    #[command(about = "Execute prompt across all AI providers in parallel")]
+    Execute {
+        #[arg(help = "Prompt to execute")]
+        prompt: String,
+
+        #[arg(short, long, default_value_t = 30, help = "Timeout in seconds")]
+        timeout: u64,
+
+        #[arg(short, long, value_enum, default_value_t = SynthesisMethodArg::CrossVerification, help = "Synthesis method")]
+        synthesis: SynthesisMethodArg,
+    },
+
+    #[command(about = "Show devil mode status")]
+    Status,
+
+    #[command(about = "Configure devil mode")]
+    Config {
+        #[arg(short, long, help = "Set timeout")]
+        timeout: Option<u64>,
+
+        #[arg(short, long, help = "Set consensus threshold (0.0-1.0)")]
+        consensus: Option<f64>,
+
+        #[arg(short, long, value_enum, help = "Set synthesis method")]
+        synthesis: Option<SynthesisMethodArg>,
+    },
+
+    #[command(about = "Test parallel execution with mock providers")]
+    Test {
+        #[arg(help = "Test prompt")]
+        prompt: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq, Default)]
+pub enum SynthesisMethodArg {
+    MajorityVoting,
+    WeightedMerge,
+    BestOfN,
+    MetaLlm,
+    #[default]
+    CrossVerification,
 }
 
 impl Cli {

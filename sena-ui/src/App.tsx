@@ -10,6 +10,8 @@ import Settings from './pages/Settings';
 import Tools from './pages/Tools';
 import Memory from './pages/Memory';
 import Features from './pages/Features';
+import Guardian from './pages/Guardian';
+import Devil from './pages/Devil';
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/memory" element={<Memory />} />
+          <Route path="/guardian" element={<Guardian />} />
+          <Route path="/devil" element={<Devil />} />
           <Route path="/peers" element={<Peers />} />
           <Route path="/features" element={<Features />} />
           <Route path="/settings" element={<Settings />} />

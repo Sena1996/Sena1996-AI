@@ -3,7 +3,8 @@ use futures::Stream;
 use std::pin::Pin;
 
 use crate::{
-    ChatRequest, ChatResponse, ModelInfo, ProviderCapabilities, ProviderStatus, Result, StreamChunk,
+    metadata::ProviderMetadata, ChatRequest, ChatResponse, ModelInfo, ProviderCapabilities,
+    ProviderStatus, Result, StreamChunk,
 };
 
 pub type ChatStream = Pin<Box<dyn Stream<Item = Result<StreamChunk>> + Send>>;
@@ -21,6 +22,8 @@ pub trait AIProvider: Send + Sync {
     fn available_models(&self) -> &[ModelInfo];
 
     fn status(&self) -> ProviderStatus;
+
+    fn provider_metadata(&self) -> ProviderMetadata;
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse>;
 

@@ -8,9 +8,12 @@ import {
   RefreshCw,
   Settings,
   Zap,
+  Key,
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import ProviderConfigModal from '../components/ProviderConfigModal';
 import clsx from 'clsx';
+import type { ProviderMetadata, CredentialStatus } from '../types';
 
 interface ProviderInfo {
   id: string;
@@ -30,6 +33,9 @@ export default function Providers() {
   const [testing, setTesting] = useState<string | null>(null);
   const [defaultProvider, setDefaultProvider] = useState('claude');
   const [isLoading, setIsLoading] = useState(true);
+  const [providerMetadata, setProviderMetadata] = useState<ProviderMetadata[]>([]);
+  const [credentialStatuses, setCredentialStatuses] = useState<Map<string, CredentialStatus>>(new Map());
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const toast = useToast();
 
   const loadProviders = useCallback(async () => {
@@ -44,6 +50,34 @@ export default function Providers() {
     }
   }, [toast]);
 
+  const loadMetadata = useCallback(async () => {
+    try {
+      const metadata = await invoke<ProviderMetadata[]>('get_all_provider_metadata_cmd');
+      setProviderMetadata(metadata);
+
+      const statuses = new Map<string, CredentialStatus>();
+      for (const meta of metadata) {
+        try {
+          const status = await invoke<CredentialStatus>('get_credential_status_cmd', {
+            providerId: meta.id,
+          });
+          statuses.set(meta.id, status);
+        } catch {
+          statuses.set(meta.id, {
+            providerId: meta.id,
+            hasCredential: false,
+            source: 'none',
+            isValid: null,
+            canImportFromEnv: false,
+          });
+        }
+      }
+      setCredentialStatuses(statuses);
+    } catch (error) {
+      console.error('Failed to load metadata:', error);
+    }
+  }, []);
+
   const refreshProviders = useCallback(async () => {
     setIsLoading(true);
     await loadProviders();
@@ -52,7 +86,19 @@ export default function Providers() {
 
   useEffect(() => {
     loadProviders();
-  }, [loadProviders]);
+    loadMetadata();
+  }, [loadProviders, loadMetadata]);
+
+  const handleCredentialSaved = useCallback(async () => {
+    await loadProviders();
+    await loadMetadata();
+    toast.success('Credentials saved successfully');
+  }, [loadProviders, loadMetadata, toast]);
+
+  const selectedProviderMeta = providerMetadata.find((m) => m.id === selectedProvider);
+  const selectedCredentialStatus = selectedProvider
+    ? credentialStatuses.get(selectedProvider)
+    : undefined;
 
   const handleTest = async (providerId: string) => {
     setTesting(providerId);
@@ -107,13 +153,31 @@ export default function Providers() {
           <ProviderCard
             key={provider.id}
             provider={provider}
+            credentialStatus={credentialStatuses.get(provider.id)}
             isDefault={provider.id === defaultProvider}
             isTesting={testing === provider.id}
             onTest={() => handleTest(provider.id)}
             onSetDefault={() => handleSetDefault(provider.id)}
+            onConfigure={() => setSelectedProvider(provider.id)}
           />
         ))}
       </div>
+
+      {selectedProviderMeta && (
+        <ProviderConfigModal
+          provider={selectedProviderMeta}
+          credentialStatus={selectedCredentialStatus || {
+            providerId: selectedProviderMeta.id,
+            hasCredential: false,
+            source: 'none',
+            isValid: null,
+            canImportFromEnv: false,
+          }}
+          isOpen={selectedProvider !== null}
+          onClose={() => setSelectedProvider(null)}
+          onSave={handleCredentialSaved}
+        />
+      )}
 
       <div className="mt-8 card">
         <h2 className="text-lg font-semibold text-dark-100 mb-4">
@@ -149,16 +213,20 @@ export default function Providers() {
 
 function ProviderCard({
   provider,
+  credentialStatus,
   isDefault,
   isTesting,
   onTest,
   onSetDefault,
+  onConfigure,
 }: {
   provider: ProviderInfo;
+  credentialStatus?: CredentialStatus;
   isDefault: boolean;
   isTesting: boolean;
   onTest: () => void;
   onSetDefault: () => void;
+  onConfigure: () => void;
 }) {
   const isConnected = provider.status === 'connected';
   const isError = provider.status === 'error';
@@ -211,7 +279,19 @@ function ProviderCard({
         {provider.capabilities.vision && (
           <span className="badge badge-info">Vision</span>
         )}
-        {provider.has_api_key ? (
+        {credentialStatus && credentialStatus.source !== 'none' ? (
+          <span className={`badge ${
+            credentialStatus.source === 'keychain'
+              ? 'bg-green-500/20 text-green-400'
+              : credentialStatus.source === 'config'
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-yellow-500/20 text-yellow-400'
+          }`}>
+            {credentialStatus.source === 'keychain' && 'Keychain'}
+            {credentialStatus.source === 'config' && 'Config'}
+            {credentialStatus.source === 'environment' && 'Env'}
+          </span>
+        ) : provider.has_api_key ? (
           <span className="badge badge-success">API Key Set</span>
         ) : (
           <span className="badge badge-warning">No API Key</span>
@@ -219,6 +299,13 @@ function ProviderCard({
       </div>
 
       <div className="flex gap-2">
+        <button
+          onClick={onConfigure}
+          className="btn-secondary"
+          title="Configure API Key"
+        >
+          <Key className="w-4 h-4" />
+        </button>
         <button
           onClick={onTest}
           disabled={isTesting || !provider.has_api_key}

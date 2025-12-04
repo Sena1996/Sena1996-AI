@@ -1,8 +1,12 @@
 #!/bin/bash
-# SENA Progress Display v3.3
-
-# Default to interactive mode
 MODE="${1:---interactive}"
 
-# Run the progress display
-python3 /Users/sena/.claude/sena_live_progress.py "$MODE"
+PROGRESS_SCRIPT="$HOME/.claude/sena_live_progress.py"
+
+if [[ -f "$PROGRESS_SCRIPT" ]]; then
+    python3 "$PROGRESS_SCRIPT" "$MODE"
+else
+    echo "Progress script not found: $PROGRESS_SCRIPT" >&2
+    echo "Run 'sena setup' to install all components" >&2
+    exit 1
+fi

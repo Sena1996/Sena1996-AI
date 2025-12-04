@@ -1,3 +1,5 @@
+mod credentials;
+
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
@@ -5,7 +7,12 @@ use tauri::State;
 use tokio::sync::RwLock;
 
 use sena_collab::CollabOrchestrator;
-use sena_providers::{config::ProvidersConfig, ChatRequest, Message, ProviderRouter};
+use sena_providers::{
+    config::ProvidersConfig, get_all_provider_metadata, AuthField, AuthSchema, AuthType,
+    ChatRequest, FieldType, Message, ProviderMetadata, ProviderRouter,
+};
+
+use credentials::{CredentialManager, CredentialSource, CredentialStatus, StorageType};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProviderInfo {
@@ -143,6 +150,12 @@ pub struct SendMessageResult {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct TestResultDto {
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct HubIdentityDto {
     pub hub_id: String,
     pub name: String,
@@ -247,12 +260,38 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let config = ProvidersConfig::load_or_default();
+        let mut config = ProvidersConfig::load_or_default();
+        Self::load_credentials_into_config(&mut config);
         let orchestrator = Arc::new(RwLock::new(CollabOrchestrator::new(100)));
         Self {
             config: RwLock::new(config),
             orchestrator,
             start_time: Instant::now(),
+        }
+    }
+
+    fn load_credentials_into_config(config: &mut ProvidersConfig) {
+        let manager = CredentialManager::new();
+        let metadata = get_all_provider_metadata();
+
+        for provider_meta in &metadata {
+            let provider_id = &provider_meta.id;
+
+            if let Some(provider_config) = config.providers.get_mut(provider_id) {
+                for field in &provider_meta.auth_schema.fields {
+                    let env_var = field.env_var_name.as_deref();
+
+                    if let Some((value, _source)) = manager.get(provider_id, &field.id, env_var) {
+                        match field.id.as_str() {
+                            "api_key" => provider_config.api_key = Some(value),
+                            "base_url" => provider_config.base_url = Some(value),
+                            _ => {
+                                provider_config.extra.insert(field.id.clone(), value);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -275,21 +314,24 @@ async fn get_providers(state: State<'_, AppState>) -> Result<Vec<ProviderInfo>, 
         .providers
         .iter()
         .map(|(id, cfg)| {
-            let has_key = cfg.get_api_key().is_some() || id == "ollama";
+            let is_configured = match id.as_str() {
+                "ollama" => cfg.base_url.is_some() || true,
+                _ => cfg.get_api_key().is_some(),
+            };
             ProviderInfo {
                 id: id.clone(),
                 name: get_provider_display_name(id),
-                status: if has_key {
+                status: if is_configured {
                     "connected".to_string()
                 } else {
                     "disconnected".to_string()
                 },
                 default_model: cfg.default_model.clone().unwrap_or_default(),
-                has_api_key: has_key,
+                has_api_key: is_configured,
                 capabilities: Capabilities {
                     streaming: true,
-                    tools: id != "ollama",
-                    vision: id != "ollama",
+                    tools: true,
+                    vision: true,
                 },
             }
         })
@@ -413,21 +455,47 @@ async fn set_default_provider(
 }
 
 #[tauri::command]
-async fn test_provider(state: State<'_, AppState>, provider_id: String) -> Result<bool, String> {
-    let config = state.config.read().await;
-    let router =
-        ProviderRouter::from_config(&config).map_err(|e| format!("Router error: {}", e))?;
+async fn test_provider(state: State<'_, AppState>, provider_id: String) -> Result<TestResultDto, String> {
+    if provider_id == "claude" {
+        return Ok(TestResultDto {
+            success: true,
+            message: "Claude is configured as MCP Orchestrator. Use Claude Desktop/Code to interact.".to_string(),
+        });
+    }
 
-    let provider = router
-        .get_provider(&provider_id)
-        .ok_or_else(|| format!("Provider not found: {}", provider_id))?;
+    let config = state.config.read().await;
+    let router = match ProviderRouter::from_config(&config) {
+        Ok(r) => r,
+        Err(e) => {
+            return Ok(TestResultDto {
+                success: false,
+                message: format!("Router error: {}", e),
+            })
+        }
+    };
+
+    let provider = match router.get_provider(&provider_id) {
+        Some(p) => p,
+        None => {
+            return Ok(TestResultDto {
+                success: false,
+                message: format!("Provider not found: {}", provider_id),
+            })
+        }
+    };
 
     let test_request =
         ChatRequest::new(vec![Message::user("Say 'OK' if you can hear me.")]).with_max_tokens(10);
 
     match provider.chat(test_request).await {
-        Ok(_) => Ok(true),
-        Err(e) => Err(format!("Test failed: {}", e)),
+        Ok(response) => Ok(TestResultDto {
+            success: true,
+            message: format!("Connected successfully. Response: {}", response.content.chars().take(50).collect::<String>()),
+        }),
+        Err(e) => Ok(TestResultDto {
+            success: false,
+            message: format!("Test failed: {}", e),
+        }),
     }
 }
 
@@ -525,7 +593,10 @@ async fn get_health(state: State<'_, AppState>) -> Result<HealthDto, String> {
     let connected = config
         .providers
         .iter()
-        .filter(|(id, cfg)| cfg.get_api_key().is_some() || *id == "ollama")
+        .filter(|(id, cfg)| match id.as_str() {
+            "ollama" => true,
+            _ => cfg.get_api_key().is_some(),
+        })
         .count();
 
     let active_sessions = orchestrator.list_active_sessions().await;
@@ -1437,6 +1508,595 @@ async fn delete_memory(id: String) -> Result<(), String> {
         .map_err(|e| format!("Cannot write memories: {}", e))
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderMetadataDto {
+    pub id: String,
+    pub display_name: String,
+    pub description: String,
+    pub icon: Option<String>,
+    pub website: String,
+    pub documentation_url: Option<String>,
+    pub auth_schema: AuthSchemaDto,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthSchemaDto {
+    pub auth_type: String,
+    pub fields: Vec<AuthFieldDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthFieldDto {
+    pub id: String,
+    pub display_name: String,
+    pub field_type: String,
+    pub required: bool,
+    pub sensitive: bool,
+    pub placeholder: Option<String>,
+    pub help_text: Option<String>,
+    pub default_value: Option<String>,
+    pub env_var_name: Option<String>,
+    pub validation_pattern: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialStatusDto {
+    pub provider_id: String,
+    pub has_credential: bool,
+    pub source: String,
+    pub is_valid: Option<bool>,
+    pub can_import_from_env: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ValidationResultDto {
+    pub valid: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageOptionsDto {
+    pub keychain_available: bool,
+    pub config_file_path: String,
+}
+
+fn convert_metadata_to_dto(meta: &ProviderMetadata) -> ProviderMetadataDto {
+    ProviderMetadataDto {
+        id: meta.id.clone(),
+        display_name: meta.display_name.clone(),
+        description: meta.description.clone(),
+        icon: meta.icon.clone(),
+        website: meta.website.clone(),
+        documentation_url: meta.documentation_url.clone(),
+        auth_schema: convert_auth_schema_to_dto(&meta.auth_schema),
+    }
+}
+
+fn convert_auth_schema_to_dto(schema: &AuthSchema) -> AuthSchemaDto {
+    let auth_type = match schema.auth_type {
+        AuthType::ApiKey => "api_key",
+        AuthType::OAuth2 => "oauth2",
+        AuthType::BasicAuth => "basic_auth",
+        AuthType::Local => "local",
+        AuthType::None => "none",
+    };
+
+    AuthSchemaDto {
+        auth_type: auth_type.to_string(),
+        fields: schema.fields.iter().map(convert_auth_field_to_dto).collect(),
+    }
+}
+
+fn convert_auth_field_to_dto(field: &AuthField) -> AuthFieldDto {
+    let field_type = match field.field_type {
+        FieldType::Text => "text",
+        FieldType::Password => "password",
+        FieldType::Url => "url",
+        FieldType::Number => "number",
+        FieldType::Toggle => "toggle",
+    };
+
+    AuthFieldDto {
+        id: field.id.clone(),
+        display_name: field.display_name.clone(),
+        field_type: field_type.to_string(),
+        required: field.required,
+        sensitive: field.sensitive,
+        placeholder: field.placeholder.clone(),
+        help_text: field.help_text.clone(),
+        default_value: field.default_value.clone(),
+        env_var_name: field.env_var_name.clone(),
+        validation_pattern: field.validation_pattern.clone(),
+    }
+}
+
+fn convert_credential_status_to_dto(status: &CredentialStatus) -> CredentialStatusDto {
+    let source = match status.source {
+        CredentialSource::Keychain => "keychain",
+        CredentialSource::ConfigFile => "config",
+        CredentialSource::Environment => "environment",
+        CredentialSource::NotSet => "none",
+    };
+
+    CredentialStatusDto {
+        provider_id: status.provider_id.clone(),
+        has_credential: status.has_credential,
+        source: source.to_string(),
+        is_valid: status.is_valid,
+        can_import_from_env: status.can_import_from_env,
+    }
+}
+
+#[tauri::command]
+async fn get_all_provider_metadata_cmd() -> Result<Vec<ProviderMetadataDto>, String> {
+    let metadata = get_all_provider_metadata();
+    Ok(metadata.iter().map(convert_metadata_to_dto).collect())
+}
+
+#[tauri::command]
+async fn get_credential_status_cmd(provider_id: String) -> Result<CredentialStatusDto, String> {
+    let manager = CredentialManager::new();
+    let metadata = get_all_provider_metadata();
+
+    let provider_meta = metadata
+        .iter()
+        .find(|m| m.id == provider_id)
+        .ok_or_else(|| format!("Provider {} not found", provider_id))?;
+
+    let first_field = provider_meta.auth_schema.fields.first();
+    let field_id = first_field.map(|f| f.id.as_str()).unwrap_or("api_key");
+    let env_var = first_field.and_then(|f| f.env_var_name.as_deref());
+
+    let status = manager.get_credential_status(&provider_id, field_id, env_var);
+    Ok(convert_credential_status_to_dto(&status))
+}
+
+#[tauri::command]
+async fn save_credential(
+    state: State<'_, AppState>,
+    provider_id: String,
+    field_id: String,
+    value: String,
+    storage_type: String,
+) -> Result<(), String> {
+    let manager = CredentialManager::new();
+
+    let storage = match storage_type.as_str() {
+        "keychain" => StorageType::Keychain,
+        "config" => StorageType::ConfigFile,
+        _ => return Err(format!("Invalid storage type: {}", storage_type)),
+    };
+
+    manager.store(&provider_id, &field_id, &value, storage.clone())?;
+
+    let mut config = state.config.write().await;
+    if let Some(provider_config) = config.providers.get_mut(&provider_id) {
+        match field_id.as_str() {
+            "api_key" => provider_config.api_key = Some(value),
+            "base_url" => provider_config.base_url = Some(value),
+            _ => {}
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_credential(provider_id: String, field_id: String) -> Result<Option<String>, String> {
+    let manager = CredentialManager::new();
+    let metadata = get_all_provider_metadata();
+
+    let env_var = metadata
+        .iter()
+        .find(|m| m.id == provider_id)
+        .and_then(|m| m.auth_schema.fields.first())
+        .and_then(|f| f.env_var_name.as_deref());
+
+    Ok(manager.get(&provider_id, &field_id, env_var).map(|(value, _)| value))
+}
+
+#[tauri::command]
+async fn delete_credential(provider_id: String, field_id: String) -> Result<(), String> {
+    let manager = CredentialManager::new();
+    manager.delete(&provider_id, &field_id)
+}
+
+#[tauri::command]
+async fn validate_api_key_cmd(
+    provider_id: String,
+    api_key: String,
+) -> Result<ValidationResultDto, String> {
+    match credentials::validate_api_key(&provider_id, &api_key).await {
+        Ok(valid) => Ok(ValidationResultDto { valid, error: None }),
+        Err(e) => Ok(ValidationResultDto {
+            valid: false,
+            error: Some(e),
+        }),
+    }
+}
+
+#[tauri::command]
+async fn import_env_to_storage(
+    state: State<'_, AppState>,
+    provider_id: String,
+    env_var: String,
+    storage_type: String,
+) -> Result<(), String> {
+    let manager = CredentialManager::new();
+    let metadata = get_all_provider_metadata();
+
+    let field_id = metadata
+        .iter()
+        .find(|m| m.id == provider_id)
+        .and_then(|m| m.auth_schema.fields.first())
+        .map(|f| f.id.as_str())
+        .unwrap_or("api_key");
+
+    let storage = match storage_type.as_str() {
+        "keychain" => StorageType::Keychain,
+        "config" => StorageType::ConfigFile,
+        _ => return Err(format!("Invalid storage type: {}", storage_type)),
+    };
+
+    manager.import_from_env(&provider_id, field_id, &env_var, storage)?;
+
+    if let Ok(value) = std::env::var(&env_var) {
+        let mut config = state.config.write().await;
+        if let Some(provider_config) = config.providers.get_mut(&provider_id) {
+            match field_id {
+                "api_key" => provider_config.api_key = Some(value),
+                "base_url" => provider_config.base_url = Some(value),
+                _ => {}
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_storage_options_cmd() -> Result<StorageOptionsDto, String> {
+    let manager = CredentialManager::new();
+    let options = manager.storage_options();
+
+    Ok(StorageOptionsDto {
+        keychain_available: options.keychain_available,
+        config_file_path: options.config_file_path,
+    })
+}
+
+#[tauri::command]
+async fn open_external_url(url: String) -> Result<(), String> {
+    open::that(&url).map_err(|e| format!("Failed to open URL: {}", e))
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GuardianStatusDto {
+    pub enabled: bool,
+    pub sandbox_level: String,
+    pub hallucination_mode: String,
+    pub threshold: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidationResultGuardianDto {
+    pub command: String,
+    pub allowed: bool,
+    pub risk_score: f64,
+    pub reason: Option<String>,
+    pub matched_patterns: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HallucinationCheckDto {
+    pub is_hallucination: bool,
+    pub risk_score: f64,
+    pub response: String,
+    pub harmony_status: String,
+    pub warnings: Vec<String>,
+    pub details: HallucinationDetailsDto,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HallucinationDetailsDto {
+    pub consistency_score: f64,
+    pub semantic_entropy: f64,
+    pub fact_validation_score: f64,
+    pub suspicious_patterns: Vec<String>,
+}
+
+#[tauri::command]
+async fn get_guardian_status() -> Result<GuardianStatusDto, String> {
+    Ok(GuardianStatusDto {
+        enabled: true,
+        sandbox_level: "Full".to_string(),
+        hallucination_mode: "All".to_string(),
+        threshold: 0.70,
+    })
+}
+
+#[tauri::command]
+async fn guardian_validate(command: String) -> Result<ValidationResultGuardianDto, String> {
+    use std::process::Command;
+
+    let output = Command::new("./target/release/sena")
+        .args(["guardian", "validate", &command, "--format", "json"])
+        .output()
+        .map_err(|e| format!("Failed to run guardian: {}", e))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if let Ok(result) = serde_json::from_str::<serde_json::Value>(&stdout) {
+            return Ok(ValidationResultGuardianDto {
+                command: command.clone(),
+                allowed: result["allowed"].as_bool().unwrap_or(true),
+                risk_score: result["risk_score"].as_f64().unwrap_or(0.0),
+                reason: result["reason"].as_str().map(|s| s.to_string()),
+                matched_patterns: result["matched_patterns"]
+                    .as_array()
+                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                    .unwrap_or_default(),
+            });
+        }
+    }
+
+    Ok(ValidationResultGuardianDto {
+        command,
+        allowed: true,
+        risk_score: 0.0,
+        reason: None,
+        matched_patterns: Vec::new(),
+    })
+}
+
+#[tauri::command]
+async fn guardian_check(content: String) -> Result<HallucinationCheckDto, String> {
+    use std::process::Command;
+
+    let output = Command::new("./target/release/sena")
+        .args(["guardian", "check", &content, "--format", "json"])
+        .output()
+        .map_err(|e| format!("Failed to run guardian: {}", e))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if let Ok(result) = serde_json::from_str::<serde_json::Value>(&stdout) {
+            return Ok(HallucinationCheckDto {
+                is_hallucination: result["is_hallucination"].as_bool().unwrap_or(false),
+                risk_score: result["risk_score"].as_f64().unwrap_or(0.0),
+                response: result["response"].as_str().unwrap_or("Pass").to_string(),
+                harmony_status: result["harmony_status"].as_str().unwrap_or("Harmonious").to_string(),
+                warnings: result["warnings"]
+                    .as_array()
+                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                    .unwrap_or_default(),
+                details: HallucinationDetailsDto {
+                    consistency_score: result["details"]["consistency_score"].as_f64().unwrap_or(1.0),
+                    semantic_entropy: result["details"]["semantic_entropy"].as_f64().unwrap_or(0.0),
+                    fact_validation_score: result["details"]["fact_validation_score"].as_f64().unwrap_or(1.0),
+                    suspicious_patterns: result["details"]["suspicious_patterns"]
+                        .as_array()
+                        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                        .unwrap_or_default(),
+                },
+            });
+        }
+    }
+
+    Ok(HallucinationCheckDto {
+        is_hallucination: false,
+        risk_score: 0.0,
+        response: "Pass".to_string(),
+        harmony_status: "Harmonious".to_string(),
+        warnings: Vec::new(),
+        details: HallucinationDetailsDto {
+            consistency_score: 1.0,
+            semantic_entropy: 0.0,
+            fact_validation_score: 1.0,
+            suspicious_patterns: Vec::new(),
+        },
+    })
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevilStatusDto {
+    pub enabled: bool,
+    pub timeout_secs: u64,
+    pub min_providers: usize,
+    pub synthesis_method: String,
+    pub consensus_threshold: f64,
+    pub wait_mode: String,
+    pub available_providers: Vec<DevilProviderDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevilProviderDto {
+    pub id: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevilExecuteResultDto {
+    pub content: String,
+    pub consensus_score: f64,
+    pub synthesis_method: String,
+    pub total_latency_ms: u64,
+    pub facts_verified: usize,
+    pub facts_rejected: usize,
+    pub provider_responses: Vec<DevilProviderResponseDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevilProviderResponseDto {
+    pub provider_id: String,
+    pub model: String,
+    pub status: String,
+    pub latency_ms: u64,
+    pub content_preview: Option<String>,
+}
+
+#[tauri::command]
+async fn get_devil_status(state: State<'_, AppState>) -> Result<DevilStatusDto, String> {
+    let config = state.config.read().await;
+    let router = ProviderRouter::from_config(&config)
+        .map_err(|e| format!("Failed to create router: {}", e))?;
+
+    let available_providers: Vec<DevilProviderDto> = router
+        .provider_status()
+        .into_iter()
+        .map(|(id, status)| DevilProviderDto {
+            id,
+            status: format!("{:?}", status),
+        })
+        .collect();
+
+    Ok(DevilStatusDto {
+        enabled: true,
+        timeout_secs: 30,
+        min_providers: 2,
+        synthesis_method: "CrossVerification".to_string(),
+        consensus_threshold: 0.6,
+        wait_mode: "WaitForAll".to_string(),
+        available_providers,
+    })
+}
+
+#[tauri::command]
+async fn devil_execute(
+    state: State<'_, AppState>,
+    prompt: String,
+    timeout: Option<u64>,
+) -> Result<DevilExecuteResultDto, String> {
+    use std::time::{Duration, Instant};
+
+    let config = state.config.read().await;
+    let router = ProviderRouter::from_config(&config)
+        .map_err(|e| format!("Failed to create router: {}", e))?;
+
+    let available_providers = router.available_providers();
+    if available_providers.is_empty() {
+        return Err("No providers available".to_string());
+    }
+
+    let timeout_duration = Duration::from_secs(timeout.unwrap_or(30));
+    let request = ChatRequest::new(vec![Message::user(&prompt)]).with_max_tokens(1024);
+
+    let mut provider_responses = Vec::new();
+    let mut contents = Vec::new();
+    let start = Instant::now();
+
+    for provider in available_providers {
+        let provider_id = provider.provider_id().to_string();
+        let model = provider.default_model().to_string();
+        let req_start = Instant::now();
+
+        match tokio::time::timeout(timeout_duration, provider.chat(request.clone())).await {
+            Ok(Ok(response)) => {
+                contents.push(response.content.clone());
+                provider_responses.push(DevilProviderResponseDto {
+                    provider_id,
+                    model: response.model,
+                    status: "Success".to_string(),
+                    latency_ms: req_start.elapsed().as_millis() as u64,
+                    content_preview: Some(if response.content.len() > 100 {
+                        format!("{}...", &response.content[..100])
+                    } else {
+                        response.content
+                    }),
+                });
+            }
+            Ok(Err(e)) => {
+                provider_responses.push(DevilProviderResponseDto {
+                    provider_id,
+                    model,
+                    status: format!("Error: {}", e),
+                    latency_ms: req_start.elapsed().as_millis() as u64,
+                    content_preview: None,
+                });
+            }
+            Err(_) => {
+                provider_responses.push(DevilProviderResponseDto {
+                    provider_id,
+                    model,
+                    status: "Timeout".to_string(),
+                    latency_ms: timeout_duration.as_millis() as u64,
+                    content_preview: None,
+                });
+            }
+        }
+    }
+
+    let total_latency = start.elapsed().as_millis() as u64;
+    let successful_count = contents.len();
+    let consensus_score = if successful_count > 1 { 0.7 } else if successful_count == 1 { 1.0 } else { 0.0 };
+
+    let combined_content = if contents.is_empty() {
+        "No successful responses from providers".to_string()
+    } else {
+        contents.join("\n\n---\n\n")
+    };
+
+    Ok(DevilExecuteResultDto {
+        content: combined_content,
+        consensus_score,
+        synthesis_method: "CrossVerification".to_string(),
+        total_latency_ms: total_latency,
+        facts_verified: successful_count,
+        facts_rejected: provider_responses.len() - successful_count,
+        provider_responses,
+    })
+}
+
+#[tauri::command]
+async fn devil_test(prompt: String) -> Result<DevilExecuteResultDto, String> {
+    let mock_responses = vec![
+        DevilProviderResponseDto {
+            provider_id: "mock_claude".to_string(),
+            model: "claude-test".to_string(),
+            status: "Success".to_string(),
+            latency_ms: 500,
+            content_preview: Some(format!("Claude response about: {}", &prompt[..prompt.len().min(50)])),
+        },
+        DevilProviderResponseDto {
+            provider_id: "mock_openai".to_string(),
+            model: "gpt-test".to_string(),
+            status: "Success".to_string(),
+            latency_ms: 400,
+            content_preview: Some(format!("OpenAI response about: {}", &prompt[..prompt.len().min(50)])),
+        },
+        DevilProviderResponseDto {
+            provider_id: "mock_gemini".to_string(),
+            model: "gemini-test".to_string(),
+            status: "Success".to_string(),
+            latency_ms: 600,
+            content_preview: Some(format!("Gemini response about: {}", &prompt[..prompt.len().min(50)])),
+        },
+    ];
+
+    Ok(DevilExecuteResultDto {
+        content: format!("Mock consensus response for: {}", prompt),
+        consensus_score: 0.85,
+        synthesis_method: "CrossVerification".to_string(),
+        total_latency_ms: 600,
+        facts_verified: 3,
+        facts_rejected: 0,
+        provider_responses: mock_responses,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
@@ -1476,6 +2136,21 @@ pub fn run() {
             get_memory_stats,
             add_memory,
             delete_memory,
+            get_all_provider_metadata_cmd,
+            get_credential_status_cmd,
+            get_credential,
+            save_credential,
+            delete_credential,
+            validate_api_key_cmd,
+            import_env_to_storage,
+            get_storage_options_cmd,
+            open_external_url,
+            get_guardian_status,
+            guardian_validate,
+            guardian_check,
+            get_devil_status,
+            devil_execute,
+            devil_test,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -4,6 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    metadata::{claude_metadata, ProviderMetadata},
     provider::{AIProvider, ChatStream},
     ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
     ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
@@ -78,15 +79,6 @@ impl ClaudeProvider {
                 ModelInfo {
                     id: "claude-sonnet-4-5-20250929".into(),
                     name: "Claude Sonnet 4.5".into(),
-                    provider: "claude".into(),
-                    context_length: 200000,
-                    supports_vision: true,
-                    supports_tools: true,
-                    supports_streaming: true,
-                },
-                ModelInfo {
-                    id: "claude-opus-4-5-20251101".into(),
-                    name: "Claude Opus 4.5".into(),
                     provider: "claude".into(),
                     context_length: 200000,
                     supports_vision: true,
@@ -196,6 +188,10 @@ impl AIProvider for ClaudeProvider {
 
     fn status(&self) -> ProviderStatus {
         self.status.clone()
+    }
+
+    fn provider_metadata(&self) -> ProviderMetadata {
+        claude_metadata()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {

@@ -1,5 +1,6 @@
 pub mod config;
 pub mod error;
+pub mod metadata;
 pub mod provider;
 pub mod router;
 pub mod types;
@@ -19,8 +20,11 @@ pub mod ollama;
 #[cfg(feature = "mistral")]
 pub mod mistral;
 
-pub use config::ProviderConfig;
+pub use config::{ProviderConfig, ProvidersConfig};
 pub use error::{ProviderError, Result};
+pub use metadata::{
+    get_all_provider_metadata, AuthField, AuthSchema, AuthType, FieldType, ProviderMetadata,
+};
 pub use provider::AIProvider;
 pub use router::ProviderRouter;
 pub use types::*;

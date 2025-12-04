@@ -158,7 +158,6 @@ impl ProvidersConfig {
 
         config.add_provider(
             ProviderConfig::new("claude")
-                .with_api_key_env("ANTHROPIC_API_KEY")
                 .with_default_model("claude-sonnet-4-5-20250929"),
         );
 
@@ -186,11 +185,10 @@ impl ProvidersConfig {
                 .with_default_model("mistral-large-latest"),
         );
 
-        config.default_provider = Some("claude".to_string());
+        config.default_provider = Some("ollama".to_string());
         config.fallback_chain = vec![
             "openai".to_string(),
             "gemini".to_string(),
-            "ollama".to_string(),
         ];
 
         config

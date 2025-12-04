@@ -2,7 +2,7 @@
 # SENA Controller - Response Enforcer Hook
 # Validates Claude's response for SENA compliance
 
-SENA_BIN="${SENA_HOME:-$HOME/AI/Sena1996-AI}/target/release/sena"
+SENA_BIN="${SENA_HOME:-$(command -v sena 2>/dev/null || echo "$HOME/.local/bin/sena")}"
 
 # Read response from stdin
 INPUT=$(cat)

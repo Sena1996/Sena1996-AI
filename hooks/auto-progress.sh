@@ -2,7 +2,7 @@
 # SENA Auto Progress Hook - Rust Edition
 # Automatically shows progress for conversation processing
 
-SENA_BIN="${SENA_HOME:-$HOME/AI/Sena1996-AI}/target/release/sena"
+SENA_BIN="${SENA_HOME:-$(command -v sena 2>/dev/null || echo "$HOME/.local/bin/sena")}"
 
 # Start progress display via Rust binary (non-blocking)
 if [ -x "$SENA_BIN" ]; then

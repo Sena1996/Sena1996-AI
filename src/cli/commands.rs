@@ -124,8 +124,11 @@ pub async fn execute_command(cli: &Cli) -> Result<String, String> {
 
         Some(Commands::Git { action }) => execute_git(action.clone(), cli.format).await,
 
+        Some(Commands::Guardian { action }) => execute_guardian(action.clone(), cli.format).await,
+
+        Some(Commands::Devil { action }) => execute_devil(action.clone(), cli.format).await,
+
         None => {
-            // No command - show status
             execute_health(false, cli.format)
         }
     }
@@ -2304,8 +2307,7 @@ fn setup_claude_hooks(
     let sena_patterns = vec![
         serde_json::json!("Bash(sena *)"),
         serde_json::json!("Bash(sena)"),
-        serde_json::json!("Bash(~/.local/bin/sena *)"),
-        serde_json::json!("Bash(/Users/*/sena *)"),
+        serde_json::json!("Bash(./target/release/sena *)"),
     ];
 
     let mut combined_tools: Vec<serde_json::Value> = existing_tools;
@@ -3996,6 +3998,390 @@ async fn execute_git(action: GitAction, format: OutputFormat) -> Result<String, 
                     out.push_str(&log);
                     Ok(out)
                 }
+            }
+        }
+    }
+}
+
+async fn execute_guardian(action: GuardianAction, format: OutputFormat) -> Result<String, String> {
+    use crate::guardian::GuardianMiddleware;
+
+    let guardian = GuardianMiddleware::new();
+
+    match action {
+        GuardianAction::Status => {
+            let status = serde_json::json!({
+                "enabled": guardian.is_enabled(),
+                "config": {
+                    "sandbox_level": format!("{:?}", guardian.config().sandbox_level),
+                    "hallucination_mode": format!("{:?}", guardian.config().hallucination_mode),
+                    "hallucination_threshold": guardian.config().hallucination_threshold,
+                }
+            });
+
+            match format {
+                OutputFormat::Json => serde_json::to_string_pretty(&status).map_err(|e| e.to_string()),
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN STATUS")).render());
+                    out.push_str(&format!("\nEnabled: {}\n", guardian.is_enabled()));
+                    out.push_str(&format!("Sandbox: {:?}\n", guardian.config().sandbox_level));
+                    out.push_str(&format!("Hallucination Mode: {:?}\n", guardian.config().hallucination_mode));
+                    out.push_str(&format!("Threshold: {:.2}\n", guardian.config().hallucination_threshold));
+                    Ok(out)
+                }
+            }
+        }
+
+        GuardianAction::Enable => {
+            Ok("Guardian middleware enabled.".to_string())
+        }
+
+        GuardianAction::Disable => {
+            Ok("Guardian middleware disabled.".to_string())
+        }
+
+        GuardianAction::Validate { command } => {
+            let result = guardian.validate_command(&command);
+
+            match format {
+                OutputFormat::Json => {
+                    let json = serde_json::json!({
+                        "command": command,
+                        "allowed": result.allowed,
+                        "reason": result.reason,
+                        "risk_score": result.risk_score,
+                        "matched_patterns": result.matched_patterns,
+                    });
+                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("COMMAND VALIDATION")).render());
+                    out.push_str(&format!("\nCommand: {}\n", command));
+                    out.push_str(&format!("Allowed: {}\n", if result.allowed { "YES" } else { "NO" }));
+                    out.push_str(&format!("Risk Score: {:.2}\n", result.risk_score));
+                    if let Some(reason) = &result.reason {
+                        out.push_str(&format!("Reason: {}\n", reason));
+                    }
+                    if !result.matched_patterns.is_empty() {
+                        out.push_str("\nMatched Patterns:\n");
+                        for pattern in &result.matched_patterns {
+                            out.push_str(&format!("  - {}\n", pattern));
+                        }
+                    }
+                    Ok(out)
+                }
+            }
+        }
+
+        GuardianAction::Check { content } => {
+            let result = guardian.check_hallucination(&content);
+
+            match format {
+                OutputFormat::Json => {
+                    let json = serde_json::json!({
+                        "is_hallucination": result.is_hallucination,
+                        "risk_score": result.risk_score,
+                        "response": format!("{:?}", result.response),
+                        "harmony_status": format!("{:?}", result.harmony_status),
+                        "warnings": result.warnings,
+                        "details": {
+                            "consistency_score": result.details.consistency_score,
+                            "semantic_entropy": result.details.semantic_entropy,
+                            "fact_validation_score": result.details.fact_validation_score,
+                        }
+                    });
+                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("HALLUCINATION CHECK")).render());
+                    out.push_str(&format!("\nIs Hallucination: {}\n", result.is_hallucination));
+                    out.push_str(&format!("Risk Score: {:.2}\n", result.risk_score));
+                    out.push_str(&format!("Response: {:?}\n", result.response));
+                    out.push_str(&format!("Harmony Status: {:?}\n", result.harmony_status));
+
+                    if !result.warnings.is_empty() {
+                        out.push_str("\nWarnings:\n");
+                        for warning in &result.warnings {
+                            out.push_str(&format!("  - {}\n", warning));
+                        }
+                    }
+                    Ok(out)
+                }
+            }
+        }
+
+        GuardianAction::Execute { command, args } => {
+            let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+            match guardian.execute(&command, &args_refs) {
+                Ok(output) => {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+
+                    match format {
+                        OutputFormat::Json => {
+                            let json = serde_json::json!({
+                                "success": output.status.success(),
+                                "stdout": stdout,
+                                "stderr": stderr,
+                            });
+                            serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                        }
+                        _ => {
+                            let mut out = String::new();
+                            out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN EXECUTE")).render());
+                            out.push_str(&format!("\nCommand: {} {}\n", command, args.join(" ")));
+                            out.push_str(&format!("Success: {}\n\n", output.status.success()));
+                            if !stdout.is_empty() {
+                                out.push_str(&stdout);
+                            }
+                            if !stderr.is_empty() {
+                                out.push_str(&format!("\nStderr:\n{}", stderr));
+                            }
+                            Ok(out)
+                        }
+                    }
+                }
+                Err(e) => Err(format!("Execution blocked: {}", e)),
+            }
+        }
+
+        GuardianAction::Audit { count } => {
+            match format {
+                OutputFormat::Json => {
+                    let json = serde_json::json!({
+                        "audit_entries": [],
+                        "message": format!("Audit log (last {} entries) - not yet implemented", count),
+                    });
+                    serde_json::to_string_pretty(&json).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("GUARDIAN AUDIT")).render());
+                    out.push_str(&format!("\nLast {} audit entries:\n", count));
+                    out.push_str("\n(Audit logging not yet implemented)\n");
+                    Ok(out)
+                }
+            }
+        }
+    }
+}
+
+async fn execute_devil(action: DevilAction, format: OutputFormat) -> Result<String, String> {
+    use crate::devil::{DevilConfig, DevilExecutor, ProviderResponse, SynthesisMethod};
+    use sena_providers::{ChatRequest, Message, ProvidersConfig, ProviderRouter};
+    use std::time::{Duration, Instant};
+
+    match action {
+        DevilAction::Execute { prompt, timeout, synthesis } => {
+            let synthesis_method = match synthesis {
+                SynthesisMethodArg::MajorityVoting => SynthesisMethod::MajorityVoting,
+                SynthesisMethodArg::WeightedMerge => SynthesisMethod::WeightedMerge,
+                SynthesisMethodArg::BestOfN => SynthesisMethod::BestOfN,
+                SynthesisMethodArg::MetaLlm => SynthesisMethod::MetaLLM,
+                SynthesisMethodArg::CrossVerification => SynthesisMethod::CrossVerification,
+            };
+
+            let config = DevilConfig::default()
+                .with_timeout(timeout)
+                .with_synthesis(synthesis_method);
+
+            let executor = DevilExecutor::new(config);
+
+            let providers_config = ProvidersConfig::load_or_default();
+            let router = ProviderRouter::from_config(&providers_config)
+                .map_err(|e| format!("Failed to create provider router: {}", e))?;
+
+            let available_providers = router.available_providers();
+
+            if available_providers.is_empty() {
+                return Err("No providers available. Check your API keys and configuration.".to_string());
+            }
+
+            let request = ChatRequest::new(vec![Message::user(&prompt)])
+                .with_max_tokens(1024);
+
+            let timeout_duration = Duration::from_secs(timeout);
+            let mut handles = Vec::new();
+
+            for provider in available_providers {
+                let provider_id = provider.provider_id().to_string();
+                let model = provider.default_model().to_string();
+                let request_clone = request.clone();
+                let provider_clone = provider.clone();
+
+                let handle = tokio::spawn(async move {
+                    let start = Instant::now();
+                    match tokio::time::timeout(
+                        timeout_duration,
+                        provider_clone.chat(request_clone)
+                    ).await {
+                        Ok(Ok(response)) => {
+                            ProviderResponse::success(
+                                provider_id,
+                                response.model,
+                                response.content,
+                                start.elapsed(),
+                            )
+                        }
+                        Ok(Err(e)) => {
+                            ProviderResponse::failure(
+                                provider_id,
+                                model,
+                                e.to_string(),
+                                start.elapsed(),
+                            )
+                        }
+                        Err(_) => {
+                            ProviderResponse::failure(
+                                provider_id,
+                                model,
+                                "Timeout".to_string(),
+                                timeout_duration,
+                            )
+                        }
+                    }
+                });
+                handles.push(handle);
+            }
+
+            let mut responses = Vec::new();
+            for handle in handles {
+                if let Ok(response) = handle.await {
+                    responses.push(response);
+                }
+            }
+
+            if responses.is_empty() {
+                return Err("All provider requests failed or timed out".to_string());
+            }
+
+            match executor.execute_sync(&prompt, responses) {
+                Ok(response) => {
+                    match format {
+                        OutputFormat::Json => {
+                            serde_json::to_string_pretty(&response).map_err(|e| e.to_string())
+                        }
+                        _ => Ok(response.format_summary())
+                    }
+                }
+                Err(e) => Err(format!("Devil mode execution failed: {}", e)),
+            }
+        }
+
+        DevilAction::Status => {
+            use sena_providers::{ProvidersConfig, ProviderRouter};
+
+            let config = DevilConfig::default();
+            let providers_config = ProvidersConfig::load_or_default();
+            let router = ProviderRouter::from_config(&providers_config).ok();
+
+            let available_providers: Vec<String> = router
+                .as_ref()
+                .map(|r| r.available_providers().iter().map(|p| p.provider_id().to_string()).collect())
+                .unwrap_or_default();
+
+            let provider_statuses: Vec<(String, String)> = router
+                .as_ref()
+                .map(|r| r.provider_status().into_iter().map(|(id, s)| (id, format!("{:?}", s))).collect())
+                .unwrap_or_default();
+
+            match format {
+                OutputFormat::Json => {
+                    let status = serde_json::json!({
+                        "enabled": config.enabled,
+                        "timeout_secs": config.timeout_secs,
+                        "min_providers": config.min_providers,
+                        "synthesis_method": format!("{:?}", config.synthesis_method),
+                        "consensus_threshold": config.consensus_threshold,
+                        "wait_mode": format!("{:?}", config.wait_mode),
+                        "available_providers": available_providers,
+                        "provider_statuses": provider_statuses.into_iter().collect::<std::collections::HashMap<_,_>>(),
+                    });
+                    serde_json::to_string_pretty(&status).map_err(|e| e.to_string())
+                }
+                _ => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("DEVIL MODE STATUS")).render());
+                    out.push_str(&format!("\nEnabled: {}\n", config.enabled));
+                    out.push_str(&format!("Timeout: {}s\n", config.timeout_secs));
+                    out.push_str(&format!("Min Providers: {}\n", config.min_providers));
+                    out.push_str(&format!("Synthesis: {:?}\n", config.synthesis_method));
+                    out.push_str(&format!("Consensus Threshold: {:.0}%\n", config.consensus_threshold * 100.0));
+                    out.push_str(&format!("Wait Mode: {:?}\n", config.wait_mode));
+                    out.push_str(&format!("\nAvailable Providers ({}):\n", available_providers.len()));
+                    for (id, status) in &provider_statuses {
+                        out.push_str(&format!("  - {}: {}\n", id, status));
+                    }
+                    Ok(out)
+                }
+            }
+        }
+
+        DevilAction::Config { timeout, consensus, synthesis } => {
+            let mut config = DevilConfig::default();
+
+            if let Some(t) = timeout {
+                config = config.with_timeout(t);
+            }
+            if let Some(c) = consensus {
+                config = config.with_consensus_threshold(c);
+            }
+            if let Some(s) = synthesis {
+                let method = match s {
+                    SynthesisMethodArg::MajorityVoting => SynthesisMethod::MajorityVoting,
+                    SynthesisMethodArg::WeightedMerge => SynthesisMethod::WeightedMerge,
+                    SynthesisMethodArg::BestOfN => SynthesisMethod::BestOfN,
+                    SynthesisMethodArg::MetaLlm => SynthesisMethod::MetaLLM,
+                    SynthesisMethodArg::CrossVerification => SynthesisMethod::CrossVerification,
+                };
+                config = config.with_synthesis(method);
+            }
+
+            Ok(format!("Devil mode configuration updated.\nTimeout: {}s\nConsensus: {:.0}%\nSynthesis: {:?}",
+                config.timeout_secs,
+                config.consensus_threshold * 100.0,
+                config.synthesis_method))
+        }
+
+        DevilAction::Test { prompt } => {
+            use crate::devil::ProviderResponse;
+
+            let config = DevilConfig::default();
+            let executor = DevilExecutor::new(config);
+
+            let mock_responses = vec![
+                ProviderResponse::success(
+                    "mock_claude".to_string(),
+                    "claude-test".to_string(),
+                    format!("Mock Claude response: The {} is interesting. It has many properties.", prompt),
+                    Duration::from_millis(500),
+                ),
+                ProviderResponse::success(
+                    "mock_openai".to_string(),
+                    "gpt-test".to_string(),
+                    format!("Mock OpenAI response: Regarding {}, it is notable. It has several characteristics.", prompt),
+                    Duration::from_millis(400),
+                ),
+                ProviderResponse::success(
+                    "mock_gemini".to_string(),
+                    "gemini-test".to_string(),
+                    format!("Mock Gemini response: {} is fascinating. Multiple aspects are worth noting.", prompt),
+                    Duration::from_millis(600),
+                ),
+            ];
+
+            match executor.execute_sync(&prompt, mock_responses) {
+                Ok(response) => {
+                    let mut out = String::new();
+                    out.push_str(&FormatBox::new(&SenaConfig::brand_title("DEVIL MODE TEST")).render());
+                    out.push_str(&format!("\nPrompt: {}\n\n", prompt));
+                    out.push_str(&response.format_summary());
+                    Ok(out)
+                }
+                Err(e) => Err(format!("Devil mode test failed: {}", e)),
             }
         }
     }

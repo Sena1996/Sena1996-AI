@@ -2,7 +2,7 @@
 # SENA Daemon Client - Rust Edition
 # Provides simple interface to SENA Rust binary operations
 
-SENA_BIN="${SENA_HOME:-$HOME/AI/Sena1996-AI}/target/release/sena"
+SENA_BIN="${SENA_HOME:-$(command -v sena 2>/dev/null || echo "$HOME/.local/bin/sena")}"
 
 # Check if SENA binary exists
 is_sena_available() {

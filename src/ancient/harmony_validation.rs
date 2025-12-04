@@ -356,6 +356,22 @@ impl ValidationResult {
     }
 }
 
+impl Default for ValidationResult {
+    fn default() -> Self {
+        Self {
+            id: "default".to_string(),
+            content_hash: "0".repeat(32),
+            timestamp: Utc::now(),
+            overall_status: HarmonyStatus::Harmonious,
+            overall_confidence: 1.0,
+            checks: Vec::new(),
+            anchor_validations: Vec::new(),
+            rule_violations: Vec::new(),
+            corrections_suggested: Vec::new(),
+        }
+    }
+}
+
 /// Validation against an anchor
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnchorValidation {

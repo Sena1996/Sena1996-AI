@@ -31,6 +31,10 @@ chrono = { version = "0.4", features = ["serde"] }
 
 sena-providers = { path = "../../crates/sena-providers" }
 sena-collab = { path = "../../crates/sena-collab" }
+keyring = "3"
+toml = "0.8"
+reqwest = { version = "0.12", features = ["json"] }
+open = "5"
 
 [profile.release]
 panic = "abort"

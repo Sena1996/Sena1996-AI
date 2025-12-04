@@ -2,11 +2,7 @@
 
 set -e
 
-<<<<<<< Updated upstream
-SENA_VERSION="13.0.2"
-=======
 SENA_VERSION="13.1.3"
->>>>>>> Stashed changes
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 INSTALL_DIR="$HOME/.local/bin"
@@ -1059,6 +1055,169 @@ setup_claude_md() {
     fi
 }
 
+setup_sena_hub() {
+    print_step "SENA Hub Desktop App Setup"
+
+    local HUB_APP="$SCRIPT_DIR/sena-ui/src-tauri/target/release/bundle/macos/SENA.app"
+    local HUB_DMG="$SCRIPT_DIR/sena-ui/src-tauri/target/release/bundle/dmg/SENA_${SENA_VERSION}_aarch64.dmg"
+    local APPLICATIONS_DIR="/Applications"
+
+    echo ""
+    echo "SENA Hub is the desktop application for managing AI providers."
+    echo "It provides a visual interface for:"
+    echo "  • Managing API keys for OpenAI, Gemini, Mistral, Ollama"
+    echo "  • Testing provider connections"
+    echo "  • Switching between providers"
+    echo "  • Using Claude as MCP Orchestrator (no API key needed)"
+    echo ""
+
+    if [ -f "$HUB_APP/Contents/MacOS/SENA" ]; then
+        print_success "SENA Hub app found (pre-built)"
+    elif [ -f "$HUB_DMG" ]; then
+        print_success "SENA Hub DMG found"
+    else
+        print_info "SENA Hub not built yet"
+        echo ""
+        echo "Would you like to build SENA Hub now?"
+        echo "  1) Yes, build Hub (requires Node.js and npm)"
+        echo "  2) Skip for now (can build later)"
+        echo ""
+        read -p "Choice [2]: " build_choice
+
+        case $build_choice in
+            1)
+                print_info "Building SENA Hub..."
+                if command -v npm &> /dev/null; then
+                    cd "$SCRIPT_DIR/sena-ui"
+                    npm install 2>&1 | tail -3
+                    npm run tauri build 2>&1 | tail -10
+                    cd "$SCRIPT_DIR"
+
+                    if [ -f "$HUB_APP/Contents/MacOS/SENA" ]; then
+                        print_success "SENA Hub built successfully"
+                    else
+                        print_warning "Build may have failed, check logs"
+                        return
+                    fi
+                else
+                    print_error "npm not found. Install Node.js first."
+                    print_detail "https://nodejs.org/"
+                    return
+                fi
+                ;;
+            *)
+                print_info "Skipping Hub build"
+                echo ""
+                echo "To build later:"
+                echo "  cd $SCRIPT_DIR/sena-ui"
+                echo "  npm install && npm run tauri build"
+                echo ""
+                return
+                ;;
+        esac
+    fi
+
+    if [ -f "$HUB_APP/Contents/MacOS/SENA" ]; then
+        echo ""
+        echo "Install SENA Hub to Applications?"
+        echo "  1) Yes, install to /Applications"
+        echo "  2) No, keep in build directory"
+        echo ""
+        read -p "Choice [1]: " install_choice
+
+        case $install_choice in
+            1|"")
+                if [ -d "$APPLICATIONS_DIR/SENA.app" ]; then
+                    print_info "Removing existing SENA.app..."
+                    rm -rf "$APPLICATIONS_DIR/SENA.app"
+                fi
+
+                cp -R "$HUB_APP" "$APPLICATIONS_DIR/"
+                print_success "Installed SENA Hub to /Applications"
+                print_detail "Launch from Spotlight: 'SENA'"
+                ;;
+            *)
+                print_info "Hub available at: $HUB_APP"
+                ;;
+        esac
+    fi
+
+    setup_hub_providers_config
+}
+
+setup_hub_providers_config() {
+    print_step "Setting up Provider Configuration"
+
+    local PROVIDERS_CONFIG="$SENA_HOME/providers.toml"
+    local CREDENTIALS_CONFIG="$SENA_HOME/credentials.toml"
+
+    if [ ! -f "$PROVIDERS_CONFIG" ]; then
+        cat > "$PROVIDERS_CONFIG" << EOF
+default_provider = "ollama"
+fallback_chain = ["openai", "gemini"]
+cost_optimization = false
+
+[providers.claude]
+provider_id = "claude"
+enabled = true
+default_model = "claude-sonnet-4-5-20250929"
+
+[providers.claude.extra]
+
+[providers.ollama]
+provider_id = "ollama"
+enabled = true
+base_url = "http://localhost:11434"
+default_model = "llama3.2"
+
+[providers.ollama.extra]
+
+[providers.openai]
+provider_id = "openai"
+enabled = true
+api_key_env = "OPENAI_API_KEY"
+default_model = "gpt-4.1"
+
+[providers.openai.extra]
+
+[providers.gemini]
+provider_id = "gemini"
+enabled = true
+api_key_env = "GOOGLE_API_KEY"
+default_model = "gemini-2.5-flash"
+
+[providers.gemini.extra]
+
+[providers.mistral]
+provider_id = "mistral"
+enabled = true
+api_key_env = "MISTRAL_API_KEY"
+default_model = "mistral-large-latest"
+
+[providers.mistral.extra]
+EOF
+        print_success "Created providers.toml"
+    else
+        print_info "providers.toml already exists"
+    fi
+
+    if [ ! -f "$CREDENTIALS_CONFIG" ]; then
+        cat > "$CREDENTIALS_CONFIG" << EOF
+[credentials.ollama.fields]
+base_url = "http://localhost:11434"
+EOF
+        print_success "Created credentials.toml (empty template)"
+        print_detail "Add API keys via SENA Hub or edit ~/.sena/credentials.toml"
+    else
+        print_info "credentials.toml already exists"
+    fi
+
+    print_info "Provider architecture:"
+    print_detail "Claude = MCP Orchestrator (no API key needed)"
+    print_detail "Ollama = Default local provider"
+    print_detail "OpenAI/Gemini/Mistral = Cloud providers (API keys required)"
+}
+
 clear_claude_code_cache() {
     print_step "Clearing Claude Code Cache"
 
@@ -1112,6 +1271,7 @@ standard_installation() {
     setup_claude_code_config
     setup_claude_desktop_config
     setup_claude_md
+    setup_sena_hub
     clear_claude_code_cache
     rotate_backups
 
@@ -1849,8 +2009,12 @@ show_installation_complete() {
         echo "  • Alias: $INSTALL_DIR/$USER_COMMAND"
     fi
     echo "  • Config: $SENA_HOME/config.toml"
+    echo "  • Providers: $SENA_HOME/providers.toml"
     echo "  • Hooks: $CLAUDE_HOME/settings.json"
     echo "  • Commands: $CLAUDE_HOME/commands/"
+    if [ -d "/Applications/SENA.app" ]; then
+        echo "  • Hub App: /Applications/SENA.app"
+    fi
     echo ""
     echo -e "${BOLD}Quick Start:${NC}"
     echo "  $USER_COMMAND health         # Check system health"
@@ -1858,10 +2022,17 @@ show_installation_complete() {
     echo "  $USER_COMMAND who            # See who's online"
     echo "  $USER_COMMAND --help         # Full command list"
     echo ""
+    echo -e "${BOLD}SENA Hub (Provider Manager):${NC}"
+    echo "  Open SENA Hub from Spotlight or run: open /Applications/SENA.app"
+    echo "  • Configure API keys for OpenAI, Gemini, Mistral"
+    echo "  • Test provider connections"
+    echo "  • Claude works as MCP Orchestrator (no API key needed)"
+    echo ""
     echo -e "${BOLD}Next Steps:${NC}"
     echo "  1. Restart Claude Desktop (if using)"
     echo "  2. Start a NEW Claude Code session"
-    echo "  3. Try: $USER_COMMAND health"
+    echo "  3. Open SENA Hub to configure providers"
+    echo "  4. Try: $USER_COMMAND health"
     echo ""
 
     if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then

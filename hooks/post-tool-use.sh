@@ -2,7 +2,7 @@
 # SENA Controller - Post Tool Use Hook
 # Processes tool results for clean output
 
-SENA_BIN="${SENA_HOME:-$HOME/AI/Sena1996-AI}/target/release/sena"
+SENA_BIN="${SENA_HOME:-$(command -v sena 2>/dev/null || echo "$HOME/.local/bin/sena")}"
 
 # Read tool result from stdin
 INPUT=$(cat)

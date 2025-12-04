@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sena": {
+      "command": "sena",
+      "args": ["mcp"]
+    }
+  }
+}

@@ -11,6 +11,8 @@ import {
   Wrench,
   Brain,
   Book,
+  Shield,
+  Flame,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -25,6 +27,8 @@ const navItems = [
   { path: '/sessions', icon: Users, label: 'Sessions' },
   { path: '/tools', icon: Wrench, label: 'Tools' },
   { path: '/memory', icon: Brain, label: 'Memory' },
+  { path: '/guardian', icon: Shield, label: 'Guardian' },
+  { path: '/devil', icon: Flame, label: 'Devil Mode' },
   { path: '/peers', icon: Globe, label: 'Peers' },
   { path: '/features', icon: Book, label: 'Features' },
   { path: '/settings', icon: Settings, label: 'Settings' },

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schemas.tauri.app/capabilities/capability.schema.json",
+  "identifier": "default",
+  "description": "Default capability for SENA Hub",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open"
+  ]
+}

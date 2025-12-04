@@ -2041,6 +2041,7 @@ dependencies = [
  "criterion",
  "dirs",
  "env_logger",
+ "futures",
  "glob",
  "hex",
  "hostname",

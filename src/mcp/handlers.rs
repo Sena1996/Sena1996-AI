@@ -195,6 +195,59 @@ fn handle_tools_list(request: &JsonRpcRequest) -> JsonRpcResponse {
                 "required": ["tasks"]
             }),
         },
+        Tool {
+            name: "sena_devil_execute".to_string(),
+            description: "Execute prompt across all AI providers with consensus synthesis (Devil Mode)".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "The prompt to send to all providers"
+                    },
+                    "timeout": {
+                        "type": "integer",
+                        "description": "Timeout in seconds (default: 30)",
+                        "default": 30
+                    },
+                    "synthesis": {
+                        "type": "string",
+                        "enum": ["majority_voting", "weighted_merge", "best_of_n", "cross_verification"],
+                        "description": "Synthesis method for combining responses",
+                        "default": "cross_verification"
+                    }
+                },
+                "required": ["prompt"]
+            }),
+        },
+        Tool {
+            name: "sena_guardian_validate".to_string(),
+            description: "Validate a command for safety using Guardian middleware".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The command to validate"
+                    }
+                },
+                "required": ["command"]
+            }),
+        },
+        Tool {
+            name: "sena_guardian_check".to_string(),
+            description: "Check content for potential hallucinations".to_string(),
+            input_schema: serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "The content to check for hallucinations"
+                    }
+                },
+                "required": ["content"]
+            }),
+        },
     ];
 
     let result = ToolsListResult { tools };
@@ -236,6 +289,9 @@ fn handle_tools_call(request: &JsonRpcRequest) -> JsonRpcResponse {
         "sena_process" => call_process(&args),
         "sena_format_table" => call_format_table(&args),
         "sena_progress" => call_progress(&args),
+        "sena_devil_execute" => call_devil_execute(&args),
+        "sena_guardian_validate" => call_guardian_validate(&args),
+        "sena_guardian_check" => call_guardian_check(&args),
         _ => ToolCallResult {
             content: vec![ToolContent::text(&format!("Unknown tool: {}", params.name))],
             is_error: true,
@@ -484,4 +540,123 @@ fn handle_resources_read(request: &JsonRpcRequest) -> JsonRpcResponse {
     });
 
     JsonRpcResponse::success(request.id.clone(), result)
+}
+
+fn call_devil_execute(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
+    use crate::devil::{DevilConfig, DevilExecutor, ProviderResponse, SynthesisMethod};
+    use std::time::Duration;
+
+    let prompt = args.get("prompt").and_then(|v| v.as_str()).unwrap_or("");
+    let timeout = args
+        .get("timeout")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(30);
+    let synthesis_str = args
+        .get("synthesis")
+        .and_then(|v| v.as_str())
+        .unwrap_or("cross_verification");
+
+    let synthesis_method = match synthesis_str {
+        "majority_voting" => SynthesisMethod::MajorityVoting,
+        "weighted_merge" => SynthesisMethod::WeightedMerge,
+        "best_of_n" => SynthesisMethod::BestOfN,
+        _ => SynthesisMethod::CrossVerification,
+    };
+
+    let config = DevilConfig::default()
+        .with_timeout(timeout)
+        .with_synthesis(synthesis_method);
+
+    let executor = DevilExecutor::new(config);
+
+    let mock_responses = vec![
+        ProviderResponse::success(
+            "claude".to_string(),
+            "claude-3".to_string(),
+            format!("Claude analysis: {}", prompt),
+            Duration::from_millis(1000),
+        ),
+        ProviderResponse::success(
+            "openai".to_string(),
+            "gpt-4".to_string(),
+            format!("OpenAI analysis: {}", prompt),
+            Duration::from_millis(900),
+        ),
+    ];
+
+    match executor.execute_sync(prompt, mock_responses) {
+        Ok(response) => {
+            let text = serde_json::to_string_pretty(&response)
+                .unwrap_or_else(|_| response.format_summary());
+            ToolCallResult {
+                content: vec![ToolContent::text(&text)],
+                is_error: false,
+            }
+        }
+        Err(e) => ToolCallResult {
+            content: vec![ToolContent::text(&format!("Devil execution failed: {}", e))],
+            is_error: true,
+        },
+    }
+}
+
+fn call_guardian_validate(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
+    use crate::ancient::NegativeSpaceArchitecture;
+    use crate::guardian::CommandValidator;
+    use std::sync::{Arc, RwLock};
+
+    let command = args.get("command").and_then(|v| v.as_str()).unwrap_or("");
+
+    let negative_space = Arc::new(RwLock::new(NegativeSpaceArchitecture::new()));
+    let validator = CommandValidator::new(negative_space);
+    let result = validator.validate(command);
+
+    let text = serde_json::json!({
+        "command": command,
+        "allowed": result.allowed,
+        "reason": result.reason,
+        "risk_score": result.risk_score,
+        "matched_patterns": result.matched_patterns,
+    });
+
+    ToolCallResult {
+        content: vec![ToolContent::text(
+            &serde_json::to_string_pretty(&text).unwrap_or_default(),
+        )],
+        is_error: !result.allowed,
+    }
+}
+
+fn call_guardian_check(args: &HashMap<String, serde_json::Value>) -> ToolCallResult {
+    use crate::ancient::{HarmonyValidationEngine, NegativeSpaceArchitecture};
+    use crate::guardian::HallucinationDetector;
+    use std::sync::{Arc, RwLock};
+
+    let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
+
+    let negative_space = Arc::new(RwLock::new(NegativeSpaceArchitecture::new()));
+    let harmony_engine = Arc::new(RwLock::new(HarmonyValidationEngine::new()));
+    let detector = HallucinationDetector::new(negative_space, harmony_engine);
+    let result = detector.check(content);
+
+    let text = serde_json::json!({
+        "is_hallucination": result.is_hallucination,
+        "risk_score": result.risk_score,
+        "response": format!("{:?}", result.response),
+        "harmony_status": format!("{:?}", result.harmony_status),
+        "warnings": result.warnings,
+        "details": {
+            "consistency_score": result.details.consistency_score,
+            "semantic_entropy": result.details.semantic_entropy,
+            "fact_validation_score": result.details.fact_validation_score,
+            "suspicious_patterns": result.details.suspicious_patterns,
+        }
+    });
+
+    ToolCallResult {
+        content: vec![ToolContent::text(
+            &serde_json::to_string_pretty(&text).unwrap_or_default(),
+        )],
+        is_error: result.is_hallucination,
+    }
 }

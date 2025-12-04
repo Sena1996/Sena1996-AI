@@ -403,6 +403,18 @@ pub struct NegativeSpaceCheckResult {
     pub recommendations: Vec<String>,
 }
 
+impl NegativeSpaceCheckResult {
+    pub fn default_allowed() -> Self {
+        Self {
+            allowed: true,
+            violations: Vec::new(),
+            boundary_violations: Vec::new(),
+            risk_score: 0.0,
+            recommendations: Vec::new(),
+        }
+    }
+}
+
 /// The main Negative Space Architecture engine
 pub struct NegativeSpaceArchitecture {
     definitions: HashMap<String, NegativeSpaceDefinition>,

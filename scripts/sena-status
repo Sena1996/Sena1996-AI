@@ -1,3 +1,12 @@
 #!/bin/bash
-# SENA v3.3 Status - Developer Edition
-exec /Users/sena/.local/bin/sena-status-v3.3 "$@"
+STATUS_BIN="$HOME/.local/bin/sena-status-v3.3"
+
+if [[ -x "$STATUS_BIN" ]]; then
+    exec "$STATUS_BIN" "$@"
+elif command -v sena &>/dev/null; then
+    exec sena status "$@"
+else
+    echo "SENA status binary not found" >&2
+    echo "Run 'sena setup' to install all components" >&2
+    exit 1
+fi

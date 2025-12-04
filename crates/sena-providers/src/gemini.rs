@@ -4,6 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    metadata::{gemini_metadata, ProviderMetadata},
     provider::{AIProvider, ChatStream},
     ChatRequest, ChatResponse, FinishReason, Message, MessageContent, ModelInfo,
     ProviderCapabilities, ProviderConfig, ProviderError, ProviderStatus, Result, Role, StreamChunk,
@@ -194,6 +195,10 @@ impl AIProvider for GeminiProvider {
 
     fn status(&self) -> ProviderStatus {
         self.status.clone()
+    }
+
+    fn provider_metadata(&self) -> ProviderMetadata {
+        gemini_metadata()
     }
 
     async fn chat(&self, request: ChatRequest) -> Result<ChatResponse> {

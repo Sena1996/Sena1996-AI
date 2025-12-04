@@ -1746,6 +1746,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring"
+version = "3.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c"
+dependencies = [
+ "log",
+ "zeroize",
+]
+
+[[package]]
 name = "kuchikiki"
 version = "0.8.8-speedreader"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3200,7 +3210,10 @@ dependencies = [
  "chrono",
  "dirs 5.0.1",
  "hostname",
+ "keyring",
+ "open",
  "rand 0.8.5",
+ "reqwest",
  "sena-collab",
  "sena-providers",
  "serde",
@@ -3209,6 +3222,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-shell",
  "tokio",
+ "toml 0.8.2",
  "uuid",
 ]
 

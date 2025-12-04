@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(sena *)",
+      "Bash(sena:*)",
       "Bash(sena who:*)",
-      "Bash(sena peer list:*)",
+      "Bash(sena peer:*)",
       "Bash(sena think:*)",
       "Bash(sena knowledge:*)",
       "Bash(sena agent:*)",
@@ -25,15 +25,40 @@
       "Bash(sena memory:*)",
       "Bash(sena auto:*)",
       "Bash(sena git:*)",
-      "Bash(/Users/sena/.local/bin/sena-latest *)",
-      "Bash(/Users/sena/.local/bin/sena *)",
-      "Bash(./target/release/sena *)"
+      "Bash(sena guardian:*)",
+      "Bash(sena devil:*)",
+      "Bash(sena mcp:*)",
+      "Bash(sena hook:*)",
+      "Bash(sena daemon:*)",
+      "Bash(sena session:*)",
+      "Bash(sena network:*)",
+      "Bash(sena discover:*)",
+      "Bash(sena setup:*)",
+      "Bash(sena detect:*)",
+      "Bash(sena metrics:*)",
+      "Bash(sena feedback:*)",
+      "Bash(./target/release/sena:*)",
+      "SlashCommand(/sena-think:*)",
+      "SlashCommand(/sena-brilliant:*)",
+      "SlashCommand(/sena-search:*)",
+      "SlashCommand(/sena-analyze:*)",
+      "SlashCommand(/sena-ancient:*)",
+      "SlashCommand(/sena-git:*)",
+      "SlashCommand(/sena-tools:*)",
+      "SlashCommand(/sena-memory:*)",
+      "SlashCommand(/sena-auto:*)",
+      "SlashCommand(/sena-hub-messages:*)"
     ]
   },
   "hooks": {
     "UserPromptSubmit": [
       {
-        "command": "sena hook user-prompt-submit"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sena hook user-prompt-submit"
+          }
+        ]
       }
     ]
   },

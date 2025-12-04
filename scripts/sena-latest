@@ -1,7 +1,10 @@
 #!/bin/bash
-SENA_DEV="/Users/sena/AI/Sena1996-AI/target/release/sena"
-SENA_INSTALLED="/Users/sena/.local/bin/sena"
-SENA_CARGO="/Users/sena/.cargo/bin/sena"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+SENA_DEV="$PROJECT_DIR/target/release/sena"
+SENA_INSTALLED="$HOME/.local/bin/sena"
+SENA_CARGO="$HOME/.cargo/bin/sena"
 
 if [[ -x "$SENA_DEV" ]]; then
     if [[ -x "$SENA_INSTALLED" ]]; then
@@ -17,6 +20,8 @@ elif [[ -x "$SENA_INSTALLED" ]]; then
     exec "$SENA_INSTALLED" "$@"
 elif [[ -x "$SENA_CARGO" ]]; then
     exec "$SENA_CARGO" "$@"
+elif command -v sena &>/dev/null; then
+    exec sena "$@"
 else
     echo "Error: sena binary not found" >&2
     exit 1

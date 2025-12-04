@@ -2,7 +2,7 @@
 # SENA Conversation Progress Hook - Rust Edition
 # Shows progress bar for each conversation prompt
 
-SENA_BIN="${SENA_HOME:-$HOME/AI/Sena1996-AI}/target/release/sena"
+SENA_BIN="${SENA_HOME:-$(command -v sena 2>/dev/null || echo "$HOME/.local/bin/sena")}"
 
 # Function to show progress for conversation
 show_conversation_progress() {
