@@ -87,58 +87,12 @@ async fn handle_pre_prompt(input: &str) -> Result<HookResult, String> {
 }
 
 fn build_sena_context() -> String {
-    use crate::config::SenaConfig;
-    let config = SenaConfig::global();
-    let user = &config.user;
-
-    format!(
-        r#"SENA Controller v{} is installed and ready.
-
-SENA COMMANDS (execute with Bash tool):
-- sena health              : System health check
-- sena who                 : List active sessions
-- sena session list        : List all sessions with IDs
-- sena session start --name 'Name' --role <role> : Start session (roles: general, backend, web, android, ios, iot)
-- sena session end --id <id> : End session
-- sena tell <Name> "msg"   : Send message to session (use session name, not ID)
-- sena inbox               : Check messages
-- sena task new "title" --to <Name> : Create task
-- sena task list           : List tasks
-- sena think "question"    : Quick analysis
-- sena think --depth deep "question" : Deep analysis
-- sena agent security "code" : Security analysis
-- sena backend/ios/android/iot/web <action> <code> : Domain agents
-
-RULES:
-- Each role can have only ONE active session
-- Use session NAME (not ID) for tell/task commands
-- All sena commands are auto-approved (no bash prompts needed)
-
-User: {} | Prefix: {} {}"#,
-        crate::VERSION,
-        user.name,
-        user.prefix,
-        user.emoji
-    )
+    format!("SENA v{} ready. Use: sena <cmd>", crate::VERSION)
 }
 
 fn detect_sena_command(input: &str) -> bool {
     let lower = input.to_lowercase().trim().to_string();
-    lower.starts_with("sena ")
-        || lower == "sena"
-        || lower.starts_with("sena session")
-        || lower.starts_with("sena health")
-        || lower.starts_with("sena who")
-        || lower.starts_with("sena tell")
-        || lower.starts_with("sena inbox")
-        || lower.starts_with("sena task")
-        || lower.starts_with("sena think")
-        || lower.starts_with("sena agent")
-        || lower.starts_with("sena backend")
-        || lower.starts_with("sena ios")
-        || lower.starts_with("sena android")
-        || lower.starts_with("sena iot")
-        || lower.starts_with("sena web")
+    lower.starts_with("sena ") || lower == "sena"
 }
 
 fn check_inbox_messages() -> Vec<String> {
