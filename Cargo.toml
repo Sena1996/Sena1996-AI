@@ -78,7 +78,7 @@ atty = "0.2"
 colored = "2.1"
 
 # Network - mDNS discovery
-mdns-sd = "0.11"
+mdns-sd = "0.17"
 
 # Network - TLS
 tokio-rustls = "0.25"
