@@ -87,7 +87,7 @@ rustls-pemfile = "2.0"
 rcgen = "0.14"
 
 # Random for tokens
-rand = "0.8"
+rand = "0.9"
 
 # Base64 encoding
 base64 = "0.21"
