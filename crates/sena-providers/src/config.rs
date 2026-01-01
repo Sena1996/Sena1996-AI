@@ -184,6 +184,48 @@ impl ProvidersConfig {
                 .with_default_model("mistral-large-latest"),
         );
 
+        config.add_provider(
+            ProviderConfig::new("cohere")
+                .with_api_key_env("COHERE_API_KEY")
+                .with_default_model("command-r-plus"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("deepseek")
+                .with_api_key_env("DEEPSEEK_API_KEY")
+                .with_default_model("deepseek-chat"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("groq")
+                .with_api_key_env("GROQ_API_KEY")
+                .with_default_model("llama-3.3-70b-versatile"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("huggingface")
+                .with_api_key_env("HUGGINGFACE_API_KEY")
+                .with_default_model("meta-llama/Llama-3.2-11B-Vision-Instruct"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("perplexity")
+                .with_api_key_env("PERPLEXITY_API_KEY")
+                .with_default_model("llama-3.1-sonar-large-128k-online"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("together")
+                .with_api_key_env("TOGETHER_API_KEY")
+                .with_default_model("meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"),
+        );
+
+        config.add_provider(
+            ProviderConfig::new("xai")
+                .with_api_key_env("XAI_API_KEY")
+                .with_default_model("grok-beta"),
+        );
+
         config.default_provider = Some("ollama".to_string());
         config.fallback_chain = vec!["openai".to_string(), "gemini".to_string()];
 

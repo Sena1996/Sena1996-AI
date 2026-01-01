@@ -230,6 +230,97 @@ pub fn mistral_metadata() -> ProviderMetadata {
         .with_help_text("Get your API key from console.mistral.ai")]))
 }
 
+pub fn cohere_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("cohere", "Cohere")
+        .with_description("Enterprise AI with command models and retrieval")
+        .with_website("https://cohere.com")
+        .with_docs_url("https://docs.cohere.com")
+        .with_icon("cohere")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "COHERE_API_KEY",
+        )
+        .with_placeholder("...")
+        .with_help_text("Get your API key from dashboard.cohere.com/api-keys")]))
+}
+
+pub fn deepseek_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("deepseek", "DeepSeek")
+        .with_description("Chinese AI lab with coding-focused models")
+        .with_website("https://deepseek.com")
+        .with_docs_url("https://platform.deepseek.com/docs")
+        .with_icon("deepseek")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "DEEPSEEK_API_KEY",
+        )
+        .with_placeholder("sk-...")
+        .with_help_text("Get your API key from platform.deepseek.com")]))
+}
+
+pub fn groq_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("groq", "Groq")
+        .with_description("Ultra-fast inference with LPU architecture")
+        .with_website("https://groq.com")
+        .with_docs_url("https://console.groq.com/docs")
+        .with_icon("groq")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "GROQ_API_KEY",
+        )
+        .with_placeholder("gsk_...")
+        .with_help_text("Get your API key from console.groq.com/keys")]))
+}
+
+pub fn huggingface_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("huggingface", "HuggingFace")
+        .with_description("Access to thousands of open-source models")
+        .with_website("https://huggingface.co")
+        .with_docs_url("https://huggingface.co/docs/api-inference")
+        .with_icon("huggingface")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "HUGGINGFACE_API_KEY",
+        )
+        .with_placeholder("hf_...")
+        .with_help_text("Get your API key from huggingface.co/settings/tokens")]))
+}
+
+pub fn perplexity_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("perplexity", "Perplexity")
+        .with_description("Online models with real-time web search")
+        .with_website("https://perplexity.ai")
+        .with_docs_url("https://docs.perplexity.ai")
+        .with_icon("perplexity")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "PERPLEXITY_API_KEY",
+        )
+        .with_placeholder("pplx-...")
+        .with_help_text("Get your API key from perplexity.ai/settings/api")]))
+}
+
+pub fn together_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("together", "Together AI")
+        .with_description("Run top open-source models at scale")
+        .with_website("https://together.ai")
+        .with_docs_url("https://docs.together.ai")
+        .with_icon("together")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "TOGETHER_API_KEY",
+        )
+        .with_placeholder("...")
+        .with_help_text("Get your API key from api.together.ai/settings/api-keys")]))
+}
+
+pub fn xai_metadata() -> ProviderMetadata {
+    ProviderMetadata::new("xai", "xAI (Grok)")
+        .with_description("Elon Musk's AI company with Grok models")
+        .with_website("https://x.ai")
+        .with_docs_url("https://docs.x.ai")
+        .with_icon("xai")
+        .with_auth_schema(AuthSchema::api_key(vec![AuthField::api_key(
+            "XAI_API_KEY",
+        )
+        .with_placeholder("xai-...")
+        .with_help_text("Get your API key from console.x.ai")]))
+}
+
 pub fn get_all_provider_metadata() -> Vec<ProviderMetadata> {
     vec![
         claude_metadata(),
@@ -237,6 +328,13 @@ pub fn get_all_provider_metadata() -> Vec<ProviderMetadata> {
         gemini_metadata(),
         ollama_metadata(),
         mistral_metadata(),
+        cohere_metadata(),
+        deepseek_metadata(),
+        groq_metadata(),
+        huggingface_metadata(),
+        perplexity_metadata(),
+        together_metadata(),
+        xai_metadata(),
     ]
 }
 
@@ -267,6 +365,6 @@ mod tests {
     #[test]
     fn test_all_providers() {
         let all = get_all_provider_metadata();
-        assert_eq!(all.len(), 5);
+        assert_eq!(all.len(), 12);
     }
 }
