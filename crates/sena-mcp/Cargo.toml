@@ -1,0 +1,21 @@
+[package]
+name = "sena-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+sena-core = { workspace = true }
+sena-local = { workspace = true }
+sena-gateway = { workspace = true }
+sena-security = { workspace = true }
+sena-observe = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+tracing = { workspace = true }
+
+[features]
+default = []

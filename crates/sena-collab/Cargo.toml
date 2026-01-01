@@ -1,25 +1,46 @@
 [package]
 name = "sena-collab"
-version = "13.1.5"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 authors = ["Sena1996 <sena1996@github.com>"]
 description = "AI-to-AI Collaboration Framework for Sena1996 AI Tool"
-license = "MIT"
 repository = "https://github.com/Sena1996/Sena1996-AI"
 keywords = ["ai", "collaboration", "multi-agent", "orchestration"]
 
 [dependencies]
-async-trait = "0.1"
-tokio = { version = "1.0", features = ["full", "sync"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "2.0"
-uuid = { version = "1.0", features = ["v4", "serde"] }
-chrono = { version = "0.4", features = ["serde"] }
-tracing = "0.1"
+# Core dependencies
+sena-core = { workspace = true }
+
+# Async/concurrency
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+futures = { workspace = true }
+parking_lot = { workspace = true }
+dashmap = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
 dirs = "5.0"
 
-sena-providers = { version = "13.1.5", path = "../sena-providers" }
+# WebSocket
+tokio-tungstenite = "0.24"
+
+# System
+libc = "0.2"
+
+# Temporary - will be refactored in Phase 3
+sena-providers = { version = "1.0.0", path = "../sena-providers" }
 
 [dev-dependencies]
 tokio-test = "0.4"

@@ -7,6 +7,16 @@ use tauri::State;
 use tokio::sync::RwLock;
 
 use sena_collab::CollabOrchestrator;
+
+// New gateway architecture
+use sena_core::{CompletionRequest, Message as CoreMessage, MessageRole, Provider};
+use sena_gateway::{
+    Gateway, AnthropicProvider, OpenAIProvider, GeminiProvider, OllamaProvider,
+    MistralProvider, CohereProvider, DeepSeekProvider, GroqProvider,
+    PerplexityProvider, TogetherProvider, XaiProvider,
+};
+
+// Keep for config structs temporarily (will be fully removed in future)
 use sena_providers::{
     config::ProvidersConfig, get_all_provider_metadata, AuthField, AuthSchema, AuthType,
     ChatRequest, FieldType, Message, ProviderMetadata, ProviderRouter,
@@ -254,6 +264,7 @@ struct PendingRequestData {
 
 pub struct AppState {
     pub config: RwLock<ProvidersConfig>,
+    pub gateway: Arc<Gateway>,
     pub orchestrator: Arc<RwLock<CollabOrchestrator>>,
     pub start_time: Instant,
 }
@@ -262,12 +273,97 @@ impl AppState {
     pub fn new() -> Self {
         let mut config = ProvidersConfig::load_or_default();
         Self::load_credentials_into_config(&mut config);
+
+        // Create gateway from config
+        let gateway = Self::create_gateway(&config);
+
         let orchestrator = Arc::new(RwLock::new(CollabOrchestrator::new(100)));
         Self {
             config: RwLock::new(config),
+            gateway: Arc::new(gateway),
             orchestrator,
             start_time: Instant::now(),
         }
+    }
+
+    fn create_gateway(config: &ProvidersConfig) -> Gateway {
+        let gateway = Gateway::new().with_budget(1000.0);
+
+        // Register providers from config
+        for (provider_id, provider_config) in &config.providers {
+            if !provider_config.enabled {
+                continue;
+            }
+
+            match provider_id.as_str() {
+                "claude" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(AnthropicProvider::new(key));
+                    }
+                }
+                "openai" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(OpenAIProvider::new(key));
+                    }
+                }
+                "gemini" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(GeminiProvider::new(key));
+                    }
+                }
+                "ollama" => {
+                    let provider = if let Some(base_url) = &provider_config.base_url {
+                        OllamaProvider::with_base_url(base_url)
+                    } else {
+                        OllamaProvider::new()
+                    };
+                    gateway.register(provider);
+                }
+                "mistral" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(MistralProvider::new(key));
+                    }
+                }
+                "cohere" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(CohereProvider::new(key));
+                    }
+                }
+                "deepseek" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(DeepSeekProvider::new(key));
+                    }
+                }
+                "groq" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(GroqProvider::new(key));
+                    }
+                }
+                "perplexity" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(PerplexityProvider::new(key));
+                    }
+                }
+                "together" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(TogetherProvider::new(key));
+                    }
+                }
+                "xai" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(XaiProvider::new(key));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Set failover chain if configured
+        if !config.fallback_chain.is_empty() {
+            gateway.set_failover_chain(config.fallback_chain.clone());
+        }
+
+        gateway
     }
 
     fn load_credentials_into_config(config: &mut ProvidersConfig) {

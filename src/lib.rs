@@ -67,9 +67,10 @@
 //! }
 //! ```
 //!
-//! Version: 13.1.3
-//! Date: 2025-11-30
+//! Version: 1.0.0
+//! Date: 2026-01-01
 
+// Existing SENA modules (Ancient Wisdom, Knowledge, Intelligence, Evolution)
 pub mod agents;
 pub mod ancient;
 pub mod base;
@@ -92,6 +93,15 @@ pub mod network;
 pub mod output;
 pub mod sync;
 pub mod tools;
+
+// Re-export new production crates (1996AI architecture)
+pub use sena_core;
+pub use sena_gateway;
+pub use sena_local;
+pub use sena_collab;
+pub use sena_security;
+pub use sena_observe;
+pub use sena_mcp;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

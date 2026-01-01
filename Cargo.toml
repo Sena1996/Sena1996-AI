@@ -1,11 +1,92 @@
 [workspace]
-members = [".", "crates/sena-providers", "crates/sena-collab"]
+members = [
+    ".",
+    "crates/sena-core",
+    "crates/sena-gateway",
+    "crates/sena-local",
+    "crates/sena-collab",
+    "crates/sena-security",
+    "crates/sena-observe",
+    "crates/sena-mcp",
+    "crates/sena-providers",
+]
 exclude = ["sena-ui/src-tauri"]
 resolver = "2"
 
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+
+[workspace.dependencies]
+# Core async
+tokio = { version = "1.42", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging/Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+prometheus = "0.13"
+
+# Network
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "gzip"] }
+axum = { version = "0.7", features = ["macros"] }
+hyper = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["util", "retry", "timeout", "limit"] }
+
+# Caching
+moka = { version = "0.12", features = ["future"] }
+
+# Vector DB
+qdrant-client = "1.12"
+fastembed = "4"
+
+# Security
+aes-gcm = "0.10"
+keyring = "3"
+sha2 = "0.10"
+base64 = "0.22"
+
+# Utilities
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+dashmap = "6"
+parking_lot = "0.12"
+bytes = "1"
+rand = "0.8"
+regex = "1"
+once_cell = "1.20"
+pin-project-lite = "0.2"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+tokio-rusqlite = "0.6"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Internal crates
+sena-core = { path = "crates/sena-core", version = "1.0.0" }
+sena-gateway = { path = "crates/sena-gateway", version = "1.0.0" }
+sena-local = { path = "crates/sena-local", version = "1.0.0" }
+sena-collab = { path = "crates/sena-collab", version = "1.0.0" }
+sena-security = { path = "crates/sena-security", version = "1.0.0" }
+sena-observe = { path = "crates/sena-observe", version = "1.0.0" }
+sena-mcp = { path = "crates/sena-mcp", version = "1.0.0" }
+
 [package]
 name = "sena1996-ai"
-version = "13.1.5"
+version = "1.0.0"
 edition = "2021"
 authors = ["Sena1996 <sena1996@github.com>"]
 description = "Sena1996 AI Tool - Make Your AI Collaborative and Smarter"
@@ -23,89 +104,60 @@ name = "sena"
 path = "src/main.rs"
 
 [dependencies]
-# Serialization
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+# Core infrastructure (new crates)
+sena-core = { workspace = true }
+sena-gateway = { workspace = true }
+sena-local = { workspace = true }
+sena-collab = { workspace = true }
+sena-security = { workspace = true }
+sena-observe = { workspace = true }
+sena-mcp = { workspace = true }
 
-# Async runtime
-tokio = { version = "1.0", features = ["full", "signal"] }
+# Temporary - will be replaced in later phases
+sena-providers = { version = "1.0.0", path = "crates/sena-providers" }
 
-# Time handling
-chrono = { version = "0.4", features = ["serde"] }
+# Core dependencies (use workspace)
+tokio = { workspace = true, features = ["signal"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
 
-# Hashing
-sha2 = "0.10"
+# Utilities (use workspace)
+chrono = { workspace = true }
+uuid = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+rand = { workspace = true }
+sha2 = { workspace = true }
+base64 = { workspace = true }
+
+# Network (use workspace)
+reqwest = { workspace = true }
+
+# CLI (use workspace)
+clap = { workspace = true }
+
+# Additional dependencies (not in workspace)
 hex = "0.4"
-
-# Regex for pattern matching
-regex = "1.10"
-
-# Lazy initialization
-once_cell = "1.19"
-
-# UUID generation
-uuid = { version = "1.0", features = ["v4", "serde"] }
-
-# Logging
 log = "0.4"
 env_logger = "0.11"
-
-# Error handling
-thiserror = "2.0"
-anyhow = "1.0"
-
-# Collections
 indexmap = { version = "2.0", features = ["serde"] }
-
-# System utilities
 dirs = "5.0"
 hostname = "0.4"
 whoami = "1.5"
-
-# Configuration
 toml = "0.9"
-
-# CLI parsing
-clap = { version = "4.4", features = ["derive"] }
-
-# JSON-RPC for MCP
 jsonrpc-core = "18.0"
-
-# Terminal/TTY detection
 atty = "0.2"
-
-# Colored output
 colored = "2.1"
-
-# Network - mDNS discovery
 mdns-sd = "0.11"
-
-# Network - TLS
 tokio-rustls = "0.25"
 rustls = "0.22"
 rustls-pemfile = "2.0"
 rcgen = "0.14"
-
-# Random for tokens
-rand = "0.8"
-
-# Base64 encoding
-base64 = "0.21"
-
-# Glob pattern matching
 glob = "0.3"
-
-# Futures for parallel execution
-futures = "0.3"
-
-# HTTP client for web tools
-reqwest = { version = "0.11", features = ["json"] }
-
-# Multi-provider AI integration
-sena-providers = { version = "13.1.5", path = "crates/sena-providers" }
-
-# AI-to-AI collaboration
-sena-collab = { version = "13.1.5", path = "crates/sena-collab" }
 
 [dev-dependencies]
 tokio-test = "0.4"
