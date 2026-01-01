@@ -13,7 +13,7 @@ use sena_core::{CompletionRequest, Message as CoreMessage, MessageRole, Provider
 use sena_gateway::{
     Gateway, AnthropicProvider, OpenAIProvider, GeminiProvider, OllamaProvider,
     MistralProvider, CohereProvider, DeepSeekProvider, GroqProvider,
-    PerplexityProvider, TogetherProvider, XaiProvider,
+    PerplexityProvider, TogetherProvider, XaiProvider, HuggingFaceProvider,
 };
 
 // Keep for config structs temporarily (will be fully removed in future)
@@ -337,6 +337,11 @@ impl AppState {
                 "groq" => {
                     if let Some(key) = &provider_config.api_key {
                         gateway.register(GroqProvider::new(key));
+                    }
+                }
+                "huggingface" => {
+                    if let Some(key) = &provider_config.api_key {
+                        gateway.register(HuggingFaceProvider::new(key));
                     }
                 }
                 "perplexity" => {
