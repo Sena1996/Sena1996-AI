@@ -10,6 +10,8 @@ import {
   AlertCircle,
   Loader2,
   ExternalLink,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import DynamicAuthForm from './DynamicAuthForm';
 import type {
@@ -42,6 +44,8 @@ export default function ProviderConfigModal({
   const [isValidating, setIsValidating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [isOAuthLoggingIn, setIsOAuthLoggingIn] = useState(false);
+  const [isOAuthLoggedIn, setIsOAuthLoggedIn] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +85,12 @@ export default function ProviderConfigModal({
       loadCredentials();
       setErrors({});
       setValidationResult(null);
+
+      if (provider.oauthSupported) {
+        invoke<boolean>('check_oauth_status', { providerId: provider.id })
+          .then(setIsOAuthLoggedIn)
+          .catch(() => setIsOAuthLoggedIn(false));
+      }
     }
   }, [isOpen, provider]);
 
@@ -138,6 +148,29 @@ export default function ProviderConfigModal({
       setValidationResult({ valid: false, error: String(error) });
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  const handleOAuthLogin = async () => {
+    setIsOAuthLoggingIn(true);
+    try {
+      await invoke('initiate_oauth_login', { providerId: provider.id });
+      setIsOAuthLoggedIn(true);
+      onSave();
+      onClose();
+    } catch (error) {
+      setErrors({ _general: String(error) });
+    } finally {
+      setIsOAuthLoggingIn(false);
+    }
+  };
+
+  const handleOAuthLogout = async () => {
+    try {
+      await invoke('logout_oauth', { providerId: provider.id });
+      setIsOAuthLoggedIn(false);
+    } catch (error) {
+      setErrors({ _general: String(error) });
     }
   };
 
@@ -236,6 +269,59 @@ export default function ProviderConfigModal({
             </span>
           </div>
 
+          {provider.oauthSupported && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-dark-700" />
+                <span className="text-xs text-dark-400 uppercase tracking-wider">OAuth Login</span>
+                <div className="h-px flex-1 bg-dark-700" />
+              </div>
+
+              {isOAuthLoggedIn ? (
+                <div className="flex items-center justify-between p-4 rounded-xl border-2 border-green-500/30 bg-green-500/10">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                    <div>
+                      <p className="text-sm font-medium text-green-400">Logged in via OAuth</p>
+                      <p className="text-xs text-dark-400 mt-0.5">Account authentication active</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleOAuthLogout}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleOAuthLogin}
+                  disabled={isOAuthLoggingIn}
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-sena-500/50 bg-sena-500/10 text-sena-400 hover:bg-sena-500/20 hover:border-sena-500 transition-all"
+                >
+                  {isOAuthLoggingIn ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="font-medium">Authenticating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-5 h-5" />
+                      <span className="font-medium">Login with {provider.displayName} Account</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-dark-700" />
+                <span className="text-xs text-dark-400 uppercase tracking-wider">Or use API Key</span>
+                <div className="h-px flex-1 bg-dark-700" />
+              </div>
+            </div>
+          )}
+
           <DynamicAuthForm
             fields={provider.authSchema.fields}
             values={values}
@@ -273,7 +359,7 @@ export default function ProviderConfigModal({
                     OS Keychain
                   </p>
                   <p className="text-xs text-dark-400 mt-1">
-                    More secure
+                    Platform native
                   </p>
                 </button>
 
@@ -296,14 +382,23 @@ export default function ProviderConfigModal({
                     Config File
                   </p>
                   <p className="text-xs text-dark-400 mt-1">
-                    Portable
+                    AES-256 encrypted
                   </p>
                 </button>
               </div>
               {storageType === 'config' && storageOptions.configFilePath && (
-                <p className="text-xs text-dark-500">
-                  File: <code className="text-dark-400">{storageOptions.configFilePath}</code>
-                </p>
+                <div className="p-3 rounded-lg bg-dark-800/50 border border-dark-700">
+                  <p className="text-xs text-dark-300 mb-1.5">
+                    <Shield className="w-3 h-3 inline mr-1 text-sena-400" />
+                    Credentials encrypted with AES-256-GCM + PBKDF2 (100k iterations)
+                  </p>
+                  <p className="text-xs text-dark-500">
+                    File: <code className="text-dark-400">{storageOptions.configFilePath}</code>
+                  </p>
+                  <p className="text-xs text-dark-500 mt-1">
+                    Permissions: 0600 (owner read/write only)
+                  </p>
+                </div>
               )}
             </div>
           )}

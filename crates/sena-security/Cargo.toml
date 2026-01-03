@@ -15,6 +15,7 @@ tracing = { workspace = true }
 aes-gcm = { workspace = true }
 keyring = { workspace = true }
 sha2 = { workspace = true }
+pbkdf2 = { workspace = true }
 base64 = { workspace = true }
 rand = { workspace = true }
 regex = { workspace = true }

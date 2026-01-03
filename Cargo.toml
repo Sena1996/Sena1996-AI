@@ -55,6 +55,7 @@ fastembed = "4"
 aes-gcm = "0.10"
 keyring = "3"
 sha2 = "0.10"
+pbkdf2 = { version = "0.12", features = ["simple"] }
 base64 = "0.22"
 
 # Utilities

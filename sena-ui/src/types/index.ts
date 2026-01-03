@@ -92,6 +92,7 @@ export interface ProviderMetadata {
   website: string;
   documentationUrl: string | null;
   authSchema: AuthSchema;
+  oauthSupported: boolean;
 }
 
 export interface AuthSchema {

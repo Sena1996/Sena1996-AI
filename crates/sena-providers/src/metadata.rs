@@ -9,6 +9,8 @@ pub struct ProviderMetadata {
     pub website: String,
     pub documentation_url: Option<String>,
     pub auth_schema: AuthSchema,
+    #[serde(default)]
+    pub oauth_supported: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,7 +66,13 @@ impl ProviderMetadata {
                 auth_type: AuthType::None,
                 fields: Vec::new(),
             },
+            oauth_supported: false,
         }
+    }
+
+    pub fn with_oauth_support(mut self, supported: bool) -> Self {
+        self.oauth_supported = supported;
+        self
     }
 
     pub fn with_description(mut self, description: &str) -> Self {
@@ -172,6 +180,7 @@ pub fn claude_metadata() -> ProviderMetadata {
         .with_docs_url("https://docs.anthropic.com")
         .with_icon("anthropic")
         .with_auth_schema(AuthSchema::none())
+        .with_oauth_support(true)
 }
 
 pub fn openai_metadata() -> ProviderMetadata {
@@ -200,6 +209,7 @@ pub fn gemini_metadata() -> ProviderMetadata {
         .with_placeholder("AI...")
         .with_help_text("Get your API key from aistudio.google.com/apikey")
         .with_validation(r"^AI")]))
+        .with_oauth_support(true)
 }
 
 pub fn ollama_metadata() -> ProviderMetadata {
@@ -280,6 +290,7 @@ pub fn huggingface_metadata() -> ProviderMetadata {
         )
         .with_placeholder("hf_...")
         .with_help_text("Get your API key from huggingface.co/settings/tokens")]))
+        .with_oauth_support(true)
 }
 
 pub fn perplexity_metadata() -> ProviderMetadata {

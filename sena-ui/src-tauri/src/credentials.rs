@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 const KEYRING_SERVICE: &str = "sena-hub";
+const ENCRYPTION_PASSWORD: &str = "sena-ui-credentials-encryption-key-v1";
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -139,12 +140,15 @@ impl CredentialManager {
     ) -> Result<(), String> {
         let mut config = self.load_config()?;
 
+        let encrypted = sena_security::encrypt_string(value, ENCRYPTION_PASSWORD)
+            .map_err(|e| format!("Encryption failed: {}", e))?;
+
         config
             .credentials
             .entry(provider_id.to_string())
             .or_default()
             .fields
-            .insert(field_id.to_string(), value.to_string());
+            .insert(field_id.to_string(), encrypted);
 
         self.save_config(&config)
     }
@@ -182,12 +186,13 @@ impl CredentialManager {
 
     fn get_from_config(&self, provider_id: &str, field_id: &str) -> Option<String> {
         let config = self.load_config().ok()?;
-        config
+        let encrypted = config
             .credentials
             .get(provider_id)?
             .fields
-            .get(field_id)
-            .cloned()
+            .get(field_id)?;
+
+        sena_security::decrypt_string(encrypted, ENCRYPTION_PASSWORD).ok()
     }
 
     pub fn delete(&self, provider_id: &str, field_id: &str) -> Result<(), String> {
@@ -284,7 +289,20 @@ impl CredentialManager {
             toml::to_string_pretty(config).map_err(|e| format!("Cannot serialize config: {}", e))?;
 
         std::fs::write(&self.config_path, content)
-            .map_err(|e| format!("Cannot write config: {}", e))
+            .map_err(|e| format!("Cannot write config: {}", e))?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&self.config_path)
+                .map_err(|e| format!("Cannot read file permissions: {}", e))?
+                .permissions();
+            perms.set_mode(0o600);
+            std::fs::set_permissions(&self.config_path, perms)
+                .map_err(|e| format!("Cannot set file permissions: {}", e))?;
+        }
+
+        Ok(())
     }
 }
 
@@ -319,11 +337,11 @@ pub async fn validate_api_key(provider_id: &str, api_key: &str) -> Result<bool, 
                 .await
         }
         "gemini" => {
-            let url = format!(
-                "https://generativelanguage.googleapis.com/v1beta/models?key={}",
-                api_key
-            );
-            client.get(&url).send().await
+            client
+                .get("https://generativelanguage.googleapis.com/v1/models")
+                .header("x-goog-api-key", api_key)
+                .send()
+                .await
         }
         "mistral" => {
             client

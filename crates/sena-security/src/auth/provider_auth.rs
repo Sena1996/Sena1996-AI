@@ -150,11 +150,15 @@ impl GeminiAuth {
     pub fn new() -> Self {
         Self {
             oauth_config: OAuthConfig::new("gemini")
+                .with_client_id(&std::env::var("GOOGLE_OAUTH_CLIENT_ID").unwrap_or_default())
+                .with_client_secret(&std::env::var("GOOGLE_OAUTH_CLIENT_SECRET").unwrap_or_default())
                 .with_auth_url("https://accounts.google.com/o/oauth2/v2/auth")
                 .with_token_url("https://oauth2.googleapis.com/token")
                 .with_scopes(vec![
-                    "https://www.googleapis.com/auth/generative-language",
-                    "https://www.googleapis.com/auth/cloud-platform",
+                    "openid",
+                    "profile",
+                    "email",
+                    "https://www.googleapis.com/auth/generative-language.retriever",
                 ]),
         }
     }
@@ -188,11 +192,11 @@ impl ProviderAuth for GeminiAuth {
         }
 
         let client = reqwest::Client::new();
-        let url = format!(
-            "https://generativelanguage.googleapis.com/v1/models?key={}",
-            key
-        );
-        let response = client.get(&url).send().await;
+        let response = client
+            .get("https://generativelanguage.googleapis.com/v1/models")
+            .header("x-goog-api-key", key)
+            .send()
+            .await;
 
         match response {
             Ok(r) => Ok(r.status().is_success()),
@@ -697,5 +701,50 @@ impl ProviderAuth for OllamaAuth {
 impl Default for OllamaAuth {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+pub struct HuggingFaceAuthOAuth {
+    oauth_config: OAuthConfig,
+}
+
+impl HuggingFaceAuthOAuth {
+    pub fn new() -> Self {
+        Self {
+            oauth_config: OAuthConfig::new("huggingface")
+                .with_client_id(&std::env::var("HUGGINGFACE_OAUTH_CLIENT_ID").unwrap_or_default())
+                .with_client_secret(&std::env::var("HUGGINGFACE_OAUTH_CLIENT_SECRET").unwrap_or_default())
+                .with_auth_url("https://huggingface.co/oauth/authorize")
+                .with_token_url("https://huggingface.co/oauth/token")
+                .with_scopes(vec![
+                    "openid",
+                    "profile",
+                    "inference-api",
+                ]),
+        }
+    }
+
+    pub fn oauth_config(&self) -> &OAuthConfig {
+        &self.oauth_config
+    }
+}
+
+pub struct ClaudeAuthOAuth {
+    oauth_config: OAuthConfig,
+}
+
+impl ClaudeAuthOAuth {
+    pub fn new() -> Self {
+        Self {
+            oauth_config: OAuthConfig::new("claude")
+                .with_client_id("9d1c250a-e61b-44d9-88ed-5944d1962f5e")
+                .with_auth_url("https://console.anthropic.com/oauth/authorize")
+                .with_token_url("https://console.anthropic.com/oauth/token")
+                .with_scopes(vec!["openid", "profile", "email"]),
+        }
+    }
+
+    pub fn oauth_config(&self) -> &OAuthConfig {
+        &self.oauth_config
     }
 }

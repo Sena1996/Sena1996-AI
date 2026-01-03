@@ -3,6 +3,7 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use pbkdf2::pbkdf2_hmac;
 use rand::RngCore;
 use sena_core::{Error, Result};
 use sha2::{Digest, Sha256};
@@ -77,12 +78,11 @@ impl Encryptor {
 }
 
 fn derive_key(password: &str) -> [u8; KEY_SIZE] {
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    hasher.update(b"sena-salt-v1");
-    let result = hasher.finalize();
+    const SALT: &[u8] = b"sena-pbkdf2-salt-v2";
+    const ITERATIONS: u32 = 100_000;
+
     let mut key = [0u8; KEY_SIZE];
-    key.copy_from_slice(&result);
+    pbkdf2_hmac::<Sha256>(password.as_bytes(), SALT, ITERATIONS, &mut key);
     key
 }
 

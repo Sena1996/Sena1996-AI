@@ -8,6 +8,7 @@ pub use oauth::{OAuthClient, OAuthConfig, OAuthToken};
 pub use provider_auth::{
     AnthropicAuth, CohereAuth, DeepSeekAuth, GeminiAuth, GroqAuth, HuggingFaceAuth,
     MistralAuth, OllamaAuth, OpenAIAuth, PerplexityAuth, ProviderAuth, TogetherAuth, XaiAuth,
+    HuggingFaceAuthOAuth, ClaudeAuthOAuth,
 };
 pub use token_store::TokenStore;
 
@@ -191,8 +192,10 @@ impl AuthManager {
         if credentials.status == CredentialStatus::Expired {
             if let Some(token) = credentials.oauth_token {
                 if let Some(refresh_token) = token.refresh_token {
-                    let provider_auth = self.providers.get(provider).unwrap();
-                    let config = provider_auth.oauth_config().unwrap();
+                    let provider_auth = self.providers.get(provider)
+                        .ok_or_else(|| sena_core::Error::validation(format!("Unknown provider: {}", provider)))?;
+                    let config = provider_auth.oauth_config()
+                        .ok_or_else(|| sena_core::Error::validation("OAuth not supported for this provider"))?;
                     let new_token = self.oauth_client.refresh_token(&config, &refresh_token).await?;
                     self.token_store.store_oauth_token(provider, &new_token)?;
 
