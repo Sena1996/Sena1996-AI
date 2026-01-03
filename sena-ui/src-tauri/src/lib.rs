@@ -7,6 +7,7 @@ use tauri::State;
 use tokio::sync::RwLock;
 
 use sena_collab::CollabOrchestrator;
+use sena_security::Sanitizer;
 
 // New gateway architecture
 use sena_core::{CompletionRequest, Message as CoreMessage, MessageRole, Provider};
@@ -264,7 +265,8 @@ struct PendingRequestData {
 
 pub struct AppState {
     pub config: RwLock<ProvidersConfig>,
-    pub gateway: Arc<Gateway>,
+    pub gateway: RwLock<Gateway>,
+    pub sanitizer: Sanitizer,
     pub orchestrator: Arc<RwLock<CollabOrchestrator>>,
     pub start_time: Instant,
 }
@@ -277,13 +279,24 @@ impl AppState {
         // Create gateway from config
         let gateway = Self::create_gateway(&config);
 
+        // Create input sanitizer for prompt injection protection
+        let sanitizer = Sanitizer::new();
+
         let orchestrator = Arc::new(RwLock::new(CollabOrchestrator::new(100)));
         Self {
             config: RwLock::new(config),
-            gateway: Arc::new(gateway),
+            gateway: RwLock::new(gateway),
+            sanitizer,
             orchestrator,
             start_time: Instant::now(),
         }
+    }
+
+    pub async fn reload_gateway(&self) {
+        let config = self.config.read().await;
+        let new_gateway = Self::create_gateway(&config);
+        let mut gateway = self.gateway.write().await;
+        *gateway = new_gateway;
     }
 
     fn create_gateway(config: &ProvidersConfig) -> Gateway {
@@ -379,6 +392,15 @@ impl AppState {
             let provider_id = &provider_meta.id;
 
             if let Some(provider_config) = config.providers.get_mut(provider_id) {
+                // Check for OAuth token first (takes precedence)
+                if provider_meta.oauth_supported {
+                    if let Some((oauth_token, _)) = manager.get(provider_id, "oauth_access_token", None) {
+                        provider_config.api_key = Some(oauth_token);
+                        continue;
+                    }
+                }
+
+                // Load regular fields (API key, base_url, etc.)
                 for field in &provider_meta.auth_schema.fields {
                     let env_var = field.env_var_name.as_deref();
 
@@ -501,6 +523,11 @@ async fn send_chat(
 ) -> Result<ChatResponseDto, String> {
     if message.trim().is_empty() {
         return Err("Message cannot be empty".to_string());
+    }
+
+    // Sanitize input for prompt injection attacks
+    if let Err(e) = state.sanitizer.check_injection(&message) {
+        return Err(format!("Input blocked: {}", e));
     }
 
     let config = state.config.read().await;
@@ -788,9 +815,15 @@ async fn list_cli_sessions() -> Result<Vec<CliSessionDto>, String> {
 
 #[tauri::command]
 async fn send_message_to_session(
+    state: State<'_, AppState>,
     target_session: String,
     message: String,
 ) -> Result<SendMessageResult, String> {
+    // Sanitize input for prompt injection attacks
+    if let Err(e) = state.sanitizer.check_injection(&message) {
+        return Err(format!("Input blocked: {}", e));
+    }
+
     let sessions_path = dirs::home_dir()
         .ok_or("Cannot find home directory")?
         .join(".claude")
@@ -897,7 +930,15 @@ async fn get_all_messages() -> Result<Vec<HubMessageDto>, String> {
 }
 
 #[tauri::command]
-async fn broadcast_message(message: String) -> Result<SendMessageResult, String> {
+async fn broadcast_message(
+    state: State<'_, AppState>,
+    message: String,
+) -> Result<SendMessageResult, String> {
+    // Sanitize input for prompt injection attacks
+    if let Err(e) = state.sanitizer.check_injection(&message) {
+        return Err(format!("Input blocked: {}", e));
+    }
+
     let messages_dir = dirs::home_dir()
         .ok_or("Cannot find home directory")?
         .join(".claude")
@@ -1926,8 +1967,22 @@ async fn get_guardian_status() -> Result<GuardianStatusDto, String> {
 }
 
 #[tauri::command]
-async fn guardian_validate(command: String) -> Result<ValidationResultGuardianDto, String> {
+async fn guardian_validate(
+    state: State<'_, AppState>,
+    command: String,
+) -> Result<ValidationResultGuardianDto, String> {
     use std::process::Command;
+
+    // Sanitize input for prompt injection attacks
+    if let Err(e) = state.sanitizer.check_injection(&command) {
+        return Ok(ValidationResultGuardianDto {
+            command: command.clone(),
+            allowed: false,
+            risk_score: 1.0,
+            reason: Some(format!("Input sanitization blocked: {}", e)),
+            matched_patterns: vec![e.to_string()],
+        });
+    }
 
     let output = Command::new("./target/release/sena")
         .args(["guardian", "validate", &command, "--format", "json"])
@@ -2083,6 +2138,11 @@ async fn devil_execute(
 ) -> Result<DevilExecuteResultDto, String> {
     use std::time::{Duration, Instant};
 
+    // Sanitize input for prompt injection attacks
+    if let Err(e) = state.sanitizer.check_injection(&prompt) {
+        return Err(format!("Input blocked: {}", e));
+    }
+
     let config = state.config.read().await;
     let router = ProviderRouter::from_config(&config)
         .map_err(|e| format!("Failed to create router: {}", e))?;
@@ -2198,6 +2258,99 @@ async fn devil_test(prompt: String) -> Result<DevilExecuteResultDto, String> {
     })
 }
 
+#[tauri::command]
+async fn initiate_oauth_login(
+    state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<String, String> {
+    use sena_security::auth::{AuthManager, HuggingFaceAuthOAuth, ClaudeAuthOAuth};
+    use sena_security::OAuthClient;
+
+    let oauth_config = match provider_id.as_str() {
+        "gemini" => {
+            sena_security::auth::OAuthConfig::new("gemini")
+                .with_client_id(&std::env::var("GOOGLE_OAUTH_CLIENT_ID")
+                    .unwrap_or_else(|_| "REPLACE_WITH_YOUR_CLIENT_ID".to_string()))
+                .with_client_secret(&std::env::var("GOOGLE_OAUTH_CLIENT_SECRET")
+                    .unwrap_or_else(|_| "REPLACE_WITH_YOUR_CLIENT_SECRET".to_string()))
+                .with_auth_url("https://accounts.google.com/o/oauth2/v2/auth")
+                .with_token_url("https://oauth2.googleapis.com/token")
+                .with_scopes(vec![
+                    "openid",
+                    "profile",
+                    "email",
+                    "https://www.googleapis.com/auth/generative-language.retriever",
+                ])
+        }
+        "huggingface" => {
+            let hf_auth = HuggingFaceAuthOAuth::new();
+            hf_auth.oauth_config().clone()
+        }
+        "claude" => {
+            let claude_auth = ClaudeAuthOAuth::new();
+            claude_auth.oauth_config().clone()
+        }
+        _ => return Err(format!("OAuth not supported for provider: {}", provider_id)),
+    };
+
+    let oauth_client = OAuthClient::new();
+    let token = oauth_client.authenticate(&oauth_config).await
+        .map_err(|e| format!("OAuth authentication failed: {}", e))?;
+
+    let manager = CredentialManager::new();
+    manager.store(
+        &provider_id,
+        "oauth_access_token",
+        &token.access_token,
+        StorageType::Keychain,
+    )?;
+
+    if let Some(refresh_token) = &token.refresh_token {
+        manager.store(
+            &provider_id,
+            "oauth_refresh_token",
+            refresh_token,
+            StorageType::Keychain,
+        )?;
+    }
+
+    // Reload config with new OAuth token
+    let mut config = state.config.write().await;
+    AppState::load_credentials_into_config(&mut config);
+    drop(config);
+
+    // Reload gateway with new credentials
+    state.reload_gateway().await;
+
+    Ok("OAuth login successful".to_string())
+}
+
+#[tauri::command]
+async fn check_oauth_status(
+    _state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<bool, String> {
+    let manager = CredentialManager::new();
+
+    match manager.get(&provider_id, "oauth_access_token", None) {
+        Some((_, _)) => Ok(true),
+        None => Ok(false),
+    }
+}
+
+#[tauri::command]
+async fn logout_oauth(
+    _state: State<'_, AppState>,
+    provider_id: String,
+) -> Result<(), String> {
+    let manager = CredentialManager::new();
+
+    manager.delete(&provider_id, "oauth_access_token")?;
+    manager.delete(&provider_id, "oauth_refresh_token").ok();
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
@@ -2252,6 +2405,9 @@ pub fn run() {
             get_devil_status,
             devil_execute,
             devil_test,
+            initiate_oauth_login,
+            check_oauth_status,
+            logout_oauth,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

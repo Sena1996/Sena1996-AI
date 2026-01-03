@@ -109,8 +109,15 @@ impl BackgroundAgentManager {
                         task.started_at = Some(Utc::now());
 
                         {
-                            let mut tasks_guard = tasks.write().unwrap();
-                            tasks_guard.insert(task_id.clone(), task.clone());
+                            match tasks.write() {
+                                Ok(mut tasks_guard) => {
+                                    tasks_guard.insert(task_id.clone(), task.clone());
+                                }
+                                Err(e) => {
+                                    log::error!("Failed to acquire task write lock: {}", e);
+                                    continue;
+                                }
+                            }
                         }
 
                         let tasks_clone = Arc::clone(&tasks);
@@ -133,12 +140,18 @@ impl BackgroundAgentManager {
                             };
 
                             {
-                                let mut tasks_guard = tasks_clone.write().unwrap();
-                                if let Some(t) = tasks_guard.get_mut(&task_id) {
-                                    t.status = status;
-                                    t.completed_at = Some(Utc::now());
-                                    t.execution = execution.clone();
-                                    t.error = error.clone();
+                                match tasks_clone.write() {
+                                    Ok(mut tasks_guard) => {
+                                        if let Some(t) = tasks_guard.get_mut(&task_id) {
+                                            t.status = status;
+                                            t.completed_at = Some(Utc::now());
+                                            t.execution = execution.clone();
+                                            t.error = error.clone();
+                                        }
+                                    }
+                                    Err(e) => {
+                                        log::error!("Failed to acquire task write lock for completion: {}", e);
+                                    }
                                 }
                             }
 
@@ -154,13 +167,19 @@ impl BackgroundAgentManager {
                     }
 
                     TaskCommand::Cancel(task_id) => {
-                        let mut tasks_guard = tasks.write().unwrap();
-                        if let Some(task) = tasks_guard.get_mut(&task_id) {
-                            if task.status == TaskStatus::Pending
-                                || task.status == TaskStatus::Running
-                            {
-                                task.status = TaskStatus::Cancelled;
-                                task.completed_at = Some(Utc::now());
+                        match tasks.write() {
+                            Ok(mut tasks_guard) => {
+                                if let Some(task) = tasks_guard.get_mut(&task_id) {
+                                    if task.status == TaskStatus::Pending
+                                        || task.status == TaskStatus::Running
+                                    {
+                                        task.status = TaskStatus::Cancelled;
+                                        task.completed_at = Some(Utc::now());
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Failed to acquire task write lock for cancellation: {}", e);
                             }
                         }
                     }

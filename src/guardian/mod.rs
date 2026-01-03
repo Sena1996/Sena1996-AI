@@ -3,6 +3,7 @@ mod error;
 mod executor;
 mod hallucination;
 mod interceptor;
+mod sanitizer;
 mod validator;
 
 pub use config::{GuardianConfig, HallucinationMode, SandboxLevel};
@@ -10,6 +11,7 @@ pub use error::{GuardianError, GuardianResult};
 pub use executor::{DirectExecutor, InlineExecutable};
 pub use hallucination::{HallucinationDetector, HallucinationResponse, HallucinationResult};
 pub use interceptor::{InterceptedOutput, StreamInterceptor};
+pub use sanitizer::{InputSanitizer, SanitizationResult};
 pub use validator::{CommandValidator, ValidationResult};
 
 use std::sync::{Arc, RwLock};
@@ -23,6 +25,7 @@ pub struct GuardianMiddleware {
     harmony_validator: Arc<RwLock<HarmonyValidationEngine>>,
     command_validator: CommandValidator,
     hallucination_detector: HallucinationDetector,
+    input_sanitizer: InputSanitizer,
     direct_executor: DirectExecutor,
     config: GuardianConfig,
 }
@@ -40,6 +43,7 @@ impl GuardianMiddleware {
                 Arc::clone(&negative_space),
                 Arc::clone(&harmony_validator),
             ),
+            input_sanitizer: InputSanitizer::new(),
             direct_executor: DirectExecutor::new(),
             config: GuardianConfig::default(),
         }
@@ -58,6 +62,7 @@ impl GuardianMiddleware {
                 Arc::clone(&harmony_validator),
                 config.hallucination_threshold,
             ),
+            input_sanitizer: InputSanitizer::new(),
             direct_executor: DirectExecutor::new(),
             config,
         }
@@ -69,6 +74,14 @@ impl GuardianMiddleware {
 
     pub fn check_hallucination(&self, content: &str) -> HallucinationResult {
         self.hallucination_detector.check(content)
+    }
+
+    pub fn sanitize_input(&self, input: &str) -> SanitizationResult {
+        self.input_sanitizer.sanitize(input)
+    }
+
+    pub fn is_input_safe(&self, input: &str) -> bool {
+        self.input_sanitizer.is_safe(input)
     }
 
     pub fn execute(&self, command: &str, args: &[&str]) -> GuardianResult<std::process::Output> {
